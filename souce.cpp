@@ -58,7 +58,22 @@ enum BlockType {
 	BasicBk, LauncherBk, OnceMvBk, LightBk, Bullet, Item, SwitchBk, ElectricBk
 };
 enum Game {
-	start, stage, survival, custom, play, stop, clear, death, customplay, customdeath, survivalready, survivalstop, survivaldeath
+	Start,
+
+	StageSelect,
+	StagePlay,
+	StageStop,
+	StageClear,
+	StageDeath,
+
+	SurvivalReady,
+	SurvivalPlay,
+	SurvivalStop,
+	SurvivalDeath,
+
+	CustomMode,
+	CustomPlay,
+	CustomDeath
 };
 enum SoundCheck {
 	X, ballcrach, telpo, eatstar, balldeath, click, gameclear, music
@@ -85,7 +100,7 @@ struct doubleRECT {
 
 Ball ball = { 30, 12.5, 0, 0, 0, Normal, Normal };
 bool isLeftPressed, isRightPressed;
-int GamePlay = start;
+int GamePlay = Start;
 vector <Block> block[15], bullet, Readyblock[4];
 vector <Block> animation;
 vector <CrashedBk> crash;
@@ -272,8 +287,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				UseItem();
 				Scheck = telpo;
 			}
-			else if (GamePlay == survivalready) {
-				GamePlay = survival;
+			else if (GamePlay == SurvivalReady) {
+				GamePlay = SurvivalPlay;
 				isSwitchOff = false;
 				score = 0;
 				random = 0;
@@ -294,20 +309,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case VK_ESCAPE: {
-			if (GamePlay == play)
-				GamePlay = stop;
-			else if (GamePlay == stop)
-				GamePlay = play;
-			else if (GamePlay == custom || GamePlay == stage)
-				GamePlay = start;
-			else if (GamePlay == customplay)
-				GamePlay = custom;
-			else if (GamePlay == clear)
-				GamePlay = stage;
-			else if (GamePlay == survival || GamePlay == survivalready)
-				GamePlay = survivalstop;
-			else if (GamePlay == survivalstop)
-				GamePlay = survivalready;
+			if (GamePlay == StagePlay)
+				GamePlay = StageStop;
+			else if (GamePlay == StageStop)
+				GamePlay = StagePlay;
+			else if (GamePlay == CustomMode || GamePlay == StageSelect)
+				GamePlay = Start;
+			else if (GamePlay == CustomPlay)
+				GamePlay = CustomMode;
+			else if (GamePlay == StageClear)
+				GamePlay = StageSelect;
+			else if (GamePlay == SurvivalPlay || GamePlay == SurvivalReady)
+				GamePlay = SurvivalStop;
+			else if (GamePlay == SurvivalStop)
+				GamePlay = SurvivalReady;
 			break;
 		}
 		case VK_RIGHT: {
@@ -372,7 +387,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		FillRect(mdc, &window, WHITE_BRUSH);
 
 		//맵툴 블럭 설치
-		if (GamePlay == custom && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
+		if (GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
 			if (selection > 0) {// 블럭이 선택되었을 경우
 				if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // 공이 있을 경우
 					BallStartLC = { -1, -1 };
@@ -404,7 +419,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		// 게임 시작 화면
-		if (GamePlay == start) {
+		if (GamePlay == Start) {
 			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615)
 				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 스테이지 모드 위 커서
 			else if (MouseLC.x <= 430 && MouseLC.y >= 640 && MouseLC.y <= 740)
@@ -414,7 +429,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			else
 				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 시작화면
 		}
-		else if (GamePlay == stage) {
+		else if (GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715)
 				imgStageScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 스테이지 모드 위 커서
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715)
@@ -429,7 +444,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			else
 				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // 기본 홈버튼
 		}
-		else if (GamePlay == custom) {
+		else if (GamePlay == CustomMode) {
 			imgMaptoolScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 시작화면
 
 			//버튼
@@ -541,7 +556,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		// 게임 플레이 화면
-		else if (GamePlay == play || GamePlay == clear || GamePlay == stop || GamePlay == customplay || GamePlay == death || GamePlay == customdeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
+		else if (GamePlay == StagePlay || GamePlay == StageClear || GamePlay == StageStop || GamePlay == CustomPlay || GamePlay == StageDeath || GamePlay == CustomDeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
 			imgPlayScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
 
 			//산탄 출력
@@ -592,7 +607,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			//공 출력
-			if (GamePlay != death && GamePlay != customdeath) { // 죽으면 출력 안하게
+			if (GamePlay != StageDeath && GamePlay != CustomDeath) { // 죽으면 출력 안하게
 				if (ball.state)
 					imgBall.AlphaBlend(mdc, ball.x - rd, ball.y - rd, rd * 2, rd * 2, ball.item * (rd * 2), 0, rd * 2, rd * 2, 125, AC_SRC_OVER); // 비활성화공
 				else
@@ -602,7 +617,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// 파티클 출력
 			for (int i = 0; i < animation.size(); i++) {
 				switch (animation[i].type) {
-				case customdeath: // 이넘 겹쳐서 걍 이거씀
+				case StageDeath: // 이넘 겹쳐서 걍 이거씀
 					imgDeadAni.AlphaBlend(mdc, animation[i].x, animation[i].y, 180, 180, 180 * (animation[i].ani / 2), 180 * animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
 					break;
 				case BreakBk:
@@ -617,12 +632,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					if (animation[i].type == Star) { // 애니메이션 끝나고 clear로 바뀜
 						starcnt--;
 						if (starcnt == 0) {
-							if (GamePlay == play || GamePlay == death) {// 별 먹고 죽었을 때도 클리어되게,,, 동시에 일어나도 WM_TIMER가먼저 돌아가서 아마 death가 먼저 될거라 괜찮을거같긴한데 버그나면뭐,, 아쉬운거임
+							if (GamePlay == StagePlay || GamePlay == StageDeath) {// 별 먹고 죽었을 때도 클리어되게,,, 동시에 일어나도 WM_TIMER가먼저 돌아가서 아마 death가 먼저 될거라 괜찮을거같긴한데 버그나면뭐,, 아쉬운거임
 								Scheck = gameclear;
-								GamePlay = clear;
+								GamePlay = StageClear;
 							}
-							else if (GamePlay == customplay || GamePlay == customdeath)
-								GamePlay = custom;
+							else if (GamePlay == CustomPlay || GamePlay == CustomDeath)
+								GamePlay = CustomMode;
 						}
 					}
 					animation.erase(animation.begin() + i);
@@ -630,7 +645,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			// 화면 출력
-			if (GamePlay == stop) {
+			if (GamePlay == StageStop) {
 				if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381)
 					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 메인화면 버튼 위 커서
 				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494)
@@ -640,14 +655,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				else
 					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 정지화면
 			}
-			else if (GamePlay == clear) {
+			else if (GamePlay == StageClear) {
 				if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155)
 					imgClearScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom);
 				else
 					imgClearScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
 			}
 		}
-		else if (GamePlay == survival || GamePlay == survivalready || GamePlay == survivalstop || GamePlay == survivaldeath) {
+		else if (GamePlay == SurvivalPlay || GamePlay == SurvivalReady || GamePlay == SurvivalStop || GamePlay == SurvivalDeath) {
 			// 배경 출력
 			imgPlayScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
 
@@ -699,7 +714,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			//공 출력
-			if (GamePlay != survivaldeath) { // 죽으면 출력 안하게
+			if (GamePlay != SurvivalDeath) { // 죽으면 출력 안하게
 				if (ball.state)
 					imgBall.AlphaBlend(mdc, ball.x - rd, ball.y - rd, rd * 2, rd * 2, ball.item * (rd * 2), 0, rd * 2, rd * 2, 125, AC_SRC_OVER); // 비활성화공
 				else
@@ -709,7 +724,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// 파티클 출력
 			for (int i = 0; i < animation.size(); i++) {
 				switch (animation[i].type) {
-				case customdeath: // 이넘 겹쳐서 걍 이거씀
+				case StageDeath: // 이넘 겹쳐서 걍 이거씀
 					imgDeadAni.AlphaBlend(mdc, animation[i].x, animation[i].y, 180, 180, 180 * (animation[i].ani / 2), 180 * animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
 					break;
 				case BreakBk:
@@ -749,7 +764,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			// 화면 출력
-			if (GamePlay == survivalready && animation.size() == 0) {
+			if (GamePlay == SurvivalReady && animation.size() == 0) {
 				imgSurvivalReady.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
 
 				hFont = CreateFont(-60, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"고령딸기체");
@@ -762,7 +777,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				SelectObject(mdc, OldFont);
 				DeleteObject(hFont);
 			}
-			else if (GamePlay == survivalstop) {
+			else if (GamePlay == SurvivalStop) {
 				if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 337 && MouseLC.y <= 434) {
 					imgSurvivalStop.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom);
 				}
@@ -784,18 +799,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_TIMER: {
 		// 리스폰
-		if (GamePlay == death && animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
+		if (GamePlay == StageDeath && animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
 			MakeVector();
 			ball = { (double)BallStartLC.x, (double)BallStartLC.y, 0, 0, 0, Normal, Normal };
-			GamePlay = play;
+			GamePlay = StagePlay;
 		}
-		else if (GamePlay == customdeath && animation.size() == 0) {
+		else if (GamePlay == CustomDeath && animation.size() == 0) {
 			MakeVector();
 			ball = { (double)BallStartLC.x * side + 30, (double)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
-			GamePlay = customplay;
+			GamePlay = CustomPlay;
 		}
-		else if (GamePlay == survivaldeath && animation.size() == 0) {
-			GamePlay = survivalready;
+		else if (GamePlay == SurvivalDeath && animation.size() == 0) {
+			GamePlay = SurvivalReady;
 			MakeVector();
 			blockDown = 0;
 			PrintLc = 3;
@@ -861,7 +876,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		//블럭/공 이동, 충돌체크
-		if (GamePlay == play || GamePlay == customplay || GamePlay == death || GamePlay == customdeath || GamePlay == survival || GamePlay == survivaldeath) { // 죽어도 애니메이션 하고 있을 땐 블럭 움직여야돼서 추가함
+		if (GamePlay == StagePlay || GamePlay == CustomPlay || GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == SurvivalPlay || GamePlay == SurvivalDeath) { // 죽어도 애니메이션 하고 있을 땐 블럭 움직여야돼서 추가함
 			// 블럭 애니메이션 & 움직이기
 			for (int y = 0; y < 15; y++) {
 				for (int i = 0; i < block[y].size(); i++) {
@@ -912,22 +927,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			CrashBullet(); // 죽어도 애니메이션 하고 있을 때도 작동하게하고싶어서 함수로 뺌
 
 			// 공 충돌체크
-			if (GamePlay == play || GamePlay == customplay || GamePlay == survival) { // 이미 뒤졌을땐 안돌아가게 하려고. 계속 돌아가면 애니메이션 벡터에 자꾸들어감
+			if (GamePlay == StagePlay || GamePlay == CustomPlay || GamePlay == SurvivalPlay) { // 이미 뒤졌을땐 안돌아가게 하려고. 계속 돌아가면 애니메이션 벡터에 자꾸들어감
 				// 바닥과 충돌
-				if (GamePlay == survival && ball.y + rd >= 804) {
-					animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, customdeath, rand() % 4, 0 });
+				if (GamePlay == SurvivalPlay && ball.y + rd >= 804) {
+					animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 					Scheck = balldeath;
-					GamePlay = survivaldeath;
+					GamePlay = SurvivalDeath;
 				}
 				else if (ball.y + rd >= window.bottom) {
-					animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, customdeath, rand() % 4, 0 });
+					animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 					Scheck = balldeath;
-					if (GamePlay == play)
-						GamePlay = death;
-					else if (GamePlay == customplay)
-						GamePlay = customdeath;
-					else if (GamePlay == survival)
-						GamePlay = survivaldeath;
+					if (GamePlay == StagePlay)
+						GamePlay = StageDeath;
+					else if (GamePlay == CustomPlay)
+						GamePlay = CustomDeath;
+					else if (GamePlay == SurvivalPlay)
+						GamePlay = SurvivalDeath;
 				}
 
 				// 블럭과 충돌
@@ -936,7 +951,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		// 서바이벌 모드 맵 이동
-		if (GamePlay == survival) {
+		if (GamePlay == SurvivalPlay) {
 			if (blockDown == 200) {
 				blockDown = 0;
 				ball.y += side;
@@ -979,14 +994,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	case WM_LBUTTONDOWN: {
-		if (GamePlay == start) {
+		if (GamePlay == Start) {
 			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615) { // 스테이지 버튼
 				Scheck = click;
-				GamePlay = stage;
+				GamePlay = StageSelect;
 			}
 			else if (MouseLC.x <= 430 && MouseLC.y >= 640 && MouseLC.y <= 740) { // 서바이벌 버튼
 				Scheck = click;
-				GamePlay = survivalready;
+				GamePlay = SurvivalReady;
 				MakeVector();
 				blockDown = 0;
 				PrintLc = -1;
@@ -1009,14 +1024,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			else if (MouseLC.x <= 430 && MouseLC.y >= 763 && MouseLC.y <= 863) { // 맵툴 버튼
 				Scheck = click;
-				GamePlay = custom;
+				GamePlay = CustomMode;
 				BallStartLC = { -1, -1 };
 				isSwitchOff = 0;
 				memset(Map, 0, sizeof(Map));
 				selection = 0;
 			}
 		}
-		else if (GamePlay == stage) {
+		else if (GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
 				Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
 				ifstream in{ "바운스볼 맵/Stage1.txt" };
@@ -1033,7 +1048,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				BallStartLC.x = BallStartLC.x * side + 30;
 				BallStartLC.y = BallStartLC.y * side + 30;
 
-				GamePlay = death;
+				GamePlay = StageDeath;
 				in.close();
 			}
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
@@ -1052,7 +1067,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				BallStartLC.x = BallStartLC.x * side + 30;
 				BallStartLC.y = BallStartLC.y * side + 30;
 
-				GamePlay = death;
+				GamePlay = StageDeath;
 				in.close();
 			}
 			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
@@ -1071,12 +1086,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				BallStartLC.x = BallStartLC.x * side + 30;
 				BallStartLC.y = BallStartLC.y * side + 30;
 
-				GamePlay = death;
+				GamePlay = StageDeath;
 				in.close();
 			}
 			else if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128) {
 				Scheck = click;
-				GamePlay = start;
+				GamePlay = Start;
 			}
 			else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
 				Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
@@ -1094,27 +1109,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				BallStartLC.x = BallStartLC.x * side + 30;
 				BallStartLC.y = BallStartLC.y * side + 30;
 
-				GamePlay = death;
+				GamePlay = StageDeath;
 				in.close();
 			}
 		}
-		else if (GamePlay == stop) {
+		else if (GamePlay == StageStop) {
 			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // 메인화면 버튼 위 커서 
 				Scheck = click;
-				GamePlay = start;
+				GamePlay = Start;
 			}
 			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // 스테이지 버튼 위 커서 
 				Scheck = click;
-				GamePlay = stage;
+				GamePlay = StageSelect;
 			}
 			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
 				Scheck = click;
 				MakeVector();
-				GamePlay = death;
+				GamePlay = StageDeath;
 				ball = { (double)BallStartLC.x, (double)BallStartLC.y, 0, 0, 0, Normal, Normal }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
 			}
 		}
-		else if (GamePlay == custom) {
+		else if (GamePlay == CustomMode) {
 			drag = true;
 			//블럭 선택
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
@@ -1142,7 +1157,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 				ball = { (double)BallStartLC.x * side + 30, (double)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
-				GamePlay = customplay;
+				GamePlay = CustomPlay;
 				MakeVector();
 			}
 			// 지우개 버튼
@@ -1224,20 +1239,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				drag = false;
 			}
 		}
-		else if (GamePlay == clear) {
+		else if (GamePlay == StageClear) {
 			if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155) {
 				Scheck = click;
-				GamePlay = stage;
+				GamePlay = StageSelect;
 			}
 		}
-		else if (GamePlay == survivalstop) {
+		else if (GamePlay == SurvivalStop) {
 			if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 337 && MouseLC.y <= 434) {
 				Scheck = click;
-				GamePlay = start;
+				GamePlay = Start;
 			}
 			else if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 451 && MouseLC.y <= 550) {
 				Scheck = click;
-				GamePlay = survivalready;
+				GamePlay = SurvivalReady;
 				MakeVector();
 				blockDown = 0;
 				PrintLc = -1;
@@ -1257,7 +1272,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	case WM_MOUSEMOVE: {
-		if (GamePlay == start || GamePlay == stage || GamePlay == stop || GamePlay == clear || GamePlay == custom || GamePlay == survivalstop) {
+		if (GamePlay == Start || GamePlay == StageSelect || GamePlay == StageStop || GamePlay == StageClear || GamePlay == CustomMode || GamePlay == SurvivalStop) {
 			MouseLC.x = LOWORD(lParam);
 			MouseLC.y = HIWORD(lParam);
 		}
@@ -1282,7 +1297,7 @@ void CrashExamin() {
 	int crashStart, crashEnd, crashDir;
 	bool doQ2block = true;
 
-	if (GamePlay == survival) {
+	if (GamePlay == SurvivalPlay) {
 		// 오른쪽 벽
 		if (ball.x + rd >= side * 17) {
 			ball.x = side * 17 - rd;
@@ -1388,14 +1403,14 @@ void Crash(int dir, int i, int y) {
 	}
 	case LightBk: {
 		if (block[y][i].subtype < 2) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, customdeath, rand() % 4, 0 });
+			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 			Scheck = balldeath;
-			if (GamePlay == play)
-				GamePlay = death;
-			else if (GamePlay == customplay)
-				GamePlay = customdeath;
-			else if (GamePlay == survival)
-				GamePlay = survivaldeath;
+			if (GamePlay == StagePlay)
+				GamePlay = StageDeath;
+			else if (GamePlay == CustomPlay)
+				GamePlay = CustomDeath;
+			else if (GamePlay == SurvivalPlay)
+				GamePlay = SurvivalDeath;
 			return;
 		}
 		else break;
@@ -1410,7 +1425,7 @@ void Crash(int dir, int i, int y) {
 					crash[j].i -= 1;
 			}
 
-			if (GamePlay == survival)
+			if (GamePlay == SurvivalPlay)
 				score += 10;
 		}
 		return;
@@ -1418,14 +1433,14 @@ void Crash(int dir, int i, int y) {
 	case ElectricBk: {
 		blockrc = { (double)block[y][i].x * side + 20, (double)block[y][i].y * side + 5, (double)(block[y][i].x + 1) * side - 20, (double)(block[y][i].y + 1) * side - 5 };
 		if (isCrashed(&ballrc, &blockrc) != 4) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, customdeath, rand() % 4, 0 });
+			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 			Scheck = balldeath;
-			if (GamePlay == play)
-				GamePlay = death;
-			else if (GamePlay == customplay)
-				GamePlay = customdeath;
-			else if (GamePlay == survival)
-				GamePlay = survivaldeath;
+			if (GamePlay == StagePlay)
+				GamePlay = StageDeath;
+			else if (GamePlay == CustomPlay)
+				GamePlay = CustomDeath;
+			else if (GamePlay == SurvivalPlay)
+				GamePlay = SurvivalDeath;
 		}
 		return;
 	}
@@ -1650,7 +1665,7 @@ void MoveBall() {
 	SHORT leftKeyState, rightKeyState;
 
 	// 눌려있는지 확인
-	if (ball.vy != 5.1 && ball.vy != 5 && GamePlay != clear) {
+	if (ball.vy != 5.1 && ball.vy != 5 && GamePlay != StageClear) {
 		leftKeyState = GetAsyncKeyState(VK_LEFT);
 		rightKeyState = GetAsyncKeyState(VK_RIGHT);
 		isLeftPressed = (leftKeyState & 0x8000) != 0;
@@ -1741,15 +1756,15 @@ void CrashBullet() {
 		bulletrc = { (double)bullet[i].x, (double)bullet[i].y, (double)bullet[i].x + 40, (double)bullet[i].y + 40 };
 
 		// 공 & 산탄 충돌
-		if (isCrashed(&ballrc, &bulletrc) != 4 && GamePlay != death && GamePlay != customdeath && GamePlay != survivaldeath) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, customdeath, rand() % 4, 0 });
+		if (isCrashed(&ballrc, &bulletrc) != 4 && GamePlay != StageDeath && GamePlay != CustomDeath && GamePlay != SurvivalDeath) {
+			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 			Scheck = balldeath;
-			if (GamePlay == play)
-				GamePlay = death;
-			else if (GamePlay == customplay)
-				GamePlay = customdeath;
-			else if (GamePlay == survival)
-				GamePlay = survivaldeath;
+			if (GamePlay == StagePlay)
+				GamePlay = StageDeath;
+			else if (GamePlay == CustomPlay)
+				GamePlay = CustomDeath;
+			else if (GamePlay == SurvivalPlay)
+				GamePlay = SurvivalDeath;
 			return;
 		}
 
@@ -1993,7 +2008,7 @@ void MakeVector() {
 	starcnt = 0;
 	ball.item = ball.state = 0;
 
-	if (GamePlay == death || GamePlay == customdeath || GamePlay == customplay) {
+	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
 				if (Map[i][j]) { // 블럭일 경우
@@ -2041,7 +2056,7 @@ void MakeVector() {
 			}
 		}
 	}
-	else if (GamePlay == survivalready) {
+	else if (GamePlay == SurvivalReady) {
 		random = 12;
 		for (int a = 0; a < 3; ++a) {
 			if (random <= ((SVMAPCNT - 1) / 2)) // 0 ~ 11이면
