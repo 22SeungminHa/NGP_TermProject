@@ -80,7 +80,7 @@ enum SoundCheck {
 };
 
 struct Ball {
-	double x = 30, y = 10, vx, vy, ax;
+	double x = 30, y = 10, vx, vy, ax, remx, remy;
 	int item; // 아이템 먹은 상태
 	int state; // 별 먹을 수 있는 상태
 };
@@ -110,7 +110,6 @@ Block list[43];
 int Map[15][25], SurvivalMap[SVMAPCNT][4][9], starcnt = 0;
 bool isSwitchOff;
 int Scheck = 0, score = 0, blockDown = 0, random, PrintLc = 3;
-double remx, remy;
 
 void CrashExamin();
 int MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blockrc);
@@ -1559,7 +1558,7 @@ int MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blockrc) {
 	doubleRECT tempballrc;
 
 	//vy에 의해 충돌했는지
-	tempballrc = { (double)ballrc->left, (double)ballrc->top - remy * t, (double)ballrc->right, (double)ballrc->bottom - remy * t };
+	tempballrc = { (double)ballrc->left, (double)ballrc->top - ball.remy * t, (double)ballrc->right, (double)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vy > 0)
 			return dirUp;
@@ -1567,7 +1566,7 @@ int MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blockrc) {
 			return dirDown;
 	}
 	// vx에 의해 충돌했는지
-	tempballrc = { (double)ballrc->left - remx * t, (double)ballrc->top, (double)ballrc->right - remx * t, (double)ballrc->bottom - remy * t };
+	tempballrc = { (double)ballrc->left - ball.remx * t, (double)ballrc->top, (double)ballrc->right - ball.remx * t, (double)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vx < 0)
 			return dirRight;
@@ -1689,8 +1688,8 @@ void MoveBall() {
 
 	ball.x += ball.vx * t;
 	ball.y += ball.vy * t;
-	remx = ball.vx;
-	remy = ball.vy;
+	ball.remx = ball.vx;
+	ball.remy = ball.vy;
 	ball.vx += ball.ax * t;
 	if (abs(ball.vx) != 60) ball.vy += g * t;
 	//가속도 조절
