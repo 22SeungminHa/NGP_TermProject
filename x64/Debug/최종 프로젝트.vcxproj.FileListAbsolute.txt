@@ -1,1 +1,2 @@
 D:\WindowProgrammingFinalProject\x64\Debug\FinalProject.exe
+D:\NGP_TermProject\x64\Debug\FinalProject.exe
