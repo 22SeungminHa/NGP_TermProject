@@ -20,8 +20,8 @@
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod_errors.h" 
 #include <random>
 #include <time.h>
-#include <enum.h>
 #include <protocol.h>
+	// #include <enum.h>
 
 #define g 10 // 중력가속도
 #define t 0.19 // 속도 조절 변수
