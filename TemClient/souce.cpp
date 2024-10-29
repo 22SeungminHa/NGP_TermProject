@@ -18,7 +18,6 @@ HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
-RECT window{}; // 화면 크기
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
@@ -81,7 +80,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg) {
 	case WM_CREATE: {
 		SetTimer(hwnd, 1, 10, NULL);
-		GetClientRect(hwnd, &window);
+		GetClientRect(hwnd, &game.window);
 		game.Initialize();
 		// 이미지 로드
 		{
@@ -178,7 +177,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.random = 0;
 				game.blockDown = 0;
 				game.PrintLc = -1;
-				game.ball.x = window.right / 2;
+				game.ball.x = game.window.right / 2;
 				game.ball.y = 580;
 				game.ball.vx = game.ball.vy = 0;
 			}
@@ -266,9 +265,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT: {
 		hdc = BeginPaint(hwnd, &ps);
 		mdc = CreateCompatibleDC(hdc);
-		HBitmap = CreateCompatibleBitmap(hdc, window.right, window.bottom);
+		HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
 		OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
-		FillRect(mdc, &window, WHITE_BRUSH);
+		FillRect(mdc, &game.window, WHITE_BRUSH);
 
 		//맵툴 블럭 설치
 		if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
@@ -305,23 +304,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// 게임 시작 화면
 		if (game.GamePlay == Start) {
 			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615)
-				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 스테이지 모드 위 커서
+				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 스테이지 모드 위 커서
 			else if (MouseLC.x <= 430 && MouseLC.y >= 640 && MouseLC.y <= 740)
-				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 3000, 0, window.right, window.bottom); // 서바이벌 모드 위 커서
+				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 서바이벌 모드 위 커서
 			else if (MouseLC.x <= 430 && MouseLC.y >= 763 && MouseLC.y <= 863)
-				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 4500, 0, window.right, window.bottom); // 커스터마이징 위 커서
+				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // 커스터마이징 위 커서
 			else
-				imgStartScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 시작화면
+				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 		}
 		else if (game.GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 스테이지 모드 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 스테이지 모드 위 커서
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, window.right, window.bottom, 3000, 0, window.right, window.bottom); // 서바이벌 모드 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 서바이벌 모드 위 커서
 			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, window.right, window.bottom, 4500, 0, window.right, window.bottom); // 커스터마이징 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // 커스터마이징 위 커서
 			else
-				imgStageScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 시작화면
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 
 			if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128)
 				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 80, 0, 80, 80); // 홈버튼 위 커서
@@ -329,7 +328,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // 기본 홈버튼
 		}
 		else if (game.GamePlay == CustomMode) {
-			imgMaptoolScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 시작화면
+			imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 
 			//버튼
 			if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
@@ -441,7 +440,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		// 게임 플레이 화면
 		else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
-			imgPlayScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+			imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 			//산탄 출력
 			for (int i = 0; i < game.bullet.size(); i++) {
@@ -531,24 +530,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// 화면 출력
 			if (game.GamePlay == StageStop) {
 				if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381)
-					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom); // 메인화면 버튼 위 커서
+					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 메인화면 버튼 위 커서
 				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494)
-					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 3000, 0, window.right, window.bottom); // 스테이지 버튼 위 커서
+					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 스테이지 버튼 위 커서
 				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606)
-					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 4500, 0, window.right, window.bottom); // 재시작 위 커서
+					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // 재시작 위 커서
 				else
-					imgStopScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom); // 기본 정지화면
+					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 정지화면
 			}
 			else if (game.GamePlay == StageClear) {
 				if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155)
-					imgClearScreen.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom);
+					imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
 				else
-					imgClearScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+					imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 			}
 		}
 		else if (game.GamePlay == SurvivalPlay || game.GamePlay == SurvivalReady || game.GamePlay == SurvivalStop || game.GamePlay == SurvivalDeath) {
 			// 배경 출력
-			imgPlayScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+			imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 			//산탄 출력
 			for (int i = 0; i < game.bullet.size(); i++) {
@@ -627,7 +626,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// 애니메이션 출력
 			{
 				ani = electictimer >= 122 ? 0 : electictimer;
-				imgSurvivalScreen.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+				imgSurvivalScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 				imgElectricAni.Draw(mdc, 462, 801, 576, 18, 0, (ani / 2) * 18, 576, 18);
 				electictimer++;
 				if (electictimer == 180)
@@ -649,7 +648,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			// 화면 출력
 			if (game.GamePlay == SurvivalReady && game.animation.size() == 0) {
-				imgSurvivalReady.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+				imgSurvivalReady.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 				hFont = CreateFont(-60, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"고령딸기체");
 				OldFont = (HFONT)SelectObject(mdc, hFont);
@@ -663,17 +662,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			else if (game.GamePlay == SurvivalStop) {
 				if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 337 && MouseLC.y <= 434) {
-					imgSurvivalStop.Draw(mdc, 0, 0, window.right, window.bottom, 1500, 0, window.right, window.bottom);
+					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
 				}
 				else if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 451 && MouseLC.y <= 550) {
-					imgSurvivalStop.Draw(mdc, 0, 0, window.right, window.bottom, 3000, 0, window.right, window.bottom);
+					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom);
 				}
 				else
-					imgSurvivalStop.Draw(mdc, 0, 0, window.right, window.bottom, 0, 0, window.right, window.bottom);
+					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 			}
 		}
 
-		BitBlt(hdc, 0, 0, window.right, window.bottom, mdc, 0, 0, SRCCOPY);
+		BitBlt(hdc, 0, 0, game.window.right, game.window.bottom, mdc, 0, 0, SRCCOPY);
 
 		SelectObject(mdc, OldBitmap);
 		DeleteObject(HBitmap);
@@ -698,7 +697,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			game.MakeVector();
 			game.blockDown = 0;
 			game.PrintLc = 3;
-			game.ball.x = window.right / 2;
+			game.ball.x = game.window.right / 2;
 			game.ball.y = 580;
 			game.ball.vx = game.ball.vy = 0;
 			game.isSwitchOff = false;
@@ -818,7 +817,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					game.Scheck = balldeath;
 					game.GamePlay = SurvivalDeath;
 				}
-				else if (game.ball.y + rd >= window.bottom) {
+				else if (game.ball.y + rd >= game.window.bottom) {
 					game.animation.emplace_back(Block{ (int)game.ball.x - 90, (int)game.ball.y - 90, StageDeath, rand() % 4, 0 });
 					game.Scheck = balldeath;
 					if (game.GamePlay == StagePlay)
@@ -889,7 +888,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.MakeVector();
 				game.blockDown = 0;
 				game.PrintLc = -1;
-				game.ball.x = window.right / 2;
+				game.ball.x = game.window.right / 2;
 				game.ball.y = 580;
 				game.ball.vx = game.ball.vy = 0;
 				game.isSwitchOff = false;
@@ -1140,7 +1139,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.MakeVector();
 				game.blockDown = 0;
 				game.PrintLc = -1;
-				game.ball.x = window.right / 2;
+				game.ball.x = game.window.right / 2;
 				game.ball.y = 580;
 				game.isSwitchOff = false;
 				game.ball.vx = game.ball.vy = 0;

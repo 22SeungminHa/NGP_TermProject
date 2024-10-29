@@ -30,6 +30,7 @@ public:
 	std::vector <Block> block[15], bullet, Readyblock[4];
 	std::vector <Block> animation;
 	std::vector <CrashedBk> crash;
+	RECT window;
 	floatRECT ballrc;
 	Block list[43];
 	int Map[15][25], SurvivalMap[SVMAPCNT][4][9], starcnt;
