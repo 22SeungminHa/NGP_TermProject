@@ -21,10 +21,10 @@
 #include <enum.h>
 #include <protocol.h>
 
-constexpr int g = 10; // 중력가속도
-constexpr float t = 0.19; // 속도 조절 변수
-constexpr int side = 60; // 블럭 한 변의 길이
-constexpr float rd = 12.5; // 공 반지름
+#define g 10 // 중력가속도
+#define t 0.19 // 속도 조절 변수
+#define side 60 // 블럭 한 변의 길이
+#define rd 12.5 // 공 반지름
 
 // 최대 vx = 21
 // 최대 vy = 40
@@ -45,37 +45,36 @@ LPCTSTR lpszWindowName = L"Trip of a Ball";
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 struct Ball {
-	double x = 30, y = 10, vx{}, vy{}, ax{}, remx{}, remy{};
-	int item{}; // 아이템 먹은 상태
-	int state{}; // 별 먹을 수 있는 상태
+	double x = 30, y = 10, vx, vy, ax, remx, remy;
+	int item; // 아이템 먹은 상태
+	int state; // 별 먹을 수 있는 상태
 };
 struct Block {
-	int x{}, y{};
-	int type{}, subtype{}, ani{};
+	int x, y, type, subtype, ani = 0;
 };
 struct CrashedBk {
-	int dir{}, i{}, j{};
-	double x{}, y{};
-	int quality{};
+	int dir, i, j;
+	double x, y;
+	int quality;
 };
 struct doubleRECT {
-	double left{}, top{}, right{}, bottom{};
+	double left, top, right, bottom;
 };
 
-constexpr int SVMAPCNT = 24;
+#define SVMAPCNT 24
 
 Ball ball = { 30, 12.5, 0, 0, 0, Normal, Normal };
-bool isLeftPressed{}, isRightPressed{};
+bool isLeftPressed, isRightPressed;
 int GamePlay = Start;
-vector <Block> block[15]{}, bullet{}, Readyblock[4]{};
-vector <Block> animation{};
-vector <CrashedBk> crash{};
-RECT window{}; // 화면 크기
-doubleRECT ballrc{};
-Block list[43]{};
-int Map[15][25]{}, SurvivalMap[SVMAPCNT][4][9]{}, starcnt{};
+vector <Block> block[15], bullet, Readyblock[4];
+vector <Block> animation;
+vector <CrashedBk> crash;
+RECT window; // 화면 크기
+doubleRECT ballrc;
+Block list[43];
+int Map[15][25], SurvivalMap[SVMAPCNT][4][9], starcnt = 0;
 bool isSwitchOff;
-int Scheck{}, score{}, blockDown{}, random{}, PrintLc = 3;
+int Scheck = 0, score = 0, blockDown = 0, random, PrintLc = 3;
 
 void CrashExamin();
 int MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blockrc);
@@ -105,9 +104,9 @@ void MakeVector();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
 	srand((unsigned int)time(NULL));
-	HWND hwnd{};
-	MSG Message{};
-	WNDCLASSEX WndClass{};
+	HWND hwnd;
+	MSG Message;
+	WNDCLASSEX WndClass;
 	g_hInst = hInstance;
 	WndClass.cbSize = sizeof(WndClass);
 	WndClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -133,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 }
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	PAINTSTRUCT ps{};
+	PAINTSTRUCT ps;
 	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
 	HFONT hFont, OldFont;
 	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgOnceMvBlock, imgBullet, imgLauncherBlock, imgLightBlock, imgItem, imgSwitchBk, imgElectricBk,
@@ -1336,7 +1335,6 @@ void CrashExamin() {
 		}
 	}
 }
-
 void Crash(int dir, int i, int y) {
 	Block* temp;
 	doubleRECT blockrc;
@@ -1505,7 +1503,6 @@ void Crash(int dir, int i, int y) {
 		return;
 	}
 }
-
 int BlockQuality(const Block* block) {
 	switch (block->type) {
 	case Item:
