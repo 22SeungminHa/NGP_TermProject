@@ -24,17 +24,17 @@ struct CrashedBk {
 class GameManager
 {
 public:
-	Ball ball = { 30, 12.5, 0, 0, 0, Normal, Normal };
-	bool isLeftPressed = false, isRightPressed = false;
-	int GamePlay = Start;
-	std::vector <Block> block[15]{}, bullet{}, Readyblock[4]{};
-	std::vector <Block> animation{};
-	std::vector <CrashedBk> crash{};
-	floatRECT ballrc{};
-	Block list[43]{};
-	int Map[15][25]{}, SurvivalMap[SVMAPCNT][4][9]{}, starcnt = 0;
-	bool isSwitchOff{};
-	int Scheck = 0, score = 0, blockDown = 0, random{}, PrintLc = 3;
+	Ball ball;
+	bool isLeftPressed, isRightPressed;
+	int GamePlay;
+	std::vector <Block> block[15], bullet, Readyblock[4];
+	std::vector <Block> animation;
+	std::vector <CrashedBk> crash;
+	floatRECT ballrc;
+	Block list[43];
+	int Map[15][25], SurvivalMap[SVMAPCNT][4][9], starcnt;
+	bool isSwitchOff;
+	int Scheck, score, blockDown, random, PrintLc;
 
 	GameManager() {};
 	~GameManager() {};
