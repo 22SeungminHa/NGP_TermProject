@@ -36,6 +36,10 @@ public:
 	bool isSwitchOff{};
 	int Scheck = 0, score = 0, blockDown = 0, random{}, PrintLc = 3;
 
+	GameManager() {};
+	~GameManager() {};
+	void Initialize();
+
 	void CrashExamin();
 	int MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc);
 	int isCrashed(const floatRECT* ballrc, const floatRECT* blockrc);
@@ -58,7 +62,6 @@ public:
 	void MoveBall();
 	void UseItem();
 
-	void MakeBlockList();
 	void ClearVector();
 	void MakeReadyVector();
 	void ClearReadyVector();

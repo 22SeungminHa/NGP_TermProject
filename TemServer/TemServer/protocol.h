@@ -78,8 +78,3 @@ typedef struct SC_CHANGE_STATE_PACKET : PACKET {
     unsigned short  c_id;
     State           state;
 };
-
-typedef struct SC_CHANGE_STATE_PACKET : PACKET {
-    unsigned short  c_id;
-    State           state;
-};

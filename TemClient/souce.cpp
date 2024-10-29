@@ -82,7 +82,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE: {
 		SetTimer(hwnd, 1, 10, NULL);
 		GetClientRect(hwnd, &window);
-		game.MakeBlockList();
+		game.Initialize();
 		// 이미지 로드
 		{
 			imgBall.Load(TEXT("바운스볼 PNG/공.png"));

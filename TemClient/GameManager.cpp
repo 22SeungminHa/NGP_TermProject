@@ -1,5 +1,45 @@
 #include "GameManager.h"
 
+void GameManager::Initialize() {
+	ball = { 30, 12.5, 0, 0, 0, Normal, Normal };
+	isLeftPressed = false, isRightPressed = false;
+	GamePlay = Start;
+	starcnt = 0;
+	isSwitchOff = false;
+	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
+
+	// 맵툴 블럭 리스트
+	list[0].type = Star;
+	for (int i = 0; i < 5; i++) {
+		list[i + 1] = { 0, 0, Item, i, 0 };
+	}
+	list[6].type = JumpBk;
+	list[7].type = RStraightBk;
+	list[8].type = LStraightBk;
+	list[9].type = RectBHBk;
+	list[10].type = RectWHBk;
+	list[11].type = CircleBHBk;
+	list[12].type = CircleWHBk;
+	list[13] = { 0, 0, SwitchBk, 0, 0 };
+	list[14] = { 0, 0, SwitchBk, 1, 0 };
+	list[15] = { 0, 0, ElectricBk, 0, 0 };
+	list[16].type = MvBkStopBk;
+	list[17] = { 0, 0, MoveBk, 1, 0 };
+	list[18].type = BreakBk;
+	list[19].type = ClimbBK;
+	list[20].type = MusicBk;
+	for (int i = 0; i < 11; i++) {
+		list[i + 21] = { 0, 0, BasicBk, i, 0 };
+	}
+	for (int i = 0; i < 4; i++) {
+		list[i + 32] = { 0, 0, OnceMvBk, i, 255 };
+		list[i + 36] = { 0, 0, LauncherBk, i, 0 };
+	}
+	list[40] = { 0, 0, LightBk, 0, 0 };
+	list[41] = { 0, 0, LightBk, 2, 0 };
+	list[42] = { 0, 0, LightBk, 4, 0 };
+}
+
 void GameManager::CrashExamin() {
 	floatRECT blockrc;
 	int crashStart, crashEnd, crashDir;
@@ -672,39 +712,6 @@ void GameManager::UseItem() {
 		ball.vx = ball.ax = 0;
 		break;
 	}
-}
-
-// 맵툴
-void GameManager::MakeBlockList() {
-	list[0].type = Star;
-	for (int i = 0; i < 5; i++) {
-		list[i + 1] = { 0, 0, Item, i, 0 };
-	}
-	list[6].type = JumpBk;
-	list[7].type = RStraightBk;
-	list[8].type = LStraightBk;
-	list[9].type = RectBHBk;
-	list[10].type = RectWHBk;
-	list[11].type = CircleBHBk;
-	list[12].type = CircleWHBk;
-	list[13] = { 0, 0, SwitchBk, 0, 0 };
-	list[14] = { 0, 0, SwitchBk, 1, 0 };
-	list[15] = { 0, 0, ElectricBk, 0, 0 };
-	list[16].type = MvBkStopBk;
-	list[17] = { 0, 0, MoveBk, 1, 0 };
-	list[18].type = BreakBk;
-	list[19].type = ClimbBK;
-	list[20].type = MusicBk;
-	for (int i = 0; i < 11; i++) {
-		list[i + 21] = { 0, 0, BasicBk, i, 0 };
-	}
-	for (int i = 0; i < 4; i++) {
-		list[i + 32] = { 0, 0, OnceMvBk, i, 255 };
-		list[i + 36] = { 0, 0, LauncherBk, i, 0 };
-	}
-	list[40] = { 0, 0, LightBk, 0, 0 };
-	list[41] = { 0, 0, LightBk, 2, 0 };
-	list[42] = { 0, 0, LightBk, 4, 0 };
 }
 
 // 맵 배열에서 벡터로 변환 (공 좌표, 스위치 상태는 따로 받기)
