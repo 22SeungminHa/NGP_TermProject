@@ -10,7 +10,7 @@ constexpr int B_HEIGHT = 15;    // block size, blockÀÇ Å©±â
 // Client -> Server Packet ID --------------------
 
 constexpr char CS_LOGIN = 0;
-constexpr char CS_KEY_PRESS = 1;
+constexpr char CS_KEY = 1;
 
 // Server -> Client Packet ID --------------------
 
@@ -23,20 +23,19 @@ constexpr char SC_CHANGE_STATE = 5;
 constexpr char SC_MOVE_BLOCK = 6;
 constexpr char SC_LOAD_MAP = 7;
 
-
-// Client -> Server Packet -----------------------
-
 typedef struct PACKET {
     unsigned short  size;
     char            packetID;
 };
 
+// Client -> Server Packet -----------------------
+
 typedef struct CS_LOGIN_PACKET : PACKET {
     char            name[NAME_SIZE];
 };
 
-typedef struct CS_KEY_PRESS_PACKET : PACKET {
-    char            dir;  // 0 : UP, 1 : DOWN, 2 : LEFT, 3 : RIGHT
+typedef struct CS_KEY_PACKET : PACKET {
+    unsigned int    wParam;
 };
 
 // Server -> Client Packet -----------------------

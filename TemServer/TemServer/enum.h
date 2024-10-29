@@ -36,3 +36,6 @@ enum Game {
 enum SoundCheck {
 	X, ballcrach, telpo, eatstar, balldeath, click, gameclear, music
 };
+enum Key {
+	Space, LeftDown, RightDown, LeftUp, RightUp, ESC
+};
