@@ -1,7 +1,7 @@
 #include "GameManager.h"
 
 void GameManager::CrashExamin() {
-	doubleRECT blockrc;
+	floatRECT blockrc;
 	int crashStart, crashEnd, crashDir;
 	bool doQ2block = true;
 
@@ -51,9 +51,9 @@ void GameManager::CrashExamin() {
 
 			//충돌체크
 			if (block[y][i].type == MoveBk)
-				blockrc = { (double)block[y][i].x, (double)block[y][i].y, (double)(block[y][i].x + side), (double)(block[y][i].y + side) };
+				blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
 			else
-				blockrc = { (double)block[y][i].x * side, (double)block[y][i].y * side, (double)((block[y][i].x + 1) * side), (double)((block[y][i].y + 1) * side) };
+				blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
 			if (isCrashed(&ballrc, &blockrc) != 4) {
 				crashDir = MyIntersectRect(&ballrc, &blockrc);
 				crash.emplace_back(CrashedBk{ crashDir, i, y, blockrc.left, blockrc.top, BlockQuality(&block[y][i]) });
@@ -81,7 +81,7 @@ void GameManager::CrashExamin() {
 }
 void GameManager::Crash(int dir, int i, int y) {
 	Block* temp;
-	doubleRECT blockrc;
+	floatRECT blockrc;
 
 	// 어디에 닿든 상관 없는 블럭
 	switch (block[y][i].type) {
@@ -139,7 +139,7 @@ void GameManager::Crash(int dir, int i, int y) {
 		return;
 	}
 	case ElectricBk: {
-		blockrc = { (double)block[y][i].x * side + 20, (double)block[y][i].y * side + 5, (double)(block[y][i].x + 1) * side - 20, (double)(block[y][i].y + 1) * side - 5 };
+		blockrc = { (float)block[y][i].x * side + 20, (float)block[y][i].y * side + 5, (float)(block[y][i].x + 1) * side - 20, (float)(block[y][i].y + 1) * side - 5 };
 		if (isCrashed(&ballrc, &blockrc) != 4) {
 			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 			Scheck = balldeath;
@@ -263,11 +263,11 @@ int GameManager::BlockQuality(const Block* block) {
 		return 0;
 	}
 }
-int GameManager::MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blockrc) {
-	doubleRECT tempballrc;
+int GameManager::MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc) {
+	floatRECT tempballrc;
 
 	//vy에 의해 충돌했는지
-	tempballrc = { (double)ballrc->left, (double)ballrc->top - ball.remy * t, (double)ballrc->right, (double)ballrc->bottom - ball.remy * t };
+	tempballrc = { (float)ballrc->left, (float)ballrc->top - ball.remy * t, (float)ballrc->right, (float)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vy > 0)
 			return dirUp;
@@ -275,7 +275,7 @@ int GameManager::MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blo
 			return dirDown;
 	}
 	// vx에 의해 충돌했는지
-	tempballrc = { (double)ballrc->left - ball.remx * t, (double)ballrc->top, (double)ballrc->right - ball.remx * t, (double)ballrc->bottom - ball.remy * t };
+	tempballrc = { (float)ballrc->left - ball.remx * t, (float)ballrc->top, (float)ballrc->right - ball.remx * t, (float)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vx < 0)
 			return dirRight;
@@ -284,11 +284,11 @@ int GameManager::MyIntersectRect(const doubleRECT* ballrc, const doubleRECT* blo
 	}
 	return isCrashed(ballrc, blockrc);
 }
-int GameManager::isCrashed(const doubleRECT* ballrc, const doubleRECT* blockrc) {
-	double dbleft = max(ballrc->left, blockrc->left);
-	double dbtop = max(ballrc->top, blockrc->top);
-	double dbright = min(ballrc->right, blockrc->right);
-	double dbbottom = min(ballrc->bottom, blockrc->bottom);
+int GameManager::isCrashed(const floatRECT* ballrc, const floatRECT* blockrc) {
+	float dbleft = max(ballrc->left, blockrc->left);
+	float dbtop = max(ballrc->top, blockrc->top);
+	float dbright = min(ballrc->right, blockrc->right);
+	float dbbottom = min(ballrc->bottom, blockrc->bottom);
 
 	if (dbleft <= dbright && dbtop <= dbbottom) { // 충돌한 경우
 		if (dbright - dbleft < dbbottom - dbtop) { // 좌우에서 충돌한 경우
@@ -458,10 +458,10 @@ void GameManager::MoveBullet() {
 	}
 }
 void GameManager::CrashBullet() {
-	doubleRECT bulletrc, blockrc;
+	floatRECT bulletrc, blockrc;
 
 	for (int i = 0; i < bullet.size(); ++i) {
-		bulletrc = { (double)bullet[i].x, (double)bullet[i].y, (double)bullet[i].x + 40, (double)bullet[i].y + 40 };
+		bulletrc = { (float)bullet[i].x, (float)bullet[i].y, (float)bullet[i].x + 40, (float)bullet[i].y + 40 };
 
 		// 공 & 산탄 충돌
 		if (isCrashed(&ballrc, &bulletrc) != 4 && GamePlay != StageDeath && GamePlay != CustomDeath && GamePlay != SurvivalDeath) {
@@ -483,9 +483,9 @@ void GameManager::CrashBullet() {
 					continue;
 
 				if (block[y][k].type == MoveBk)
-					blockrc = { (double)block[y][k].x, (double)block[y][k].y, (double)(block[y][k].x + side), (double)(block[y][k].y + side) };
+					blockrc = { (float)block[y][k].x, (float)block[y][k].y, (float)(block[y][k].x + side), (float)(block[y][k].y + side) };
 				else
-					blockrc = { (double)block[y][k].x * side, (double)block[y][k].y * side, (double)((block[y][k].x + 1) * side), (double)((block[y][k].y + 1) * side) };
+					blockrc = { (float)block[y][k].x * side, (float)block[y][k].y * side, (float)((block[y][k].x + 1) * side), (float)((block[y][k].y + 1) * side) };
 
 				if (isCrashed(&bulletrc, &blockrc) != 4) {
 					if (block[y][k].type == BreakBk && bullet[i].subtype) {
@@ -616,7 +616,7 @@ void GameManager::TurnMoveBk(Block* b)
 // 아이템 사용
 void GameManager::UseItem() {
 	int tempx, crashStart, crashEnd, crashReturn;
-	doubleRECT ballrc, blockrc;
+	floatRECT ballrc, blockrc;
 
 	switch (ball.item) {
 	case ShortTelpo:
@@ -632,9 +632,9 @@ void GameManager::UseItem() {
 			for (int y = crashStart; y <= crashEnd; ++y) {
 				for (int i = 0; i < block[y].size(); i++) {
 					if (block[y][i].type == MoveBk)
-						blockrc = { (double)block[y][i].x, (double)block[y][i].y, (double)(block[y][i].x + side), (double)(block[y][i].y + side) };
+						blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
 					else
-						blockrc = { (double)block[y][i].x * side, (double)block[y][i].y * side, (double)((block[y][i].x + 1) * side), (double)((block[y][i].y + 1) * side) };
+						blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
 					if (isCrashed(&ballrc, &blockrc) != 4 && i != block[y].size() - 1 && block[y][i + 1].x - block[y][i].x == 1) {
 						ball.x = blockrc.left - rd;
 						return;
@@ -648,9 +648,9 @@ void GameManager::UseItem() {
 			for (int y = crashStart; y <= crashEnd; ++y) {
 				for (int i = block[y].size() - 1; i >= 0; i--) {
 					if (block[y][i].type == MoveBk)
-						blockrc = { (double)block[y][i].x, (double)block[y][i].y, (double)(block[y][i].x + side), (double)(block[y][i].y + side) };
+						blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
 					else
-						blockrc = { (double)block[y][i].x * side, (double)block[y][i].y * side, (double)((block[y][i].x + 1) * side), (double)((block[y][i].y + 1) * side) };
+						blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
 					if (isCrashed(&ballrc, &blockrc) != 4 && i > 0 && block[y][i].x - block[y][i - 1].x == 1) {
 						ball.x = blockrc.right + rd;
 						return;

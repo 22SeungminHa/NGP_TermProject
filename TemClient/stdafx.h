@@ -23,8 +23,8 @@
 #include <protocol.h>
 	// #include <enum.h>
 
-#define g 10 // 중력가속도
-#define t 0.19 // 속도 조절 변수
-#define side 60 // 블럭 한 변의 길이
-#define rd 12.5 // 공 반지름
-#define SVMAPCNT 24
+constexpr int g = 10; // 중력가속도
+constexpr float t = 0.19; // 속도 조절 변수
+constexpr int side = 60; // 블럭 한 변의 길이
+constexpr float rd = 12.5; // 공 반지름
+constexpr int SVMAPCNT = 24;

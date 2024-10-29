@@ -685,12 +685,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// 리스폰
 		if (game.GamePlay == StageDeath && game.animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
 			game.MakeVector();
-			game.ball = { (double)BallStartLC.x, (double)BallStartLC.y, 0, 0, 0, Normal, Normal };
+			game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0, Normal, Normal };
 			game.GamePlay = StagePlay;
 		}
 		else if (game.GamePlay == CustomDeath && game.animation.size() == 0) {
 			game.MakeVector();
-			game.ball = { (double)BallStartLC.x * side + 30, (double)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
+			game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
 			game.GamePlay = CustomPlay;
 		}
 		else if (game.GamePlay == SurvivalDeath && game.animation.size() == 0) {
@@ -805,7 +805,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			//공 이동
 			game.MoveBall();
 
-			game.ballrc = { (double)game.ball.x - rd, (double)game.ball.y - rd, (double)game.ball.x + rd, (double)game.ball.y + rd };
+			game.ballrc = { (float)game.ball.x - rd, (float)game.ball.y - rd, (float)game.ball.x + rd, (float)game.ball.y + rd };
 
 			//산탄 충돌체크
 			game.CrashBullet(); // 죽어도 애니메이션 하고 있을 때도 작동하게하고싶어서 함수로 뺌
@@ -1010,7 +1010,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.Scheck = click;
 				game.MakeVector();
 				game.GamePlay = StageDeath;
-				game.ball = { (double)BallStartLC.x, (double)BallStartLC.y, 0, 0, 0, Normal, Normal }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
+				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0, Normal, Normal }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
 			}
 		}
 		else if (game.GamePlay == CustomMode) {
@@ -1040,7 +1040,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					drag = false;
 					break;
 				}
-				game.ball = { (double)BallStartLC.x * side + 30, (double)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
+				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
 				game.GamePlay = CustomPlay;
 				game.MakeVector();
 			}
