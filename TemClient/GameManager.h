@@ -30,7 +30,7 @@ public:
 	std::vector <CrashedBk> crash;
 	RECT window;
 	floatRECT ballrc;
-	Block list[27];
+	Block list[24];
 	int Map[15][25], starcnt;
 	bool isSwitchOff;
 	int Scheck, score, blockDown, random, PrintLc;

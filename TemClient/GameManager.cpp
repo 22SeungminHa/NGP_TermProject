@@ -25,9 +25,6 @@ void GameManager::Initialize() {
 	for (int i = 0; i < 11; i++) {
 		list[i + 13] = { 0, 0, BasicBk, i, 0 };
 	}
-	list[24] = { 0, 0, LightBk, 0, 0 };
-	list[25] = { 0, 0, LightBk, 2, 0 };
-	list[26] = { 0, 0, LightBk, 4, 0 };
 }
 
 void GameManager::CrashExamin() {
@@ -103,18 +100,6 @@ void GameManager::Crash(int dir, int i, int y) {
 			ball.vy = 40;
 		}
 		return;
-	}
-	case LightBk: {
-		if (block[y][i].subtype < 2) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
-			Scheck = balldeath;
-			if (GamePlay == StagePlay)
-				GamePlay = StageDeath;
-			else if (GamePlay == CustomPlay)
-				GamePlay = CustomDeath;
-			return;
-		}
-		else break;
 	}
 	case Star: {
 		Scheck = eatstar;

@@ -9,7 +9,7 @@ enum BlockType {
 	ClimbBK, MusicBk,
 	Star,
 	// 여기부터 Fuction에 안들어감
-	BasicBk, LightBk, SwitchBk, ElectricBk
+	BasicBk, SwitchBk, ElectricBk
 };
 enum Game {
 	Start,

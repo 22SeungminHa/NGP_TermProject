@@ -52,7 +52,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
 	HFONT hFont, OldFont;
-	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgLightBlock, imgSwitchBk, imgElectricBk,
+	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgSwitchBk, imgElectricBk,
 		imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
 		imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
 		imgBlockList, imgOutline,
@@ -86,7 +86,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			imgBall.Load(TEXT("바운스볼 PNG/공.png"));
 			imgBasicBlock.Load(TEXT("바운스볼 PNG/기본블럭.png"));
 			imgFuctionBlock.Load(TEXT("바운스볼 PNG/기능블럭.png"));
-			imgLightBlock.Load(TEXT("바운스볼 PNG/신호등블럭.png"));
 			imgSwitchBk.Load(TEXT("바운스볼 PNG/전기스위치블럭.png"));
 			imgElectricBk.Load(TEXT("바운스볼 PNG/전기블럭.png"));
 
@@ -226,7 +225,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // 공이 있을 경우
 					BallStartLC = { -1, -1 };
 
-				if (selection == 11 || selection == 13) {
+				if (selection == 6 || selection == 8) {
 					for (int y = 0; y < 15; ++y) {
 						for (int x = 0; x < 25; ++x) {
 							if (game.Map[y][x] == selection) {
@@ -324,9 +323,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 							case BasicBk: // 기본블럭
 								imgBasicBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
 								break;
-							case LightBk: // 신호등블럭
-								imgLightBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
-								break;
 							case SwitchBk:
 								imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
 								break;
@@ -352,9 +348,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					switch (game.list[selection - 1].type) {
 					case BasicBk: // 기본블럭
 						imgBasicBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
-						break;
-					case LightBk: // 신호등블럭
-						imgLightBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
 						break;
 					case SwitchBk:
 						imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
@@ -385,9 +378,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						switch (game.block[y][i].type) {
 						case BasicBk: // 기본블럭
 							imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case LightBk: // 신호등블럭
-							imgLightBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
 							break;
 						case SwitchBk:
 							imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
@@ -520,23 +510,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		//블럭/공 이동, 충돌체크
-		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽어도 애니메이션 하고 있을 땐 블럭 움직여야돼서 추가함
-			// 블럭 애니메이션 & 움직이기
-			for (int y = 0; y < 15; y++) {
-				for (int i = 0; i < game.block[y].size(); i++) {
-					switch (game.block[y][i].type) {
-					case LightBk: {
-						game.block[y][i].ani++;
-						if (game.block[y][i].ani == 50) {
-							game.block[y][i].ani = 0;
-							game.block[y][i].subtype = game.block[y][i].subtype == 5 ? 0 : game.block[y][i].subtype + 1;
-						}
-						break;
-					}
-					}
-				}
-			}
-
+		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) {
 			//공 이동
 			game.MoveBall();
 
