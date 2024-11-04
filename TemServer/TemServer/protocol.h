@@ -72,8 +72,3 @@ typedef struct SC_RESPAWN_PACKET : PACKET {
     unsigned short  c_id;
     short           x, y;
 };
-
-typedef struct SC_CHANGE_STATE_PACKET : PACKET {
-    unsigned short  c_id;
-    State           state;
-};

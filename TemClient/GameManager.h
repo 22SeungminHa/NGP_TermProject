@@ -7,8 +7,6 @@ struct floatRECT {
 
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
-	int item; // 아이템 먹은 상태
-	int state; // 별 먹을 수 있는 상태
 };
 
 struct Block {
@@ -27,18 +25,18 @@ public:
 	Ball ball;
 	bool isLeftPressed, isRightPressed;
 	int GamePlay;
-	std::vector <Block> block[15], bullet, Readyblock[4];
+	std::vector <Block> block[15];
 	std::vector <Block> animation;
 	std::vector <CrashedBk> crash;
 	RECT window;
 	floatRECT ballrc;
-	Block list[43];
-	int Map[15][25], SurvivalMap[SVMAPCNT][4][9], starcnt;
+	Block list[27];
+	int Map[15][25], starcnt;
 	bool isSwitchOff;
 	int Scheck, score, blockDown, random, PrintLc;
 
-	GameManager() {};
-	~GameManager() {};
+	GameManager() {}
+	~GameManager() {}
 	void Initialize();
 
 	void CrashExamin();
@@ -52,20 +50,10 @@ public:
 
 	Block* Search(const int type);
 	int BlockQuality(const Block* block);
-	void MakeBullet(const Block* block, int BulletType);
-	void MoveBullet();
-	void CrashBullet();
-	bool OnceMvBkGo(const Block* b);
-	void MoveOnceMvBk(int y, int i);
-	bool MoveMoveBk(Block* b);
-	void TurnMoveBk(Block* b);
 
 	void MoveBall();
-	void UseItem();
 
 	void ClearVector();
-	void MakeReadyVector();
-	void ClearReadyVector();
 	void MakeVector();
 };
 

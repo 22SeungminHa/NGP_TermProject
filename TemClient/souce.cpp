@@ -9,8 +9,6 @@
 // 좌우직진블럭 vx = 60
 // 상승블럭 vy = -65
 // 끈적이 블럭 좌 vy = 5 우 vy = 5.1
-// 대시아이템 vx = 50
-// 점프아이템 vy = 50
 
 using namespace std;
 
@@ -48,16 +46,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	}
 	return Message.wParam;
 }
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
 	HFONT hFont, OldFont;
-	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgOnceMvBlock, imgBullet, imgLauncherBlock, imgLightBlock, imgItem, imgSwitchBk, imgElectricBk,
-		imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen, imgSurvivalScreen, imgSurvivalReady, imgSurvivalStop,
+	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgLightBlock, imgSwitchBk, imgElectricBk,
+		imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
 		imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
 		imgBlockList, imgOutline,
-		imgStarAni, imgDeadAni, imgBreakAni, imgElectricAni;
+		imgStarAni, imgDeadAni;
 	static POINT BallStartLC, MouseLC;
 	static OPENFILENAME OFN;
 	static TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
@@ -87,18 +86,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			imgBall.Load(TEXT("바운스볼 PNG/공.png"));
 			imgBasicBlock.Load(TEXT("바운스볼 PNG/기본블럭.png"));
 			imgFuctionBlock.Load(TEXT("바운스볼 PNG/기능블럭.png"));
-			imgOnceMvBlock.Load(TEXT("바운스볼 PNG/단칸이동블럭.png"));
-			imgBullet.Load(TEXT("바운스볼 PNG/산탄.png"));
-			imgLauncherBlock.Load(TEXT("바운스볼 PNG/산탄발사기.png"));
 			imgLightBlock.Load(TEXT("바운스볼 PNG/신호등블럭.png"));
-			imgItem.Load(TEXT("바운스볼 PNG/아이템.png"));
 			imgSwitchBk.Load(TEXT("바운스볼 PNG/전기스위치블럭.png"));
 			imgElectricBk.Load(TEXT("바운스볼 PNG/전기블럭.png"));
 
 			imgStarAni.Load(TEXT("바운스볼 PNG/별 스프라이트.png"));
 			imgDeadAni.Load(TEXT("바운스볼 PNG/공 스프라이트.png"));
-			imgBreakAni.Load(TEXT("바운스볼 PNG/소멸블럭 스프라이트.png"));
-			imgElectricAni.Load(TEXT("바운스볼 PNG/전기 스프라이트.png"));
 
 			imgStartScreen.Load(TEXT("바운스볼 PNG/시작화면.png"));
 			imgStageScreen.Load(TEXT("바운스볼 PNG/스테이지.png"));
@@ -106,9 +99,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			imgClearScreen.Load(TEXT("바운스볼 PNG/게임클리어.png"));
 			imgPlayScreen.Load(TEXT("바운스볼 PNG/게임플레이배경.png"));
 			imgMaptoolScreen.Load(TEXT("바운스볼 PNG/맵툴.png"));
-			imgSurvivalScreen.Load(TEXT("바운스볼 PNG/서바이벌모드 배경.png"));
-			imgSurvivalReady.Load(TEXT("바운스볼 PNG/서바이벌모드 시작준비.png"));
-			imgSurvivalStop.Load(TEXT("바운스볼 PNG/서바이벌모드 일시정지.png"));
 
 			imgHomeButton.Load(TEXT("바운스볼 PNG/홈버튼.png"));
 			imgResetButton.Load(TEXT("바운스볼 PNG/맵툴_리셋.png"));
@@ -134,23 +124,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			ssystem->createSound("Sound/GameClear.mp3", FMOD_LOOP_OFF, 0, &GameClear_Sound); //--- 게임 클리어
 			ssystem->createSound("Sound/musicbk.mp3", FMOD_LOOP_OFF, 0, &MusicBk_Sound); //--- 게임 클리어
 		}
-		// 서바이벌모드 로드
-		{
-			ifstream in{ "바운스볼 맵/Survival_Map.txt" };
-
-			int cnt = 0;
-			while (cnt < SVMAPCNT) {
-				for (int y = 0; y < 4; ++y) {
-					for (int x = 0; x < 9; ++x) {
-						in >> game.SurvivalMap[cnt][y][x];
-					}
-				}
-
-				cnt++;
-			}
-
-			in.close();
-		}
 
 		MouseLC = { 0, 0 };
 		break;
@@ -165,24 +138,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case 'Q':
 			PostQuitMessage(0);
 			break;
-		case VK_SPACE: { // 아이템 사용
-			if (game.ball.item) {
-				game.UseItem();
-				game.Scheck = telpo;
-			}
-			else if (game.GamePlay == SurvivalReady) {
-				game.GamePlay = SurvivalPlay;
-				game.isSwitchOff = false;
-				game.score = 0;
-				game.random = 0;
-				game.blockDown = 0;
-				game.PrintLc = -1;
-				game.ball.x = game.window.right / 2;
-				game.ball.y = 580;
-				game.ball.vx = game.ball.vy = 0;
-			}
-			break;
-		}
 		default:
 			break;
 		}
@@ -202,10 +157,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = CustomMode;
 			else if (game.GamePlay == StageClear)
 				game.GamePlay = StageSelect;
-			else if (game.GamePlay == SurvivalPlay || game.GamePlay == SurvivalReady)
-				game.GamePlay = SurvivalStop;
-			else if (game.GamePlay == SurvivalStop)
-				game.GamePlay = SurvivalReady;
 			break;
 		}
 		case VK_RIGHT: {
@@ -373,17 +324,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 							case BasicBk: // 기본블럭
 								imgBasicBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
 								break;
-							case LauncherBk: // 산탄발사기
-								imgLauncherBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, 8 * side, game.list[game.Map[i][j] - 1].subtype * side, side, side);
-								break;
-							case OnceMvBk: // 단칸이동블럭
-								imgOnceMvBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
-								break;
 							case LightBk: // 신호등블럭
 								imgLightBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
-								break;
-							case Item: // 아이템
-								imgItem.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
 								break;
 							case SwitchBk:
 								imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
@@ -411,17 +353,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					case BasicBk: // 기본블럭
 						imgBasicBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
 						break;
-					case LauncherBk: // 산탄발사기
-						imgLauncherBlock.Draw(mdc, 1315, 307, 80, 80, 8 * side, game.list[selection - 1].subtype * side, side, side);
-						break;
-					case OnceMvBk: // 단칸이동블럭
-						imgOnceMvBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
-						break;
 					case LightBk: // 신호등블럭
 						imgLightBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
-						break;
-					case Item: // 아이템
-						imgItem.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
 						break;
 					case SwitchBk:
 						imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
@@ -442,41 +375,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
 			imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
-			//산탄 출력
-			for (int i = 0; i < game.bullet.size(); i++) {
-				imgBullet.Draw(mdc, game.bullet[i].x, game.bullet[i].y, 40, 40, game.bullet[i].subtype * 42, 0, 42, 42);
-			}
-
 			//블럭 출력
 			for (int y = 0; y < 15; ++y) {
 				for (int i = 0; i < game.block[y].size(); ++i) {
 					if (game.block[y][i].type < BasicBk) { // 기능블럭 
-						if (game.block[y][i].type == MoveBk)
-							imgFuctionBlock.Draw(mdc, game.block[y][i].x, game.block[y][i].y, side, side, game.block[y][i].type * side, 0, side, side); // 이동블럭
-						else
-							imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
+						imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
 					}
 					else {
 						switch (game.block[y][i].type) {
 						case BasicBk: // 기본블럭
 							imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
 							break;
-						case LauncherBk: // 산탄발사기
-							if (game.block[y][i].ani >= 63 && game.block[y][i].ani < 90) // 대기
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, (game.block[y][i].ani - 63) / 3 * side, game.block[y][i].subtype * side, side, side);
-							else if (game.block[y][i].ani >= 90) // 그라데이션
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, 8 * side, game.block[y][i].subtype * side, side, side);
-							else // 대기
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, 0, game.block[y][i].subtype * side, side, side);
-							break;
-						case OnceMvBk: // 단칸이동블럭
-							imgOnceMvBlock.AlphaBlend(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side, game.block[y][i].ani, AC_SRC_OVER);
-							break;
 						case LightBk: // 신호등블럭
 							imgLightBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case Item: // 아이템
-							imgItem.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
 							break;
 						case SwitchBk:
 							imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
@@ -491,10 +402,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			//공 출력
 			if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // 죽으면 출력 안하게
-				if (game.ball.state)
-					imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, game.ball.item * (rd * 2), 0, rd * 2, rd * 2, 125, AC_SRC_OVER); // 비활성화공
-				else
-					imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, game.ball.item * (rd * 2), 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // 활성화공
+				imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // 활성화공
 			}
 
 			// 파티클 출력
@@ -502,9 +410,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				switch (game.animation[i].type) {
 				case StageDeath: // 이넘 겹쳐서 걍 이거씀
 					imgDeadAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				case BreakBk:
-					imgBreakAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
 					break;
 				case Star:
 					imgStarAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
@@ -545,132 +450,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 			}
 		}
-		else if (game.GamePlay == SurvivalPlay || game.GamePlay == SurvivalReady || game.GamePlay == SurvivalStop || game.GamePlay == SurvivalDeath) {
-			// 배경 출력
-			imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-
-			//산탄 출력
-			for (int i = 0; i < game.bullet.size(); i++) {
-				imgBullet.Draw(mdc, game.bullet[i].x, game.bullet[i].y, 40, 40, game.bullet[i].subtype * 42, 0, 42, 42);
-			}
-
-			//블럭 출력
-			for (int y = 0; y < 15; ++y) {
-				for (int i = 0; i < game.block[y].size(); ++i) {
-					if (game.block[y][i].type < BasicBk) { // 기능블럭 
-						if (game.block[y][i].type == MoveBk)
-							imgFuctionBlock.Draw(mdc, game.block[y][i].x, game.block[y][i].y, side, side, game.block[y][i].type * side, 0, side, side); // 이동블럭
-						else
-							imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
-					}
-					else {
-						switch (game.block[y][i].type) {
-						case BasicBk: // 기본블럭
-							imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case LauncherBk: // 산탄발사기
-							if (game.block[y][i].ani >= 63 && game.block[y][i].ani < 90) // 대기
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, (game.block[y][i].ani - 63) / 3 * side, game.block[y][i].subtype * side, side, side);
-							else if (game.block[y][i].ani >= 90) // 그라데이션
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, 8 * side, game.block[y][i].subtype * side, side, side);
-							else // 대기
-								imgLauncherBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, 0, game.block[y][i].subtype * side, side, side);
-							break;
-						case OnceMvBk: // 단칸이동블럭
-							imgOnceMvBlock.AlphaBlend(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side, game.block[y][i].ani, AC_SRC_OVER);
-							break;
-						case LightBk: // 신호등블럭
-							imgLightBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case Item: // 아이템
-							imgItem.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case SwitchBk:
-							imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-							break;
-						case ElectricBk:
-							imgElectricBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-							break;
-						}
-					}
-				}
-			}
-
-			//공 출력
-			if (game.GamePlay != SurvivalDeath) { // 죽으면 출력 안하게
-				if (game.ball.state)
-					imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, game.ball.item * (rd * 2), 0, rd * 2, rd * 2, 125, AC_SRC_OVER); // 비활성화공
-				else
-					imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, game.ball.item * (rd * 2), 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // 활성화공
-			}
-
-			// 파티클 출력
-			for (int i = 0; i < game.animation.size(); i++) {
-				switch (game.animation[i].type) {
-				case StageDeath: // 이넘 겹쳐서 걍 이거씀
-					imgDeadAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				case BreakBk:
-					imgBreakAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				case Star:
-					imgStarAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				}
-				game.animation[i].ani++;
-				if (game.animation[i].ani == 40) {
-					game.animation.erase(game.animation.begin() + i);
-				}
-			}
-
-			// 애니메이션 출력
-			{
-				ani = electictimer >= 122 ? 0 : electictimer;
-				imgSurvivalScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-				imgElectricAni.Draw(mdc, 462, 801, 576, 18, 0, (ani / 2) * 18, 576, 18);
-				electictimer++;
-				if (electictimer == 180)
-					electictimer = 0;
-			}
-
-			//점수 출력
-			{
-				hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"고령딸기체");
-				OldFont = (HFONT)SelectObject(mdc, hFont);
-				SetTextColor(mdc, RGB(255, 255, 255));
-				SetBkMode(mdc, TRANSPARENT);
-				wsprintf(str, L"%d", game.score);
-				GetTextExtentPoint32(mdc, str, lstrlen(str), &size);
-				TextOut(mdc, 750 - size.cx / 2, 7, str, lstrlen(str));
-				SelectObject(mdc, OldFont);
-				DeleteObject(hFont);
-			}
-
-			// 화면 출력
-			if (game.GamePlay == SurvivalReady && game.animation.size() == 0) {
-				imgSurvivalReady.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-
-				hFont = CreateFont(-60, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"고령딸기체");
-				OldFont = (HFONT)SelectObject(mdc, hFont);
-				SetTextColor(mdc, RGB(255, 255, 255));
-				SetBkMode(mdc, TRANSPARENT);
-				wsprintf(str, L"Score  %d          Best  %d", game.score, bestscore);
-				GetTextExtentPoint32(mdc, str, lstrlen(str), &size);
-				TextOut(mdc, 750 - size.cx / 2, 385, str, lstrlen(str));
-				SelectObject(mdc, OldFont);
-				DeleteObject(hFont);
-			}
-			else if (game.GamePlay == SurvivalStop) {
-				if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 337 && MouseLC.y <= 434) {
-					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
-				}
-				else if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 451 && MouseLC.y <= 550) {
-					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom);
-				}
-				else
-					imgSurvivalStop.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-			}
-		}
 
 		BitBlt(hdc, 0, 0, game.window.right, game.window.bottom, mdc, 0, 0, SRCCOPY);
 
@@ -684,31 +463,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// 리스폰
 		if (game.GamePlay == StageDeath && game.animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
 			game.MakeVector();
-			game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0, Normal, Normal };
+			game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 };
 			game.GamePlay = StagePlay;
 		}
 		else if (game.GamePlay == CustomDeath && game.animation.size() == 0) {
 			game.MakeVector();
-			game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
+			game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
 			game.GamePlay = CustomPlay;
-		}
-		else if (game.GamePlay == SurvivalDeath && game.animation.size() == 0) {
-			game.GamePlay = SurvivalReady;
-			game.MakeVector();
-			game.blockDown = 0;
-			game.PrintLc = 3;
-			game.ball.x = game.window.right / 2;
-			game.ball.y = 580;
-			game.ball.vx = game.ball.vy = 0;
-			game.isSwitchOff = false;
-
-			if (bestscore < game.score) {
-				bestscore = game.score;
-
-				ofstream out{ "BestScore.txt" };
-				out << bestscore;
-				out.close();
-			}
 		}
 
 		// 공 관련 효과음 재생
@@ -759,34 +520,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 
 		//블럭/공 이동, 충돌체크
-		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath || game.GamePlay == SurvivalPlay || game.GamePlay == SurvivalDeath) { // 죽어도 애니메이션 하고 있을 땐 블럭 움직여야돼서 추가함
+		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽어도 애니메이션 하고 있을 땐 블럭 움직여야돼서 추가함
 			// 블럭 애니메이션 & 움직이기
 			for (int y = 0; y < 15; y++) {
 				for (int i = 0; i < game.block[y].size(); i++) {
 					switch (game.block[y][i].type) {
-					case MoveBk: {
-						game.block[y][i].x += game.block[y][i].subtype;
-						game.MoveMoveBk(&game.block[y][i]);
-						break;
-					}
-					case LauncherBk: {
-						game.block[y][i].ani++;
-						if (game.block[y][i].ani == 100) { // 1초 주기로 발사
-							game.block[y][i].ani = 0;
-							game.MakeBullet(&game.block[y][i], 0);
-						}
-						break;
-					}
-					case OnceMvBk: {
-						if (game.block[y][i].ani != 255) {
-							game.block[y][i].ani -= 15;
-							if (game.block[y][i].ani <= 0) {
-								game.block[y][i].ani = 255;
-								game.MoveOnceMvBk(y, i);
-							}
-						}
-						break;
-					}
 					case LightBk: {
 						game.block[y][i].ani++;
 						if (game.block[y][i].ani == 50) {
@@ -799,78 +537,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 
-			//산탄 이동
-			game.MoveBullet();
 			//공 이동
 			game.MoveBall();
 
 			game.ballrc = { (float)game.ball.x - rd, (float)game.ball.y - rd, (float)game.ball.x + rd, (float)game.ball.y + rd };
 
-			//산탄 충돌체크
-			game.CrashBullet(); // 죽어도 애니메이션 하고 있을 때도 작동하게하고싶어서 함수로 뺌
-
 			// 공 충돌체크
-			if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == SurvivalPlay) { // 이미 뒤졌을땐 안돌아가게 하려고. 계속 돌아가면 애니메이션 벡터에 자꾸들어감
+			if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay) { // 이미 뒤졌을땐 안돌아가게 하려고. 계속 돌아가면 애니메이션 벡터에 자꾸들어감
 				// 바닥과 충돌
-				if (game.GamePlay == SurvivalPlay && game.ball.y + rd >= 804) {
-					game.animation.emplace_back(Block{ (int)game.ball.x - 90, (int)game.ball.y - 90, StageDeath, rand() % 4, 0 });
-					game.Scheck = balldeath;
-					game.GamePlay = SurvivalDeath;
-				}
-				else if (game.ball.y + rd >= game.window.bottom) {
+				if (game.ball.y + rd >= game.window.bottom) {
 					game.animation.emplace_back(Block{ (int)game.ball.x - 90, (int)game.ball.y - 90, StageDeath, rand() % 4, 0 });
 					game.Scheck = balldeath;
 					if (game.GamePlay == StagePlay)
 						game.GamePlay = StageDeath;
 					else if (game.GamePlay == CustomPlay)
 						game.GamePlay = CustomDeath;
-					else if (game.GamePlay == SurvivalPlay)
-						game.GamePlay = SurvivalDeath;
 				}
 
 				// 블럭과 충돌
 				else game.CrashExamin();
 			}
-		}
-
-		// 서바이벌 모드 맵 이동
-		if (game.GamePlay == SurvivalPlay) {
-			if (game.blockDown == 200) {
-				game.blockDown = 0;
-				game.ball.y += side;
-				game.score += 2;
-
-				if (game.PrintLc < 0) {
-					game.PrintLc = 3;
-					game.MakeReadyVector();
-				}
-
-				// 한 칸씩 보내기
-				for (int i = 0; i < game.bullet.size(); i++) {
-					game.bullet[i].y += side;
-				}
-				for (int i = 0; i < game.animation.size(); i++) {
-					game.animation[i].y += side;
-				}
-				for (int y = 13; y >= 0; --y) {
-					game.block[y + 1].clear();
-					for (int x = 0; x < game.block[y].size(); ++x) {
-						if (game.block[y][x].type == MoveBk)
-							game.block[y][x].y += side;
-						else
-							game.block[y][x].y += 1;
-
-						game.block[y + 1].push_back(game.block[y][x]);
-					}
-				}
-
-				game.block[0].clear();
-				for (int x = 0; x < game.Readyblock[game.PrintLc].size(); ++x) {
-					game.block[0].push_back(game.Readyblock[game.PrintLc][x]);
-				}
-				game.PrintLc--;
-			}
-			game.blockDown++;
 		}
 
 		InvalidateRect(hwnd, NULL, FALSE);
@@ -881,29 +567,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615) { // 스테이지 버튼
 				game.Scheck = click;
 				game.GamePlay = StageSelect;
-			}
-			else if (MouseLC.x <= 430 && MouseLC.y >= 640 && MouseLC.y <= 740) { // 서바이벌 버튼
-				game.Scheck = click;
-				game.GamePlay = SurvivalReady;
-				game.MakeVector();
-				game.blockDown = 0;
-				game.PrintLc = -1;
-				game.ball.x = game.window.right / 2;
-				game.ball.y = 580;
-				game.ball.vx = game.ball.vy = 0;
-				game.isSwitchOff = false;
-
-				ifstream in{ "BestScore.txt" };
-				in >> bestscore;
-				in.close();
-
-				if (bestscore < game.score) {
-					bestscore = game.score;
-
-					ofstream out{ "BestScore.txt" };
-					out << bestscore;
-					out.close();
-				}
 			}
 			else if (MouseLC.x <= 430 && MouseLC.y >= 763 && MouseLC.y <= 863) { // 맵툴 버튼
 				game.Scheck = click;
@@ -1009,7 +672,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.Scheck = click;
 				game.MakeVector();
 				game.GamePlay = StageDeath;
-				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0, Normal, Normal }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
+				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
 			}
 		}
 		else if (game.GamePlay == CustomMode) {
@@ -1039,7 +702,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					drag = false;
 					break;
 				}
-				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0, Normal, Normal };
+				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
 				game.GamePlay = CustomPlay;
 				game.MakeVector();
 			}
@@ -1128,34 +791,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = StageSelect;
 			}
 		}
-		else if (game.GamePlay == SurvivalStop) {
-			if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 337 && MouseLC.y <= 434) {
-				game.Scheck = click;
-				game.GamePlay = Start;
-			}
-			else if (MouseLC.x >= 927 && MouseLC.x <= 1217 && MouseLC.y >= 451 && MouseLC.y <= 550) {
-				game.Scheck = click;
-				game.GamePlay = SurvivalReady;
-				game.MakeVector();
-				game.blockDown = 0;
-				game.PrintLc = -1;
-				game.ball.x = game.window.right / 2;
-				game.ball.y = 580;
-				game.isSwitchOff = false;
-				game.ball.vx = game.ball.vy = 0;
-
-				if (bestscore < game.score) {
-					bestscore = game.score;
-					ofstream out{ "BestScore.txt" };
-					out << bestscore;
-					out.close();
-				}
-			}
-		}
 		break;
 	}
 	case WM_MOUSEMOVE: {
-		if (game.GamePlay == Start || game.GamePlay == StageSelect || game.GamePlay == StageStop || game.GamePlay == StageClear || game.GamePlay == CustomMode || game.GamePlay == SurvivalStop) {
+		if (game.GamePlay == Start || game.GamePlay == StageSelect || game.GamePlay == StageStop || game.GamePlay == StageClear || game.GamePlay == CustomMode) {
 			MouseLC.x = LOWORD(lParam);
 			MouseLC.y = HIWORD(lParam);
 		}
@@ -1171,5 +810,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	}
+
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

@@ -1,7 +1,7 @@
 #include "GameManager.h"
 
 void GameManager::Initialize() {
-	ball = { 30, 12.5, 0, 0, 0, Normal, Normal };
+	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
 	starcnt = 0;
@@ -10,34 +10,24 @@ void GameManager::Initialize() {
 
 	// 맵툴 블럭 리스트
 	list[0].type = Star;
-	for (int i = 0; i < 5; i++) {
-		list[i + 1] = { 0, 0, Item, i, 0 };
-	}
-	list[6].type = JumpBk;
-	list[7].type = RStraightBk;
-	list[8].type = LStraightBk;
-	list[9].type = RectBHBk;
-	list[10].type = RectWHBk;
-	list[11].type = CircleBHBk;
-	list[12].type = CircleWHBk;
-	list[13] = { 0, 0, SwitchBk, 0, 0 };
-	list[14] = { 0, 0, SwitchBk, 1, 0 };
-	list[15] = { 0, 0, ElectricBk, 0, 0 };
-	list[16].type = MvBkStopBk;
-	list[17] = { 0, 0, MoveBk, 1, 0 };
-	list[18].type = BreakBk;
-	list[19].type = ClimbBK;
-	list[20].type = MusicBk;
+	list[1].type = JumpBk;
+	list[2].type = RStraightBk;
+	list[3].type = LStraightBk;
+	list[4].type = RectBHBk;
+	list[5].type = RectWHBk;
+	list[6].type = CircleBHBk;
+	list[7].type = CircleWHBk;
+	list[8] = { 0, 0, SwitchBk, 0, 0 };
+	list[9] = { 0, 0, SwitchBk, 1, 0 };
+	list[10] = { 0, 0, ElectricBk, 0, 0 };
+	list[11].type = ClimbBK;
+	list[12].type = MusicBk;
 	for (int i = 0; i < 11; i++) {
-		list[i + 21] = { 0, 0, BasicBk, i, 0 };
+		list[i + 13] = { 0, 0, BasicBk, i, 0 };
 	}
-	for (int i = 0; i < 4; i++) {
-		list[i + 32] = { 0, 0, OnceMvBk, i, 255 };
-		list[i + 36] = { 0, 0, LauncherBk, i, 0 };
-	}
-	list[40] = { 0, 0, LightBk, 0, 0 };
-	list[41] = { 0, 0, LightBk, 2, 0 };
-	list[42] = { 0, 0, LightBk, 4, 0 };
+	list[24] = { 0, 0, LightBk, 0, 0 };
+	list[25] = { 0, 0, LightBk, 2, 0 };
+	list[26] = { 0, 0, LightBk, 4, 0 };
 }
 
 void GameManager::CrashExamin() {
@@ -45,37 +35,19 @@ void GameManager::CrashExamin() {
 	int crashStart, crashEnd, crashDir;
 	bool doQ2block = true;
 
-	if (GamePlay == SurvivalPlay) {
-		// 오른쪽 벽
-		if (ball.x + rd >= side * 17) {
-			ball.x = side * 17 - rd;
-			ball.vx = -ball.vx / 2;
-			ball.ax = -7;
-			return;
-		}
-		// 왼쪽벽
-		else if (ball.x - rd <= side * 8) {
-			ball.x = side * 8 + rd;
-			ball.vx = -ball.vx / 2;
-			ball.ax = 7;
-			return;
-		}
+	// 오른쪽 벽
+	if (ball.x + rd >= 1516) {
+		ball.x = 1516 - rd;
+		ball.vx = -ball.vx / 2;
+		ball.ax = -7;
+		return;
 	}
-	else {
-		// 오른쪽 벽
-		if (ball.x + rd >= 1516) {
-			ball.x = 1516 - rd;
-			ball.vx = -ball.vx / 2;
-			ball.ax = -7;
-			return;
-		}
-		// 왼쪽벽
-		if (ball.x - rd <= 0) {
-			ball.x = rd;
-			ball.vx = -ball.vx / 2;
-			ball.ax = 7;
-			return;
-		}
+	// 왼쪽벽
+	if (ball.x - rd <= 0) {
+		ball.x = rd;
+		ball.vx = -ball.vx / 2;
+		ball.ax = 7;
+		return;
 	}
 
 	crash.clear();
@@ -84,16 +56,11 @@ void GameManager::CrashExamin() {
 	for (int y = crashStart; y <= crashEnd; y++) {
 		for (int i = 0; i < block[y].size(); i++) {
 			//충돌체크 안해도 되는 블럭일 경우 넘어감
-			if (block[y][i].type == MvBkStopBk || (block[y][i].type == ElectricBk && isSwitchOff) || block[y][i].type == RectWHBk || block[y][i].type == CircleWHBk)
-				continue;
-			else if (block[y][i].type == OnceMvBk && block[y][i].ani != 255)
+			if ((block[y][i].type == ElectricBk && isSwitchOff) || block[y][i].type == RectWHBk || block[y][i].type == CircleWHBk)
 				continue;
 
 			//충돌체크
-			if (block[y][i].type == MoveBk)
-				blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
-			else
-				blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
+			blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
 			if (isCrashed(&ballrc, &blockrc) != 4) {
 				crashDir = MyIntersectRect(&ballrc, &blockrc);
 				crash.emplace_back(CrashedBk{ crashDir, i, y, blockrc.left, blockrc.top, BlockQuality(&block[y][i]) });
@@ -137,18 +104,6 @@ void GameManager::Crash(int dir, int i, int y) {
 		}
 		return;
 	}
-	case Item: {
-		if (block[y][i].subtype < ShortTelpo) // 공 상태를 바꾸는 아이템일 경우
-			ball.state = block[y][i].subtype;
-		else
-			ball.item = block[y][i].subtype;
-		block[y].erase(block[y].begin() + i);
-		for (int j = 0; j < crash.size(); j++) {
-			if (y == crash[j].j && i < crash[j].i)
-				crash[j].i -= 1;
-		}
-		return;
-	}
 	case LightBk: {
 		if (block[y][i].subtype < 2) {
 			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
@@ -157,26 +112,18 @@ void GameManager::Crash(int dir, int i, int y) {
 				GamePlay = StageDeath;
 			else if (GamePlay == CustomPlay)
 				GamePlay = CustomDeath;
-			else if (GamePlay == SurvivalPlay)
-				GamePlay = SurvivalDeath;
 			return;
 		}
 		else break;
 	}
 	case Star: {
-		if (ball.state == Normal) {
-			Scheck = eatstar;
-			animation.emplace_back(Block{ (block[y][i].x - 1) * side, (block[y][i].y - 1) * side, Star, rand() % 4, 0 });
-			block[y].erase(block[y].begin() + i);
-			for (int j = 0; j < crash.size(); j++) {
-				if (y == crash[j].j && i < crash[j].i)
-					crash[j].i -= 1;
-			}
-
-			if (GamePlay == SurvivalPlay)
-				score += 10;
+		Scheck = eatstar;
+		animation.emplace_back(Block{ (block[y][i].x - 1) * side, (block[y][i].y - 1) * side, Star, rand() % 4, 0 });
+		block[y].erase(block[y].begin() + i);
+		for (int j = 0; j < crash.size(); j++) {
+			if (y == crash[j].j && i < crash[j].i)
+				crash[j].i -= 1;
 		}
-		return;
 	}
 	case ElectricBk: {
 		blockrc = { (float)block[y][i].x * side + 20, (float)block[y][i].y * side + 5, (float)(block[y][i].x + 1) * side - 20, (float)(block[y][i].y + 1) * side - 5 };
@@ -187,8 +134,6 @@ void GameManager::Crash(int dir, int i, int y) {
 				GamePlay = StageDeath;
 			else if (GamePlay == CustomPlay)
 				GamePlay = CustomDeath;
-			else if (GamePlay == SurvivalPlay)
-				GamePlay = SurvivalDeath;
 		}
 		return;
 	}
@@ -198,16 +143,6 @@ void GameManager::Crash(int dir, int i, int y) {
 	switch (dir) {
 	case dirUp: { // 블럭 위쪽에 충돌했을 경우
 		switch (block[y][i].type) {
-		case BreakBk: {
-			CrashBasicTop(&block[y][i]);
-			animation.emplace_back(Block{ (block[y][i].x - 1) * side, (block[y][i].y - 1) * side, BreakBk, rand() % 4, 0 });
-			block[y].erase(block[y].begin() + i);
-			for (int j = 0; j < crash.size(); j++) {
-				if (y == crash[j].j && i < crash[j].i)
-					crash[j].i -= 1;
-			}
-			return;
-		}
 		case JumpBk: {
 			Scheck = telpo;
 			ball.y = block[y][i].y * side - rd;
@@ -229,18 +164,6 @@ void GameManager::Crash(int dir, int i, int y) {
 		case SwitchBk: {
 			CrashBasicTop(&block[y][i]);
 			isSwitchOff = 1 - isSwitchOff;
-			return;
-		}
-		case OnceMvBk: {
-			if (block[y][i].ani == 255) {
-				CrashBasicTop(&block[y][i]);
-				block[y][i].ani -= 30;
-			}
-			return;
-		}
-		case LauncherBk: {
-			CrashBasicTop(&block[y][i]);
-			MakeBullet(&block[y][i], 1);
 			return;
 		}
 		case MusicBk: {
@@ -289,7 +212,6 @@ void GameManager::Crash(int dir, int i, int y) {
 }
 int GameManager::BlockQuality(const Block* block) {
 	switch (block->type) {
-	case Item:
 	case Star:
 		return 2;
 	case ElectricBk:
@@ -364,10 +286,7 @@ void GameManager::CrashBasicTop(const Block* block) {
 	if (block->type != MusicBk && block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
 	}
-	if (block->type == MoveBk)
-		ball.y = block->y - rd;
-	else
-		ball.y = block->y * side - rd;
+	ball.y = block->y * side - rd;
 	ball.vy = -40;
 	ball.ax = 0;
 	if (isLeftPressed) ball.vx = ball.vx < 0 ? -21 : ball.vx;
@@ -377,10 +296,7 @@ void GameManager::CrashBasicTop(const Block* block) {
 //기본블럭 아래에 충돌한 경우
 void GameManager::CrashBasicBottom(const Block* block) {
 	Scheck = ballcrach;
-	if (block->type == MoveBk)
-		ball.y = block->y + side + rd;
-	else
-		ball.y = block->y * side + side + rd;
+	ball.y = block->y * side + side + rd;
 	ball.vy = -ball.vy;
 }
 //기본블럭 왼쪽에 충돌한 경우
@@ -388,10 +304,7 @@ void GameManager::CrashBasicLeft(const Block* block) {
 	if (block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
 	}
-	if (block->type == MoveBk)
-		ball.x = block->x - rd;
-	else
-		ball.x = block->x * side - rd;
+	ball.x = block->x * side - rd;
 	ball.vx = -ball.vx / 2;
 	ball.ax = -7;
 }
@@ -400,10 +313,7 @@ void GameManager::CrashBasicRight(const Block* block) {
 	if (block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
 	}
-	if (block->type == MoveBk)
-		ball.x = block->x + side + rd;
-	else
-		ball.x = block->x * side + side + rd;
+	ball.x = block->x * side + side + rd;
 	ball.vx = -ball.vx / 2;
 	ball.ax = 7;
 }
@@ -448,272 +358,6 @@ void GameManager::MoveBall() {
 	}
 }
 
-//산탄 생성, 이동, 충돌
-void GameManager::MakeBullet(const Block* block, int BulletType) {
-	switch (block->subtype)
-	{
-	case dirRight: {
-		bullet.emplace_back(Block{ (block->x + 1) * side, block->y * side + 10, dirRight, BulletType, 0 });
-		break;
-	}
-	case dirLeft: {
-		bullet.emplace_back(Block{ (block->x - 1) * side + 20, block->y * side + 10, dirLeft, BulletType, 0 });
-		break;
-	}
-	case dirDown: {
-		bullet.emplace_back(Block{ block->x * side + 10, (block->y + 1) * side, dirDown, BulletType, 0 });
-		break;
-	}
-	case dirUp: {
-		bullet.emplace_back(Block{ block->x * side + 10, (block->y - 1) * side + 20, dirUp, BulletType, 0 });
-		break;
-	}
-	}
-}
-void GameManager::MoveBullet() {
-	for (int i = 0; i < bullet.size(); i++) {
-		switch (bullet[i].type)
-		{
-		case dirRight: {
-			bullet[i].x += 4;
-			break;
-		}
-		case dirLeft: {
-			bullet[i].x -= 4;
-			break;
-		}
-		case dirDown: {
-			bullet[i].y += 4;
-			break;
-		}
-		case dirUp: {
-			bullet[i].y -= 4;
-			break;
-		}
-		}
-
-		if (bullet[i].x + 42 <= 0 || bullet[i].x >= 1516 || bullet[i].y + 42 <= 0 || bullet[i].y >= 939) {
-			bullet.erase(bullet.begin() + i);
-		}
-	}
-}
-void GameManager::CrashBullet() {
-	floatRECT bulletrc, blockrc;
-
-	for (int i = 0; i < bullet.size(); ++i) {
-		bulletrc = { (float)bullet[i].x, (float)bullet[i].y, (float)bullet[i].x + 40, (float)bullet[i].y + 40 };
-
-		// 공 & 산탄 충돌
-		if (isCrashed(&ballrc, &bulletrc) != 4 && GamePlay != StageDeath && GamePlay != CustomDeath && GamePlay != SurvivalDeath) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
-			Scheck = balldeath;
-			if (GamePlay == StagePlay)
-				GamePlay = StageDeath;
-			else if (GamePlay == CustomPlay)
-				GamePlay = CustomDeath;
-			else if (GamePlay == SurvivalPlay)
-				GamePlay = SurvivalDeath;
-			return;
-		}
-
-		// 블럭 & 산탄 충돌
-		for (int y = 0; y < 15; ++y) {
-			for (int k = 0; k < block[y].size(); ++k) {
-				if (block[y][k].type == MvBkStopBk || block[y][k].type == ElectricBk || block[y][k].type == RectWHBk || block[y][k].type == CircleWHBk)
-					continue;
-
-				if (block[y][k].type == MoveBk)
-					blockrc = { (float)block[y][k].x, (float)block[y][k].y, (float)(block[y][k].x + side), (float)(block[y][k].y + side) };
-				else
-					blockrc = { (float)block[y][k].x * side, (float)block[y][k].y * side, (float)((block[y][k].x + 1) * side), (float)((block[y][k].y + 1) * side) };
-
-				if (isCrashed(&bulletrc, &blockrc) != 4) {
-					if (block[y][k].type == BreakBk && bullet[i].subtype) {
-						animation.emplace_back(Block{ (block[y][k].x - 1) * side, (block[y][k].y - 1) * side, BreakBk, rand() % 4, 0 });
-						block[y].erase(block[y].begin() + k);
-					}
-					bullet.erase(bullet.begin() + i);
-				}
-			}
-		}
-	}
-}
-
-//단칸이동블럭 이동 위치 검사, 이동
-bool GameManager::OnceMvBkGo(const Block* b)
-{
-	switch (b->subtype)
-	{
-	case dirRight: {
-		for (int i = 0; i < block[b->y].size(); ++i) {
-			if (block[b->y][i].type == MoveBk) {
-				if ((b->x + 1) * side < block[b->y][i].x + side && (b->x + 1) * side + side > block[b->y][i].x)
-					return false;
-			}
-			else if (b->x + 1 == block[b->y][i].x && (block[b->y][i].type != ElectricBk && block[b->y][i].type != MvBkStopBk))
-				return false;
-		}
-		break;
-	}
-	case dirLeft: {
-		for (int i = 0; i < block[b->y].size(); ++i) {
-			if (block[b->y][i].type == MoveBk) {
-				if ((b->x - 1) * side < block[b->y][i].x + side && (b->x - 1) * side + side > block[b->y][i].x)
-					return false;
-			}
-			else if (b->x - 1 == block[b->y][i].x && (block[b->y][i].type != ElectricBk && block[b->y][i].type != MvBkStopBk))
-				return false;
-		}
-		break;
-	}
-	case dirDown: {
-		for (int i = 0; i < block[b->y + 1].size(); ++i) {
-			if (block[b->y + 1][i].type == MoveBk) {
-				if (b->x * side < block[b->y + 1][i].x + side && b->x * side + side > block[b->y + 1][i].x)
-					return false;
-			}
-			else if (b->x == block[b->y + 1][i].x && (block[b->y + 1][i].type != ElectricBk && block[b->y + 1][i].type != MvBkStopBk))
-				return false;
-		}
-		break;
-	}
-	case dirUp: {
-		for (int i = 0; i < block[b->y - 1].size(); ++i) {
-			if (block[b->y - 1][i].type == MoveBk) {
-				if (b->x * side < block[b->y - 1][i].x + side && b->x * side + side > block[b->y - 1][i].x)
-					return false;
-			}
-			else if (b->x == block[b->y - 1][i].x && (block[b->y - 1][i].type != ElectricBk && block[b->y - 1][i].type != MvBkStopBk))
-				return false;
-		}
-		break;
-	}
-	default:
-		break;
-	}
-	return true;
-}
-void GameManager::MoveOnceMvBk(int y, int i) {
-	switch (block[y][i].subtype)
-	{
-	case dirRight:
-		if (block[y][i].x < 24 && OnceMvBkGo(&block[y][i])) {
-			block[y][i].x++;
-		}
-		break;
-	case dirLeft:
-		if (block[y][i].x > 0 && OnceMvBkGo(&block[y][i])) {
-			block[y][i].x--;
-		}
-		break;
-	case dirUp:
-		if (y > 0 && OnceMvBkGo(&block[y][i])) {
-			block[y - 1].emplace_back(block[y][i]);
-			block[y - 1].back().y -= 1;
-			block[y].erase(block[y].begin() + i);
-		}
-		break;
-	case dirDown:
-		if (y < 14 && OnceMvBkGo(&block[y][i])) {
-			block[y + 1].emplace_back(block[y][i]);
-			block[y + 1].back().y += 1;
-			block[y].erase(block[y].begin() + i);
-		}
-		break;
-	}
-}
-
-// 이동블럭 이동, 방향전환
-bool GameManager::MoveMoveBk(Block* b)
-{
-	if (b->x < 0 || b->x + side > 1516) {
-		TurnMoveBk(b);
-	}
-
-	for (int k = 0; k < block[b->y / side].size(); ++k) {
-		if (block[b->y / side][k].type == MoveBk && block[b->y / side][k].ani == b->ani) continue;//여기 같은 그룹의 이동블럭 충돌체크 안하게 수정했고
-
-		if (b->x + b->subtype < ((block[b->y / side][k].x + 1) * side) && b->x + side + b->subtype >(block[b->y / side][k].x * side)) {//이거 이거만 써도 충돌체크 됨
-			TurnMoveBk(b);//반복되는부분 함수로 뺐습니다 추가로 함수명도 수정함
-			break;
-		}
-	}
-	return false;
-}
-void GameManager::TurnMoveBk(Block* b)
-{
-	if (b->subtype < 0) {
-		b->x -= b->subtype * 2;
-	}
-	for (int k = 0; k < block[b->y / side].size(); ++k) {
-		if (block[b->y / side][k].type != MoveBk || block[b->y / side][k].ani != b->ani) continue;
-		else {
-			block[b->y / side][k].subtype *= -1;
-		}
-	}
-}
-
-// 아이템 사용
-void GameManager::UseItem() {
-	int tempx, crashStart, crashEnd, crashReturn;
-	floatRECT ballrc, blockrc;
-
-	switch (ball.item) {
-	case ShortTelpo:
-		Scheck = telpo;
-		if (ball.vx >= 0) ballrc = { (ball.x + rd), (ball.y - rd), (ball.x + side * 3 + rd), (ball.y + rd) };
-		else ballrc = { (ball.x - rd), (ball.y - rd), (ball.x - side * 3 + rd), (ball.y + rd) };
-
-		ball.item = Normal;
-		crashStart = ballrc.top >= 0 ? (int)(ballrc.top / 60) : 0;
-		crashEnd = (int)(ballrc.bottom / 60);
-
-		if (ball.vx >= 0) {
-			for (int y = crashStart; y <= crashEnd; ++y) {
-				for (int i = 0; i < block[y].size(); i++) {
-					if (block[y][i].type == MoveBk)
-						blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
-					else
-						blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
-					if (isCrashed(&ballrc, &blockrc) != 4 && i != block[y].size() - 1 && block[y][i + 1].x - block[y][i].x == 1) {
-						ball.x = blockrc.left - rd;
-						return;
-					}
-				}
-			}
-			ball.x += side * 3;
-		}
-
-		else {
-			for (int y = crashStart; y <= crashEnd; ++y) {
-				for (int i = block[y].size() - 1; i >= 0; i--) {
-					if (block[y][i].type == MoveBk)
-						blockrc = { (float)block[y][i].x, (float)block[y][i].y, (float)(block[y][i].x + side), (float)(block[y][i].y + side) };
-					else
-						blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
-					if (isCrashed(&ballrc, &blockrc) != 4 && i > 0 && block[y][i].x - block[y][i - 1].x == 1) {
-						ball.x = blockrc.right + rd;
-						return;
-					}
-				}
-			}
-			ball.x -= side * 3;
-		}
-		break;
-	case Dash:
-		ball.item = Normal;
-		ball.vy = -10;
-		ball.vx = ball.vx > 0 ? 50 : -50;
-		ball.ax = 0;
-		break;
-	case HighJmp:
-		ball.item = Normal;
-		ball.vy = -50;
-		ball.vx = ball.ax = 0;
-		break;
-	}
-}
-
 // 맵 배열에서 벡터로 변환 (공 좌표, 스위치 상태는 따로 받기)
 void GameManager::MakeVector() {
 	ClearVector();
@@ -721,7 +365,6 @@ void GameManager::MakeVector() {
 	int groupcnt = 1; // 이동블럭 그룹
 	bool Continuous = false;
 	starcnt = 0;
-	ball.item = ball.state = 0;
 
 	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
@@ -771,129 +414,10 @@ void GameManager::MakeVector() {
 			}
 		}
 	}
-	else if (GamePlay == SurvivalReady) {
-		random = 12;
-		for (int a = 0; a < 3; ++a) {
-			if (random <= ((SVMAPCNT - 1) / 2)) // 0 ~ 11이면
-				random = rand() % (SVMAPCNT / 2) + (SVMAPCNT / 2);
-			else // 12 ~ 23이면
-				random = rand() % (SVMAPCNT / 2);
-
-			if (a == 2) // 첫번째 맵
-				random = 0;
-
-			for (int i = 0; i < 4; i++) {
-				for (int j = 0; j < 9; j++) {
-					if (SurvivalMap[random][i][j]) { // 블럭일 경우
-						temp.x = SurvivalMap[random][i][j] - 1 == 17 ? (j + 8) * side : j + 8;
-						temp.y = SurvivalMap[random][i][j] - 1 == 17 ? (i + (a * 4)) * side : i + (a * 4);
-						temp.type = list[SurvivalMap[random][i][j] - 1].type;
-						if (SurvivalMap[random][i][j] - 1 == 13 || SurvivalMap[random][i][j] - 1 == 14 || SurvivalMap[random][i][j] - 1 == 15)
-							temp.subtype = isSwitchOff;
-						else
-							temp.subtype = list[SurvivalMap[random][i][j] - 1].subtype;
-
-						// 이동블럭 관리
-						if (Continuous) {
-							if (SurvivalMap[random][i][j] - 1 == 17 && SurvivalMap[random][i][j - 1] - 1 == 17)
-								temp.ani = groupcnt;
-							else {
-								Continuous = false;
-								groupcnt++;
-							}
-						}
-						if (SurvivalMap[random][i][j] - 1 == 17) {
-							temp.ani = groupcnt;
-							Continuous = true;
-						}
-						if (SurvivalMap[random][i][j] - 1 != 17)
-							temp.ani = list[SurvivalMap[random][i][j] - 1].ani;
-
-						// 끈끈이 그룹화
-						if (SurvivalMap[random][i][j] == 20) {
-							// 맵 가장 위이거나, 맵 가장 아래가 아니고 블럭 위가 끈끈이가 아니고 아래가 끈끈이면 1번
-							if (i == 0 || i < 14 && SurvivalMap[random][i - 1][j] != 20 && SurvivalMap[random][i + i][j] == 20)
-								temp.subtype = 1;
-							// 맵 가장 위나 아래가 아니고 블럭 위와 아래가 끈끈이면 2번
-							else if (i > 0 && i < 14 && SurvivalMap[random][i - 1][j] == 20 && SurvivalMap[random][i + 1][j] == 20)
-								temp.subtype = 2;
-							// 맵 가장 아래이거나, 맵 가장 위가 아니고 블럭 위가 끈끈이고 아래가 끈끈이가 아니면 2번
-							else if (i == 14 || i > 0 && SurvivalMap[random][i - 1][j] == 20 && SurvivalMap[random][i + 1][j] != 20)
-								temp.subtype = 3;
-							else
-								temp.subtype = 4;
-						}
-						block[i + (a * 4)].emplace_back(temp);
-					}
-				}
-			}
-		}
-	}
 }
 void GameManager::ClearVector() { // 걍 다 초기화하게함
-	bullet.clear();
 	animation.clear();
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
-	}
-}
-void GameManager::MakeReadyVector() {
-	ClearReadyVector();
-	Block temp;
-	int groupcnt = 1; // 이동블럭 그룹
-	bool Continuous = false;
-	if (random <= ((SVMAPCNT - 1) / 2))
-		random = rand() % ((SVMAPCNT - 1) / 2) + ((SVMAPCNT - 1) / 2) + 1;
-	else
-		random = rand() % ((SVMAPCNT - 1) / 2);
-
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 9; j++) {
-			if (SurvivalMap[random][i][j]) { // 블럭일 경우
-				temp.x = SurvivalMap[random][i][j] - 1 == 17 ? (j + 8) * side : j + 8;
-				temp.y = 0;
-				temp.type = list[SurvivalMap[random][i][j] - 1].type;
-				if (SurvivalMap[random][i][j] - 1 == 13 || SurvivalMap[random][i][j] - 1 == 14 || SurvivalMap[random][i][j] - 1 == 15)
-					temp.subtype = isSwitchOff;
-				else
-					temp.subtype = list[SurvivalMap[random][i][j] - 1].subtype;
-
-				// 이동블럭 관리
-				if (Continuous) {
-					if (SurvivalMap[random][i][j] - 1 == 17 && SurvivalMap[random][i][j - 1] - 1 == 17) temp.ani = groupcnt;
-					else {
-						Continuous = false;
-						groupcnt++;
-					}
-				}
-				if (SurvivalMap[random][i][j] - 1 == 17) {
-					temp.ani = groupcnt;
-					Continuous = true;
-				}
-				if (SurvivalMap[random][i][j] - 1 != 17)
-					temp.ani = list[SurvivalMap[random][i][j] - 1].ani;
-
-				// 끈끈이 그룹화
-				if (SurvivalMap[random][i][j] == 20) {
-					// 맵 가장 위이거나, 맵 가장 아래가 아니고 블럭 위가 끈끈이가 아니고 아래가 끈끈이면 1번
-					if (i == 0 || i < 14 && SurvivalMap[random][i - 1][j] != 20 && SurvivalMap[random][i + i][j] == 20)
-						temp.subtype = 1;
-					// 맵 가장 위나 아래가 아니고 블럭 위와 아래가 끈끈이면 2번
-					else if (i > 0 && i < 14 && SurvivalMap[random][i - 1][j] == 20 && SurvivalMap[random][i + 1][j] == 20)
-						temp.subtype = 2;
-					// 맵 가장 아래이거나, 맵 가장 위가 아니고 블럭 위가 끈끈이고 아래가 끈끈이가 아니면 2번
-					else if (i == 14 || i > 0 && SurvivalMap[random][i - 1][j] == 20 && SurvivalMap[random][i + 1][j] != 20)
-						temp.subtype = 3;
-					else
-						temp.subtype = 4;
-				}
-				Readyblock[i].emplace_back(temp);
-			}
-		}
-	}
-}
-void GameManager::ClearReadyVector() {
-	for (int i = 0; i < 4; i++) {
-		Readyblock[i].clear();
 	}
 }
