@@ -22,7 +22,7 @@ void GameManager::Initialize() {
 	list[10] = { 0, 0, ElectricBk, 0, 0 };
 	list[11].type = ClimbBK;
 	list[12].type = MusicBk;
-	for (int i = 0; i < 11; i++) {
+	for (int i = 0; i < 14; i++) {
 		list[i + 13] = { 0, 0, BasicBk, i, 0 };
 	}
 }

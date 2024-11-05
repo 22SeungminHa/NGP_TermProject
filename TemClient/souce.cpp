@@ -305,11 +305,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// 블럭 목록
 			for (int i = 0; i < 44; i++) {
 				if (i == selection)
-					imgOutline.Draw(mdc, 17 + 60 * (i % 22) + 7 * (i % 22), 756 + 68 * (i / 22), 60, 60, 60, 0, 60, 60); // 빨간테두리
+					imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 60, 0, 60, 60); // 빨간테두리
 				else
-					imgOutline.Draw(mdc, 17 + 60 * (i % 22) + 7 * (i % 22), 756 + 68 * (i / 22), 60, 60, 0, 0, 60, 60); // 검정테두리
+					imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 0, 0, 60, 60); // 검정테두리
 			}
-			imgBlockList.Draw(mdc, 20, 759, 1461, 122, 0, 0, 1461, 122); // 블럭
+			imgBlockList.Draw(mdc, 20, 759, 925, 122, 0, 0, 925, 122); // 블럭
 
 			//맵
 			for (int i = 0; i < 15; i++) {
@@ -654,16 +654,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			//블럭 선택
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
 				game.Scheck = click;
-				for (int i = 0; i < 22; i++) {
+				for (int i = 0; i < 14; i++) {
 					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
 						selection = i;
 				}
 			}
 			else if (MouseLC.y >= 756 + 60 + 7 && MouseLC.y <= 756 + 60 + 7 + 60) {
 				game.Scheck = click;
-				for (int i = 0; i < 22; i++) {
+				for (int i = 0; i < 14; i++) {
 					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-						selection = i + 22;
+						selection = i + 14;
 				}
 			}
 			// 플레이 버튼
