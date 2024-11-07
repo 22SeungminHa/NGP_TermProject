@@ -253,24 +253,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		// 게임 시작 화면
 		if (game.GamePlay == Start) {
-			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615)
+			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693)
 				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 스테이지 모드 위 커서
-			else if (MouseLC.x <= 430 && MouseLC.y >= 640 && MouseLC.y <= 740)
-				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 서바이벌 모드 위 커서
-			else if (MouseLC.x <= 430 && MouseLC.y >= 763 && MouseLC.y <= 863)
-				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // 커스터마이징 위 커서
+			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817)
+				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 커스텀 모드 위 커서
 			else
 				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 		}
 		else if (game.GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 스테이지 모드 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // 서바이벌 모드 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom);
 			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // 커스터마이징 위 커서
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom);
 			else
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
+				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 			if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128)
 				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 80, 0, 80, 80); // 홈버튼 위 커서
@@ -278,7 +276,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // 기본 홈버튼
 		}
 		else if (game.GamePlay == CustomMode) {
-			imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
+			imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 			//버튼
 			if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
@@ -538,11 +536,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_LBUTTONDOWN: {
 		if (game.GamePlay == Start) {
-			if (MouseLC.x <= 430 && MouseLC.y >= 515 && MouseLC.y <= 615) { // 스테이지 버튼
+			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // 스테이지 버튼
 				game.Scheck = click;
 				game.GamePlay = StageSelect;
 			}
-			else if (MouseLC.x <= 430 && MouseLC.y >= 763 && MouseLC.y <= 863) { // 맵툴 버튼
+			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // 맵툴 버튼
 				game.Scheck = click;
 				game.GamePlay = CustomMode;
 				BallStartLC = { -1, -1 };
