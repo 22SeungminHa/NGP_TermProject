@@ -15,3 +15,5 @@
 
 #include "protocol.h"
 	// + enum.h
+
+using namespace std;
