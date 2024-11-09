@@ -47,14 +47,15 @@ public:
 	int PrintLc{};
 
 	int retval{};
-	SOCKET socket{};
+	SOCKET clientSocket{};
+	
 
 public:
 	ClientManager() {}
 	~ClientManager() {}
 
 public:
-	void Initialize();
+	bool Initialize();
 
 	void ConnectWithServer();
 	void LoginToGame();

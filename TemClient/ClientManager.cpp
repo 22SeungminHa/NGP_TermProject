@@ -1,6 +1,7 @@
 #include "ClientManager.h"
 
-void ClientManager::Initialize() {
+bool ClientManager::Initialize() 
+{
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
@@ -25,11 +26,33 @@ void ClientManager::Initialize() {
 	for (int i = 0; i < 11; i++) {
 		list[i + 13] = { 0, 0, BasicBk, i, 0 };
 	}
+
+	WSADATA wsa;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+		return false;
+
+	return true;
 }
 
 void ClientManager::ConnectWithServer()
 {
+	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (clientSocket == INVALID_SOCKET) {
+		err_quit("socket()");
+	}
+
+	struct sockaddr_in serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	inet_pton(AF_INET, serverIP, &serveraddr.sin_addr);
+	serveraddr.sin_port = htons(serverPort);
+
+	retval = connect(clientSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+
+	if (retval == SOCKET_ERROR) {
+		err_quit("connect()");
+	}
 }
 
 void ClientManager::LoginToGame()

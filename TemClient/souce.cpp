@@ -10,7 +10,7 @@
 // 상승블럭 vy = -65
 // 끈적이 블럭 좌 vy = 5 우 vy = 5.1
 
-using namespace std;
+ClientManager game;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
@@ -40,10 +40,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	hwnd = CreateWindow(lpszClass, lpszWindowName, WS_OVERLAPPEDWINDOW, 0, 0, 1516, 939, NULL, (HMENU)NULL, hInstance, NULL);
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
+
+	if (!game.Initialize()) {
+		return 1;
+	}
+
 	while (GetMessage(&Message, 0, 0, 0)) {
 		TranslateMessage(&Message);
 		DispatchMessage(&Message);
 	}
+
 	return Message.wParam;
 }
 
@@ -74,13 +80,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	static FMOD_RESULT result;
 	static void* extradriverdata = 0;
 
-	static ClientManager game;
-
 	switch (uMsg) {
 	case WM_CREATE: {
 		SetTimer(hwnd, 1, 10, NULL);
 		GetClientRect(hwnd, &game.window);
-		game.Initialize();
 		// 이미지 로드
 		{
 			imgBall.Load(TEXT("바운스볼 PNG/공.png"));
