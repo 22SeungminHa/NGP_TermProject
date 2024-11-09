@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "GameManager.h"
+#include "ClientManager.h"
 
 // 최대 vx = 21
 // 최대 vy = 40
@@ -74,7 +74,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	static FMOD_RESULT result;
 	static void* extradriverdata = 0;
 
-	static GameManager game;
+	static ClientManager game;
 
 	switch (uMsg) {
 	case WM_CREATE: {
