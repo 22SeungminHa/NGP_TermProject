@@ -20,11 +20,7 @@
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod_errors.h" 
 #include <random>
 #include <time.h>
-#include <protocol.h>
-	// #include <enum.h>
+#include <thread>
 
-constexpr int g = 10; // 중력가속도
-constexpr float t = 0.19; // 속도 조절 변수
-constexpr int side = 60; // 블럭 한 변의 길이
-constexpr float rd = 12.5; // 공 반지름
-constexpr int SVMAPCNT = 24;
+#include "protocol.h"
+	// #include "enum.h"

@@ -301,7 +301,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				imgLoadButton.Draw(mdc, 1410, 105, 78, 78, 0, 0, 78, 78); // 기본 불러오기버튼
 
 			// 블럭 목록
-			for (int i = 0; i < 44; i++) {
+			for (int i = 0; i < 28; i++) {
 				if (i == selection)
 					imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 60, 0, 60, 60); // 빨간테두리
 				else
