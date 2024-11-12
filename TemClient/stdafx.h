@@ -6,7 +6,7 @@
 #pragma comment(lib,"msimg32.lib")
 #pragma comment (lib, "fmod_vc.lib")
 
-#include <windows.h> //--- À©µµ¿ì Çì´õ ÆÄÀÏ
+#include <windows.h> //--- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 #include <winsock2.h> 
 #include <ws2tcpip.h> 
 #include <tchar.h>
@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string.h>
-#include <atlImage.h> // cimg ¶§¹®¿¡ ÇÊ¿äÇÑ Çì´õ
+#include <atlImage.h> // cimg ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 #include <vector>
 #include <string>
 #include <fstream>
@@ -22,14 +22,16 @@
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod_errors.h" 
 #include <random>
 #include <time.h>
+#include <thread>
+
 #include <protocol.h>
 	// #include <enum.h>
 using namespace std;
 
-constexpr int g = 10; // Áß·Â°¡¼Óµµ
-constexpr float t = 0.19; // ¼Óµµ Á¶Àý º¯¼ö
-constexpr int side = 60; // ºí·° ÇÑ º¯ÀÇ ±æÀÌ
-constexpr float rd = 12.5; // °ø ¹ÝÁö¸§
+constexpr int g = 10; // ï¿½ß·Â°ï¿½ï¿½Óµï¿½
+constexpr float t = 0.19; // ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+constexpr int side = 60; // ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+constexpr float rd = 12.5; // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 constexpr int SVMAPCNT = 24;
 
 constexpr const char* serverIP = "asdf";
