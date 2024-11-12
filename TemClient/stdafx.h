@@ -28,10 +28,10 @@
 	// #include <enum.h>
 using namespace std;
 
-constexpr int g = 10; // �߷°��ӵ�
-constexpr float t = 0.19; // �ӵ� ���� ����
-constexpr int side = 60; // �� �� ���� ����
-constexpr float rd = 12.5; // �� ������
+constexpr int g = 10;
+constexpr float t = 0.19; 
+constexpr int side = 60; 
+constexpr float rd = 12.5;
 constexpr int SVMAPCNT = 24;
 
 constexpr const char* serverIP = "asdf";
