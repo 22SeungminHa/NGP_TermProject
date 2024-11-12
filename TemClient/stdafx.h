@@ -6,13 +6,15 @@
 #pragma comment(lib,"msimg32.lib")
 #pragma comment (lib, "fmod_vc.lib")
 
-#include <windows.h> //--- À©µµ¿ì Çì´õ ÆÄÀÏ
+#include <windows.h> //--- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+#include <winsock2.h> 
+#include <ws2tcpip.h> 
 #include <tchar.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <string.h>
-#include <atlImage.h> // cimg ¶§¹®¿¡ ÇÊ¿äÇÑ Çì´õ
+#include <atlImage.h> // cimg ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 #include <vector>
 #include <string>
 #include <fstream>
@@ -22,5 +24,16 @@
 #include <time.h>
 #include <thread>
 
-#include "protocol.h"
-	// #include "enum.h"
+#include <protocol.h>
+	// #include <enum.h>
+using namespace std;
+
+constexpr int g = 10;
+constexpr float t = 0.19; 
+constexpr int side = 60; 
+constexpr float rd = 12.5;
+constexpr int SVMAPCNT = 24;
+
+constexpr const char* serverIP = "asdf";
+constexpr const WORD serverPort = 9000;
+
