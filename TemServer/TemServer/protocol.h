@@ -1,6 +1,8 @@
 #pragma once
 #include "enum.h"
 
+#define SERVERPORT 9000
+
 constexpr int NAME_SIZE = 20;
 constexpr int M_WIDTH   = 25;
 constexpr int M_HEIGHT  = 15;    // map size, blockÀÇ °³¼ö
