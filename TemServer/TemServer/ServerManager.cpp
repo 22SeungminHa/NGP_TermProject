@@ -2,6 +2,8 @@
 
 ServerManager::ServerManager()
 {
+    cl_num = 0;
+
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
 	s_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -58,6 +60,20 @@ void ServerManager::S_Accept()
 
 void ServerManager::MakeThreads()
 {
+    // 스레드 인자 준비
+    ThreadArgs* args = new ThreadArgs;
+    args->num = cl_num;
+    args->client_sock = c_sock;
+
+    // 스레드 생성
+    Session* session = &clients[0];  // 첫 번째 Session 객체 사용
+    hThread = CreateThread(NULL, 0, ServerManager::Session_Do_Recv, (LPVOID)session, 0, NULL);
+
+    if (hThread == NULL) {
+        delete args;
+        closesocket(c_sock);
+    }
+    else { CloseHandle(hThread); }
 }
 
 void ServerManager::WorkThreads()
@@ -76,6 +92,11 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 {
 }
 
+DWORD __stdcall ServerManager::Session_Do_Recv(LPVOID arg)
+{
+    Session* session = (Session*)arg;  // Session 객체로 변환
+    return session->Do_Recv(arg);  // Session의 Do_Recv 호출
+}
 
 
 
