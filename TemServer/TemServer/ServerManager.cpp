@@ -27,7 +27,7 @@ void ServerManager::S_Bind_Listen()
 
     // 소켓 생성
     listen_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_sock == INVALID_SOCKET) err_quit("socket()");
+    if (listen_sock == INVALID_SOCKET) cm.err_quit("socket()");
 
     // bind()
     struct sockaddr_in serveraddr;
@@ -36,11 +36,11 @@ void ServerManager::S_Bind_Listen()
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serveraddr.sin_port = htons(SERVERPORT);
     retval = bind(listen_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-    if (retval == SOCKET_ERROR) err_quit("bind()");
+    if (retval == SOCKET_ERROR) cm.err_quit("bind()");
 
     // listen()
     retval = listen(listen_sock, SOMAXCONN);
-    if (retval == SOCKET_ERROR) err_quit("listen()");
+    if (retval == SOCKET_ERROR) cm.err_quit("listen()");
 }
 
 void ServerManager::S_Accept()
@@ -50,7 +50,7 @@ void ServerManager::S_Accept()
         addrlen = sizeof(clientaddr);
         c_sock = accept(listen_sock, (struct sockaddr*)&clientaddr, &addrlen);
         if (c_sock == INVALID_SOCKET) {
-            err_display("accept()");
+            cm.err_display("accept()");
             return;
         }
 
@@ -99,44 +99,3 @@ DWORD __stdcall ServerManager::Session_Do_Recv(LPVOID arg)
 }
 
 
-
-
-// 소켓 함수 오류 출력 후 종료
-void ServerManager::err_quit(const char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	MessageBoxA(NULL, (const char*)lpMsgBuf, msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-	exit(1);
-}
-
-// 소켓 함수 오류 출력
-void ServerManager::err_display(const char* msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s\n", msg, (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
-
-// 소켓 함수 오류 출력
-void ServerManager::err_display(int errcode)
-{
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, errcode,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	printf("[오류] %s\n", (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}

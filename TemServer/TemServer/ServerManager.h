@@ -31,10 +31,6 @@ public:
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);
-
-	static DWORD WINAPI Session_Do_Recv(LPVOID arg);
-
-	void err_quit(const char* msg);
-	void err_display(const char* msg);
-	void err_display(int errcode);
+	
+	static DWORD WINAPI Session_Do_Recv(LPVOID arg);  // static 멤버 함수로 변경
 };
