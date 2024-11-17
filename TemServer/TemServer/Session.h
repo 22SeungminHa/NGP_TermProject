@@ -2,6 +2,8 @@
 #include "stdafx.h"
 #include "Common.h"
 
+class ServerManager;
+
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
 };
