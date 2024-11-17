@@ -24,6 +24,7 @@
 #include <time.h>
 #include <thread>
 #include<array>
+#include<queue>
 
 #include <protocol.h>
 	// #include <enum.h>
@@ -48,4 +49,5 @@ public:							\
 		static T instance;		\
 		return instance;		\
 	}							
-								
+
+#define INSTANCE(T) T::GetInstance()

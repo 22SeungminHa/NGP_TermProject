@@ -6,11 +6,11 @@
 
 constexpr int NAME_SIZE = 20;
 constexpr int M_WIDTH   = 25;
-constexpr int M_HEIGHT  = 15;    // map size, blockÀÇ °³¼ö
+constexpr int M_HEIGHT  = 15;    // map size, blockï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 constexpr int B_WIDTH   = 20;
-constexpr int B_HEIGHT  = 15;    // block size, blockÀÇ Å©±â
+constexpr int B_HEIGHT  = 15;    // block size, blockï¿½ï¿½ Å©ï¿½ï¿½
 
-static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread¿Í send()ÇÒ ½º·¹µå Á¦¿Ü
+static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThreadï¿½ï¿½ send()ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 constexpr short g           = 10;
 constexpr short t           = 0.19;
@@ -23,6 +23,7 @@ constexpr short SVMAPCNT    = 24;
 
 constexpr char CS_LOGIN         = 0;
 constexpr char CS_KEY_PRESS     = 1;
+constexpr char CS_MOUSE_POS     = 2;
 
 // Server -> Client Packet ID --------------------
 
@@ -51,8 +52,13 @@ typedef struct CS_LOGIN_PACKET : PACKET {
 };
 
 typedef struct CS_KEY_PACKET : PACKET {
-    unsigned int    wParam;
-    CS_KEY_PACKET(unsigned int sID) : PACKET(sizeof(CS_LOGIN_PACKET), CS_KEY_PRESS, sID) {}
+    KEY_TYPE keyType;
+    CS_KEY_PACKET() : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS) {}
+};
+
+typedef struct CS_MOUSE_POSITION_PACKET : PACKET {
+    POINT mousePos;
+    CS_MOUSE_POSITION_PACKET() : PACKET(sizeof(CS_MOUSE_POSITION_PACKET), CS_MOUSE_POS) {}
 };
 
 // Server -> Client Packet -----------------------

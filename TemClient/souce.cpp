@@ -1,28 +1,65 @@
-#include "stdafx.h"
+ï»¿#include "client_pch.h"
 #include "ClientManager.h"
+#include"InputManager.h"
+#include"Timer.h"
 
-// ÃÖ´ë vx = 21
-// ÃÖ´ë vy = 40
+// ìµœëŒ€ vx = 21
+// ìµœëŒ€ vy = 40
 // ax = 7
-// xÃà ÃÖ´ë ÀÌµ¿°Å¸® = 180
-// xÃà ÃÖ¼Ò ÀÌµ¿°Å¸® = 90
-// ÁÂ¿ìÁ÷Áøºí·° vx = 60
-// »ó½Âºí·° vy = -65
-// ²öÀûÀÌ ºí·° ÁÂ vy = 5 ¿ì vy = 5.1
+// xì¶• ìµœëŒ€ ì´ë™ê±°ë¦¬ = 180
+// xì¶• ìµœì†Œ ì´ë™ê±°ë¦¬ = 90
+// ì¢Œìš°ì§ì§„ë¸”ëŸ­ vx = 60
+// ìƒìŠ¹ë¸”ëŸ­ vy = -65
+// ëˆì ì´ ë¸”ëŸ­ ì¢Œ vy = 5 ìš° vy = 5.1
 
+//ì „ì—­ ë³€ìˆ˜
 ClientManager game;
+HANDLE hThreadNetwork;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
+
+POINT BallStartLC;
+OPENFILENAME OFN;
+TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
+TCHAR lpstrFile[100], str[20];
+bool drag = false;
+int selection = 0, electictimer = 0, bestscore = 0;
+
+FMOD::System* ssystem;
+FMOD::Sound* ballCrach_Sound, * Telpo_Sound, * EatStar_Sound, * ballDeath_Sound, * Click_Sound, * GameClear_Sound, * MusicBk_Sound;
+FMOD::Channel* channel = 0;
+FMOD_RESULT result;
+void* extradriverdata = 0;
+
+
+std::queue<KEY_TYPE> keyEventQueue{};
+
+#pragma region Images
+CImage imgBall, imgBasicBlock, imgFuctionBlock, imgSwitchBk, imgElectricBk,
+imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
+imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
+imgBlockList, imgOutline,
+imgStarAni, imgDeadAni;
+#pragma endregion
+
+
+void LoadResources();
+void Update();
+void Render();
+
+void SendKeyPackets();
+
+DWORD WINAPI ClientMain(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
 	srand((unsigned int)time(NULL));
 	HWND hwnd;
-	MSG Message;
-	WNDCLASSEX WndClass;
+	MSG Message{};
+	WNDCLASSEX WndClass{};
 	g_hInst = hInstance;
 	WndClass.cbSize = sizeof(WndClass);
 	WndClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -41,93 +78,444 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
 
-	if (!game.Initialize()) {
+	if (!game.Initialize(hwnd)) {
 		return 1;
 	}
+	TIMER.Initilaize();
+	INPUT.Initialize(hwnd);
+	LoadResources();
 
-	while (GetMessage(&Message, 0, 0, 0)) {
-		TranslateMessage(&Message);
-		DispatchMessage(&Message);
+
+	//ë„¤íŠ¸ì›Œí¬ìš© ì“°ë ˆë“œ ìƒì„±
+	hThreadNetwork = CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
+
+	//í‚¤ ì´ë²¤íŠ¸ ì „ì†¡ ì´ë²¤íŠ¸
+	InitializeCriticalSection(&keyEventCS);
+
+	while (Message.message != WM_QUIT)
+	{
+		if (PeekMessage(&Message, NULL, 0, 0, PM_REMOVE))
+		{
+			if (Message.message == WM_QUIT) break;
+			TranslateMessage(&Message);
+			DispatchMessage(&Message);
+		}
+		else
+		{
+			TIMER.Tick(120.f);
+			Update();
+			Render();
+		}
 	}
 
+	game.Destroy();
+
+	CloseHandle(hThreadNetwork);
 	return Message.wParam;
+}
+
+void LoadResources()
+{
+	//ì´ë¯¸ì§€ ë¡œë“œ
+	{
+		imgBall.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê³µ.png"));
+		imgBasicBlock.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê¸°ë³¸ë¸”ëŸ­.png"));
+		imgFuctionBlock.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê¸°ëŠ¥ë¸”ëŸ­.png"));
+		imgSwitchBk.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ì „ê¸°ìŠ¤ìœ„ì¹˜ë¸”ëŸ­.png"));
+		imgElectricBk.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ì „ê¸°ë¸”ëŸ­.png"));
+
+		imgStarAni.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë³„ ìŠ¤í”„ë¼ì´íŠ¸.png"));
+		imgDeadAni.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê³µ ìŠ¤í”„ë¼ì´íŠ¸.png"));
+
+		imgStartScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ì‹œì‘í™”ë©´.png"));
+		imgStageScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ìŠ¤í…Œì´ì§€.png"));
+		imgStopScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ì¼ì‹œì •ì§€.png"));
+		imgClearScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê²Œì„í´ë¦¬ì–´.png"));
+		imgPlayScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ê²Œì„í”Œë ˆì´ë°°ê²½.png"));
+		imgMaptoolScreen.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´.png"));
+
+		imgHomeButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/í™ˆë²„íŠ¼.png"));
+		imgResetButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ë¦¬ì…‹.png"));
+		imgLoadButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ë¶ˆëŸ¬ì˜¤ê¸°.png"));
+		imgSaveButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ì €ì¥.png"));
+		imgEraseButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ì§€ìš°ê°œ.png"));
+		imgPlayButton.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_í”Œë ˆì´.png"));
+
+		imgBlockList.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ë¸”ëŸ­ ì„ íƒ ëª©ë¡.png"));
+		imgOutline.Load(TEXT("ë°”ìš´ìŠ¤ë³¼ PNG/ë§µíˆ´_ë¸”ëŸ­ ì„ íƒ í…Œë‘ë¦¬.png"));
+	}
+	// ì‚¬ìš´ë“œ ë¡œë“œ
+	{
+		result = FMOD::System_Create(&ssystem); //--- ì‚¬ìš´ë“œ ì‹œìŠ¤í…œ ìƒì„±
+		if (result != FMOD_OK)
+			exit(0);
+		ssystem->init(32, FMOD_INIT_NORMAL, extradriverdata); //--- ì‚¬ìš´ë“œ ì‹œìŠ¤í…œ ì´ˆê¸°í™”
+		ssystem->createSound("Sound/ball.ogg", FMOD_LOOP_OFF, 0, &ballCrach_Sound); //--- ê³µ íŠ€ê¸°ëŠ” ì†Œë¦¬
+		ssystem->createSound("Sound/telpo.mp3", FMOD_LOOP_OFF, 0, &Telpo_Sound); //--- ê³µ í…”í¬í•˜ëŠ” ì†Œë¦¬ (í…”í¬, ë¸”ë™í™€)
+		ssystem->createSound("Sound/eatStar.mp3", FMOD_LOOP_OFF, 0, &EatStar_Sound); //--- ë³„ ë¨¹ìœ¼ë©´ ë‚˜ëŠ” ì†Œë¦¬
+		ssystem->createSound("Sound/balldeath.wav", FMOD_LOOP_OFF, 0, &ballDeath_Sound); //--- ê³µ ì£½ìœ¼ë©´ ë‚˜ëŠ” ì†Œë¦¬
+		ssystem->createSound("Sound/Click.mp3", FMOD_LOOP_OFF, 0, &Click_Sound); //--- í´ë¦­
+		ssystem->createSound("Sound/GameClear.mp3", FMOD_LOOP_OFF, 0, &GameClear_Sound); //--- ê²Œì„ í´ë¦¬ì–´
+		ssystem->createSound("Sound/musicbk.mp3", FMOD_LOOP_OFF, 0, &MusicBk_Sound); //--- ê²Œì„ í´ë¦¬ì–´
+	}
+
+	const wchar_t* fontPath = L"ê³ ë ¹ë”¸ê¸°ì²´+OTF.otf";
+	AddFontResource(fontPath);
+}
+
+void Update()
+{
+#pragma region key event
+	INPUT.Update();
+
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyPress(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push(KEY_TYPE::RIGHT);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT) || INPUT.IsKeyPress(KEY_TYPE::LEFT)) {
+		keyEventQueue.push(KEY_TYPE::LEFT);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
+		keyEventQueue.push(KEY_TYPE::ESCAPE);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::A)) {
+		keyEventQueue.push(KEY_TYPE::A);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::Q)) {
+		keyEventQueue.push(KEY_TYPE::Q);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
+		keyEventQueue.push(KEY_TYPE::LBUTTON);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
+		keyEventQueue.push(KEY_TYPE::RBUTTON);
+	}
+
+	LeaveCriticalSection(&keyEventCS);
+#pragma endregion
+
+	// ê³µ ê´€ë ¨ íš¨ê³¼ìŒ ì¬ìƒ
+	switch (game.Scheck)
+	{
+		case ballcrach: {
+			ssystem->playSound(ballCrach_Sound, 0, false, &channel);
+			channel->setVolume(0.35);
+			game.Scheck = X;
+			break;
+		}
+		case telpo: {
+			ssystem->playSound(Telpo_Sound, 0, false, &channel);
+			channel->setVolume(0.5);
+			game.Scheck = X;
+			break;
+		}
+		case eatstar: {
+			ssystem->playSound(EatStar_Sound, 0, false, &channel);
+			channel->setVolume(1);
+			game.Scheck = X;
+			break;
+		}
+		case balldeath: {
+			ssystem->playSound(ballDeath_Sound, 0, false, &channel);
+			channel->setVolume(0.5);
+			game.Scheck = X;
+			break;
+		}
+		case click: {
+			ssystem->playSound(Click_Sound, 0, false, &channel);
+			channel->setVolume(1);
+			game.Scheck = X;
+			break;
+		}
+		case gameclear: {
+			ssystem->playSound(GameClear_Sound, 0, false, &channel);
+			channel->setVolume(1);
+			game.Scheck = X;
+			break;
+		}
+		case music: {
+			ssystem->playSound(MusicBk_Sound, 0, false, &channel);
+			channel->setVolume(1);
+			game.Scheck = X;
+			break;
+		}
+	}
+}
+
+void Render()
+{
+	PAINTSTRUCT ps;
+	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
+
+	hdc = BeginPaint(game.hwnd, &ps);
+	mdc = CreateCompatibleDC(hdc);
+	HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
+	OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
+	FillRect(mdc, &game.window, WHITE_BRUSH);
+
+	POINT MouseLC = INPUT.GetMousePosition();
+
+	//ë§µíˆ´ ë¸”ëŸ­ ì„¤ì¹˜
+	if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
+		if (selection > 0) {// ë¸”ëŸ­ì´ ì„ íƒë˜ì—ˆì„ ê²½ìš°
+			if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // ê³µì´ ìˆì„ ê²½ìš°
+				BallStartLC = { -1, -1 };
+
+			if (selection == 6 || selection == 8) {
+				for (int y = 0; y < 15; ++y) {
+					for (int x = 0; x < 25; ++x) {
+						if (game.Map[y][x] == selection) {
+							game.Map[y][x] = 0;
+						}
+					}
+				}
+			}
+			game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = selection;
+			if (game.list[selection - 1].type == SwitchBk)
+				game.isSwitchOff = game.list[selection - 1].subtype;
+		}
+		else if (selection == 0) { // ê³µì´ ì„ íƒë˜ì—ˆì„ ê²½ìš°
+			if (game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48]) // ë¸”ëŸ­ì´ ìˆì„ ê²½ìš°
+				game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = 0;
+			BallStartLC = { (MouseLC.x - 21) / 48, (MouseLC.y - 21) / 48 };
+		}
+		else {// ì§€ìš°ê°œê°€ ì„ íƒë˜ì—ˆì„ ê²½ìš°
+			if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // ê³µ ì§€ìš°ê¸°
+				BallStartLC = { -1, -1 };
+			else
+				game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = 0; // ë¸”ëŸ­ ì§€ìš°ê¸°
+		}
+	}
+
+	// ê²Œì„ ì‹œì‘ í™”ë©´
+	if (game.GamePlay == Start) {
+		if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693)
+			imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // ìŠ¤í…Œì´ì§€ ëª¨ë“œ ìœ„ ì»¤ì„œ
+		else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817)
+			imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // ì»¤ìŠ¤í…€ ëª¨ë“œ ìœ„ ì»¤ì„œ
+		else
+			imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // ê¸°ë³¸ ì‹œì‘í™”ë©´
+	}
+	else if (game.GamePlay == StageSelect) {
+		if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715)
+			imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
+		else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715)
+			imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom);
+		else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715)
+			imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom);
+		else
+			imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+
+		if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128)
+			imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 80, 0, 80, 80); // í™ˆë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // ê¸°ë³¸ í™ˆë²„íŠ¼
+	}
+	else if (game.GamePlay == CustomMode) {
+		imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+
+		//ë²„íŠ¼
+		if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
+			imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 164, 0, 164, 78); // í”Œë ˆì´ë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 0, 0, 164, 78); // ê¸°ë³¸ í”Œë ˆì´ë²„íŠ¼
+		if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
+			imgSaveButton.Draw(mdc, 1410, 16, 78, 78, 78, 0, 78, 78); // ì €ì¥ë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgSaveButton.Draw(mdc, 1410, 16, 78, 78, 0, 0, 78, 78); // ê¸°ë³¸ ì €ì¥ë²„íŠ¼
+		if ((MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78))
+			imgEraseButton.Draw(mdc, 1239, 105, 78, 78, 78, 0, 78, 78); // ì§€ìš°ê°œë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgEraseButton.Draw(mdc, 1239, 105, 78, 78, 0, 0, 78, 78); // ê¸°ë³¸ ì§€ìš°ê°œë²„íŠ¼
+		if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78)
+			imgResetButton.Draw(mdc, 1325, 105, 78, 78, 78, 0, 78, 78); // ë¦¬ì…‹ë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgResetButton.Draw(mdc, 1325, 105, 78, 78, 0, 0, 78, 78); // ê¸°ë³¸ ë¦¬ì…‹ë²„íŠ¼
+		if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78)
+			imgLoadButton.Draw(mdc, 1410, 105, 78, 78, 78, 0, 78, 78); // ë¶ˆëŸ¬ì˜¤ê¸°ë²„íŠ¼ ìœ„ ì»¤ì„œ
+		else
+			imgLoadButton.Draw(mdc, 1410, 105, 78, 78, 0, 0, 78, 78); // ê¸°ë³¸ ë¶ˆëŸ¬ì˜¤ê¸°ë²„íŠ¼
+
+		// ë¸”ëŸ­ ëª©ë¡
+		for (int i = 0; i < 28; i++) {
+			if (i == selection)
+				imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 60, 0, 60, 60); // ë¹¨ê°„í…Œë‘ë¦¬
+			else
+				imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 0, 0, 60, 60); // ê²€ì •í…Œë‘ë¦¬
+		}
+		imgBlockList.Draw(mdc, 20, 759, 925, 122, 0, 0, 925, 122); // ë¸”ëŸ­
+
+		//ë§µ
+		for (int i = 0; i < 15; i++) {
+			for (int j = 0; j < 25; j++) {
+				if (game.Map[i][j]) {
+					if (game.list[game.Map[i][j] - 1].type < BasicBk) { // ê¸°ëŠ¥ë¸”ëŸ­ 
+						imgFuctionBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].type * side, 0, side, side);
+					}
+					else {
+						switch (game.list[game.Map[i][j] - 1].type) {
+						case BasicBk: // ê¸°ë³¸ë¸”ëŸ­
+							imgBasicBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
+							break;
+						case SwitchBk:
+							imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
+							break;
+						case ElectricBk:
+							imgElectricBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		//ê³µ
+		if (BallStartLC.x >= 0 && BallStartLC.y >= 0)
+			imgBall.Draw(mdc, 21 + BallStartLC.x * 48 + 14, 21 + BallStartLC.y * 48 + 14, 20, 20, 0, 0, rd * 2, rd * 2);
+
+		//ì„ íƒëœ ê²ƒ
+		if (selection > 0) { // ë¸”ëŸ­
+			if (game.list[selection - 1].type < BasicBk) { // ê¸°ëŠ¥ë¸”ëŸ­ 
+				imgFuctionBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].type * side, 0, side, side);
+			}
+			else {
+				switch (game.list[selection - 1].type) {
+				case BasicBk: // ê¸°ë³¸ë¸”ëŸ­
+					imgBasicBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
+					break;
+				case SwitchBk:
+					imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
+					break;
+				case ElectricBk:
+					imgElectricBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
+					break;
+				}
+			}
+		}
+		else if (selection == 0) // ê³µ
+			imgBall.Draw(mdc, 1315 + 15, 307 + 15, 50, 50, 0, 0, rd * 2, rd * 2);
+		else // ì§€ìš°ê°œ
+			imgEraseButton.Draw(mdc, 1315, 307, 78, 78, 0, 0, 78, 78);
+	}
+
+	// ê²Œì„ í”Œë ˆì´ í™”ë©´
+	else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // ì£½ì—ˆê³  íŒŒí‹°í´ ì• ë‹ˆë©”ì´ì…˜ ìˆì„ ë•Œ ê·¸ë¦¬ë ¤ê³  ì¶”ê°€í•¨
+		imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+
+		//ë¸”ëŸ­ ì¶œë ¥
+		for (int y = 0; y < 15; ++y) {
+			for (int i = 0; i < game.block[y].size(); ++i) {
+				if (game.block[y][i].type < BasicBk) { // ê¸°ëŠ¥ë¸”ëŸ­ 
+					imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
+				}
+				else {
+					switch (game.block[y][i].type) {
+					case BasicBk: // ê¸°ë³¸ë¸”ëŸ­
+						imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
+						break;
+					case SwitchBk:
+						imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
+						break;
+					case ElectricBk:
+						imgElectricBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
+						break;
+					}
+				}
+			}
+		}
+
+		//ê³µ ì¶œë ¥
+		if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // ì£½ìœ¼ë©´ ì¶œë ¥ ì•ˆí•˜ê²Œ
+			imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // í™œì„±í™”ê³µ
+		}
+
+		// íŒŒí‹°í´ ì¶œë ¥
+		for (int i = 0; i < game.animation.size(); i++) {
+			switch (game.animation[i].type) {
+			case StageDeath: // ì´ë„˜ ê²¹ì³ì„œ ê± ì´ê±°ì”€
+				imgDeadAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
+				break;
+			case Star:
+				imgStarAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
+				break;
+			}
+			game.animation[i].ani++;
+			if (game.animation[i].ani == 40) {
+				if (game.animation[i].type == Star) { // ì• ë‹ˆë©”ì´ì…˜ ëë‚˜ê³  clearë¡œ ë°”ë€œ
+					game.starcnt--;
+					if (game.starcnt == 0) {
+						if (game.GamePlay == StagePlay || game.GamePlay == StageDeath) {// ë³„ ë¨¹ê³  ì£½ì—ˆì„ ë•Œë„ í´ë¦¬ì–´ë˜ê²Œ,,, ë™ì‹œì— ì¼ì–´ë‚˜ë„ WM_TIMERê°€ë¨¼ì € ëŒì•„ê°€ì„œ ì•„ë§ˆ deathê°€ ë¨¼ì € ë ê±°ë¼ ê´œì°®ì„ê±°ê°™ê¸´í•œë° ë²„ê·¸ë‚˜ë©´ë­,, ì•„ì‰¬ìš´ê±°ì„
+							game.Scheck = gameclear;
+							game.GamePlay = StageClear;
+						}
+						else if (game.GamePlay == CustomPlay || game.GamePlay == CustomDeath)
+							game.GamePlay = CustomMode;
+					}
+				}
+				game.animation.erase(game.animation.begin() + i);
+			}
+		}
+
+		// í™”ë©´ ì¶œë ¥
+		if (game.GamePlay == StageStop) {
+			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381)
+				imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // ë©”ì¸í™”ë©´ ë²„íŠ¼ ìœ„ ì»¤ì„œ
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494)
+				imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // ìŠ¤í…Œì´ì§€ ë²„íŠ¼ ìœ„ ì»¤ì„œ
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606)
+				imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // ì¬ì‹œì‘ ìœ„ ì»¤ì„œ
+			else
+				imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // ê¸°ë³¸ ì •ì§€í™”ë©´
+		}
+		else if (game.GamePlay == StageClear) {
+			if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155)
+				imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
+			else
+				imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+		}
+	}
+
+	BitBlt(hdc, 0, 0, game.window.right, game.window.bottom, mdc, 0, 0, SRCCOPY);
+
+	SelectObject(mdc, OldBitmap);
+	DeleteObject(HBitmap);
+	DeleteDC(mdc);
+	EndPaint(game.hwnd, &ps);
+}
+
+void SendKeyPackets()
+{
+	EnterCriticalSection(&keyEventCS);
+	while (!keyEventQueue.empty()) {
+		game.SendKeyPacket(0, keyEventQueue.front());
+		keyEventQueue.pop();
+	}
+
+	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON) || INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
+		game.SendMousePositionPacket(INPUT.GetMousePosition());
+	}
+	LeaveCriticalSection(&keyEventCS);
+}
+
+DWORD __stdcall ClientMain(LPVOID arg)
+{
+	if (!game.ConnectWithServer()) {
+		return;
+	}
+
+	while (true)
+	{
+		SendKeyPackets();
+		game.ReceiveServerData();
+
+	}
+
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	PAINTSTRUCT ps;
-	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
-	HFONT hFont, OldFont;
-	static CImage imgBall, imgBasicBlock, imgFuctionBlock, imgSwitchBk, imgElectricBk,
-		imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
-		imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
-		imgBlockList, imgOutline,
-		imgStarAni, imgDeadAni;
-	static POINT BallStartLC, MouseLC;
-	static OPENFILENAME OFN;
-	static TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
-	static TCHAR lpstrFile[100], str[20];
-	static bool drag = false;
-	static int selection = 0, electictimer = 0, bestscore = 0;
-	int ani;
-	SIZE size;
-	const wchar_t* fontPath = L"°í·Éµş±âÃ¼+OTF.otf";
-	AddFontResource(fontPath);
-
-	static FMOD::System* ssystem;
-	static FMOD::Sound* ballCrach_Sound, * Telpo_Sound, * EatStar_Sound, * ballDeath_Sound, * Click_Sound, * GameClear_Sound, * MusicBk_Sound;
-	static FMOD::Channel* channel = 0;
-	static FMOD_RESULT result;
-	static void* extradriverdata = 0;
-
 	switch (uMsg) {
 	case WM_CREATE: {
-		SetTimer(hwnd, 1, 10, NULL);
-		GetClientRect(hwnd, &game.window);
-		// ÀÌ¹ÌÁö ·Îµå
-		{
-			imgBall.Load(TEXT("¹Ù¿î½ºº¼ PNG/°ø.png"));
-			imgBasicBlock.Load(TEXT("¹Ù¿î½ºº¼ PNG/±âº»ºí·°.png"));
-			imgFuctionBlock.Load(TEXT("¹Ù¿î½ºº¼ PNG/±â´Éºí·°.png"));
-			imgSwitchBk.Load(TEXT("¹Ù¿î½ºº¼ PNG/Àü±â½ºÀ§Ä¡ºí·°.png"));
-			imgElectricBk.Load(TEXT("¹Ù¿î½ºº¼ PNG/Àü±âºí·°.png"));
-
-			imgStarAni.Load(TEXT("¹Ù¿î½ºº¼ PNG/º° ½ºÇÁ¶óÀÌÆ®.png"));
-			imgDeadAni.Load(TEXT("¹Ù¿î½ºº¼ PNG/°ø ½ºÇÁ¶óÀÌÆ®.png"));
-
-			imgStartScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/½ÃÀÛÈ­¸é.png"));
-			imgStageScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/½ºÅ×ÀÌÁö.png"));
-			imgStopScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/ÀÏ½ÃÁ¤Áö.png"));
-			imgClearScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/°ÔÀÓÅ¬¸®¾î.png"));
-			imgPlayScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/°ÔÀÓÇÃ·¹ÀÌ¹è°æ.png"));
-			imgMaptoolScreen.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø.png"));
-
-			imgHomeButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/È¨¹öÆ°.png"));
-			imgResetButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_¸®¼Â.png"));
-			imgLoadButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_ºÒ·¯¿À±â.png"));
-			imgSaveButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_ÀúÀå.png"));
-			imgEraseButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_Áö¿ì°³.png"));
-			imgPlayButton.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_ÇÃ·¹ÀÌ.png"));
-
-			imgBlockList.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_ºí·° ¼±ÅÃ ¸ñ·Ï.png"));
-			imgOutline.Load(TEXT("¹Ù¿î½ºº¼ PNG/¸ÊÅø_ºí·° ¼±ÅÃ Å×µÎ¸®.png"));
-		}
-		// »ç¿îµå ·Îµå
-		{
-			result = FMOD::System_Create(&ssystem); //--- »ç¿îµå ½Ã½ºÅÛ »ı¼º
-			if (result != FMOD_OK)
-				exit(0);
-			ssystem->init(32, FMOD_INIT_NORMAL, extradriverdata); //--- »ç¿îµå ½Ã½ºÅÛ ÃÊ±âÈ­
-			ssystem->createSound("Sound/ball.ogg", FMOD_LOOP_OFF, 0, &ballCrach_Sound); //--- °ø Æ¢±â´Â ¼Ò¸®
-			ssystem->createSound("Sound/telpo.mp3", FMOD_LOOP_OFF, 0, &Telpo_Sound); //--- °ø ÅÚÆ÷ÇÏ´Â ¼Ò¸® (ÅÚÆ÷, ºí·¢È¦)
-			ssystem->createSound("Sound/eatStar.mp3", FMOD_LOOP_OFF, 0, &EatStar_Sound); //--- º° ¸ÔÀ¸¸é ³ª´Â ¼Ò¸®
-			ssystem->createSound("Sound/balldeath.wav", FMOD_LOOP_OFF, 0, &ballDeath_Sound); //--- °ø Á×À¸¸é ³ª´Â ¼Ò¸®
-			ssystem->createSound("Sound/Click.mp3", FMOD_LOOP_OFF, 0, &Click_Sound); //--- Å¬¸¯
-			ssystem->createSound("Sound/GameClear.mp3", FMOD_LOOP_OFF, 0, &GameClear_Sound); //--- °ÔÀÓ Å¬¸®¾î
-			ssystem->createSound("Sound/musicbk.mp3", FMOD_LOOP_OFF, 0, &MusicBk_Sound); //--- °ÔÀÓ Å¬¸®¾î
-		}
-
-		MouseLC = { 0, 0 };
 		break;
 	}
 	case WM_CHAR: {
@@ -215,244 +603,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	}
-	case WM_PAINT: {
-		hdc = BeginPaint(hwnd, &ps);
-		mdc = CreateCompatibleDC(hdc);
-		HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
-		OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
-		FillRect(mdc, &game.window, WHITE_BRUSH);
-
-		//¸ÊÅø ºí·° ¼³Ä¡
-		if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
-			if (selection > 0) {// ºí·°ÀÌ ¼±ÅÃµÇ¾úÀ» °æ¿ì
-				if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // °øÀÌ ÀÖÀ» °æ¿ì
-					BallStartLC = { -1, -1 };
-
-				if (selection == 6 || selection == 8) {
-					for (int y = 0; y < 15; ++y) {
-						for (int x = 0; x < 25; ++x) {
-							if (game.Map[y][x] == selection) {
-								game.Map[y][x] = 0;
-							}
-						}
-					}
-				}
-				game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = selection;
-				if (game.list[selection - 1].type == SwitchBk)
-					game.isSwitchOff = game.list[selection - 1].subtype;
-			}
-			else if (selection == 0) { // °øÀÌ ¼±ÅÃµÇ¾úÀ» °æ¿ì
-				if (game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48]) // ºí·°ÀÌ ÀÖÀ» °æ¿ì
-					game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = 0;
-				BallStartLC = { (MouseLC.x - 21) / 48, (MouseLC.y - 21) / 48 };
-			}
-			else {// Áö¿ì°³°¡ ¼±ÅÃµÇ¾úÀ» °æ¿ì
-				if ((MouseLC.x - 21) / 48 == BallStartLC.x && (MouseLC.y - 21) / 48 == BallStartLC.y) // °ø Áö¿ì±â
-					BallStartLC = { -1, -1 };
-				else
-					game.Map[(MouseLC.y - 21) / 48][(MouseLC.x - 21) / 48] = 0; // ºí·° Áö¿ì±â
-			}
-		}
-
-		// °ÔÀÓ ½ÃÀÛ È­¸é
-		if (game.GamePlay == Start) {
-			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693)
-				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // ½ºÅ×ÀÌÁö ¸ğµå À§ Ä¿¼­
-			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817)
-				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // Ä¿½ºÅÒ ¸ğµå À§ Ä¿¼­
-			else
-				imgStartScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // ±âº» ½ÃÀÛÈ­¸é
-		}
-		else if (game.GamePlay == StageSelect) {
-			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
-			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom);
-			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715)
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom);
-			else
-				imgStageScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-
-			if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128)
-				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 80, 0, 80, 80); // È¨¹öÆ° À§ Ä¿¼­
-			else
-				imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // ±âº» È¨¹öÆ°
-		}
-		else if (game.GamePlay == CustomMode) {
-			imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-
-			//¹öÆ°
-			if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
-				imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 164, 0, 164, 78); // ÇÃ·¹ÀÌ¹öÆ° À§ Ä¿¼­
-			else
-				imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 0, 0, 164, 78); // ±âº» ÇÃ·¹ÀÌ¹öÆ°
-			if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
-				imgSaveButton.Draw(mdc, 1410, 16, 78, 78, 78, 0, 78, 78); // ÀúÀå¹öÆ° À§ Ä¿¼­
-			else
-				imgSaveButton.Draw(mdc, 1410, 16, 78, 78, 0, 0, 78, 78); // ±âº» ÀúÀå¹öÆ°
-			if ((MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78))
-				imgEraseButton.Draw(mdc, 1239, 105, 78, 78, 78, 0, 78, 78); // Áö¿ì°³¹öÆ° À§ Ä¿¼­
-			else
-				imgEraseButton.Draw(mdc, 1239, 105, 78, 78, 0, 0, 78, 78); // ±âº» Áö¿ì°³¹öÆ°
-			if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78)
-				imgResetButton.Draw(mdc, 1325, 105, 78, 78, 78, 0, 78, 78); // ¸®¼Â¹öÆ° À§ Ä¿¼­
-			else
-				imgResetButton.Draw(mdc, 1325, 105, 78, 78, 0, 0, 78, 78); // ±âº» ¸®¼Â¹öÆ°
-			if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78)
-				imgLoadButton.Draw(mdc, 1410, 105, 78, 78, 78, 0, 78, 78); // ºÒ·¯¿À±â¹öÆ° À§ Ä¿¼­
-			else
-				imgLoadButton.Draw(mdc, 1410, 105, 78, 78, 0, 0, 78, 78); // ±âº» ºÒ·¯¿À±â¹öÆ°
-
-			// ºí·° ¸ñ·Ï
-			for (int i = 0; i < 28; i++) {
-				if (i == selection)
-					imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 60, 0, 60, 60); // »¡°£Å×µÎ¸®
-				else
-					imgOutline.Draw(mdc, 17 + 60 * (i % 14) + 7 * (i % 14), 756 + 68 * (i / 14), 60, 60, 0, 0, 60, 60); // °ËÁ¤Å×µÎ¸®
-			}
-			imgBlockList.Draw(mdc, 20, 759, 925, 122, 0, 0, 925, 122); // ºí·°
-
-			//¸Ê
-			for (int i = 0; i < 15; i++) {
-				for (int j = 0; j < 25; j++) {
-					if (game.Map[i][j]) {
-						if (game.list[game.Map[i][j] - 1].type < BasicBk) { // ±â´Éºí·° 
-							imgFuctionBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].type * side, 0, side, side);
-						}
-						else {
-							switch (game.list[game.Map[i][j] - 1].type) {
-							case BasicBk: // ±âº»ºí·°
-								imgBasicBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
-								break;
-							case SwitchBk:
-								imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
-								break;
-							case ElectricBk:
-								imgElectricBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
-								break;
-							}
-						}
-					}
-				}
-			}
-
-			//°ø
-			if (BallStartLC.x >= 0 && BallStartLC.y >= 0)
-				imgBall.Draw(mdc, 21 + BallStartLC.x * 48 + 14, 21 + BallStartLC.y * 48 + 14, 20, 20, 0, 0, rd * 2, rd * 2);
-
-			//¼±ÅÃµÈ °Í
-			if (selection > 0) { // ºí·°
-				if (game.list[selection - 1].type < BasicBk) { // ±â´Éºí·° 
-					imgFuctionBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].type * side, 0, side, side);
-				}
-				else {
-					switch (game.list[selection - 1].type) {
-					case BasicBk: // ±âº»ºí·°
-						imgBasicBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
-						break;
-					case SwitchBk:
-						imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
-						break;
-					case ElectricBk:
-						imgElectricBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
-						break;
-					}
-				}
-			}
-			else if (selection == 0) // °ø
-				imgBall.Draw(mdc, 1315 + 15, 307 + 15, 50, 50, 0, 0, rd * 2, rd * 2);
-			else // Áö¿ì°³
-				imgEraseButton.Draw(mdc, 1315, 307, 78, 78, 0, 0, 78, 78);
-		}
-
-		// °ÔÀÓ ÇÃ·¹ÀÌ È­¸é
-		else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // Á×¾ú°í ÆÄÆ¼Å¬ ¾Ö´Ï¸ŞÀÌ¼Ç ÀÖÀ» ¶§ ±×¸®·Á°í Ãß°¡ÇÔ
-			imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-
-			//ºí·° Ãâ·Â
-			for (int y = 0; y < 15; ++y) {
-				for (int i = 0; i < game.block[y].size(); ++i) {
-					if (game.block[y][i].type < BasicBk) { // ±â´Éºí·° 
-						imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
-					}
-					else {
-						switch (game.block[y][i].type) {
-						case BasicBk: // ±âº»ºí·°
-							imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-							break;
-						case SwitchBk:
-							imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-							break;
-						case ElectricBk:
-							imgElectricBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-							break;
-						}
-					}
-				}
-			}
-
-			//°ø Ãâ·Â
-			if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // Á×À¸¸é Ãâ·Â ¾ÈÇÏ°Ô
-				imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // È°¼ºÈ­°ø
-			}
-
-			// ÆÄÆ¼Å¬ Ãâ·Â
-			for (int i = 0; i < game.animation.size(); i++) {
-				switch (game.animation[i].type) {
-				case StageDeath: // ÀÌ³Ñ °ãÃÄ¼­ °Á ÀÌ°Å¾¸
-					imgDeadAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				case Star:
-					imgStarAni.AlphaBlend(mdc, game.animation[i].x, game.animation[i].y, 180, 180, 180 * (game.animation[i].ani / 2), 180 * game.animation[i].subtype, 180, 180, 170, AC_SRC_OVER);
-					break;
-				}
-				game.animation[i].ani++;
-				if (game.animation[i].ani == 40) {
-					if (game.animation[i].type == Star) { // ¾Ö´Ï¸ŞÀÌ¼Ç ³¡³ª°í clear·Î ¹Ù²ñ
-						game.starcnt--;
-						if (game.starcnt == 0) {
-							if (game.GamePlay == StagePlay || game.GamePlay == StageDeath) {// º° ¸Ô°í Á×¾úÀ» ¶§µµ Å¬¸®¾îµÇ°Ô,,, µ¿½Ã¿¡ ÀÏ¾î³ªµµ WM_TIMER°¡¸ÕÀú µ¹¾Æ°¡¼­ ¾Æ¸¶ death°¡ ¸ÕÀú µÉ°Å¶ó ±¦ÂúÀ»°Å°°±äÇÑµ¥ ¹ö±×³ª¸é¹¹,, ¾Æ½¬¿î°ÅÀÓ
-								game.Scheck = gameclear;
-								game.GamePlay = StageClear;
-							}
-							else if (game.GamePlay == CustomPlay || game.GamePlay == CustomDeath)
-								game.GamePlay = CustomMode;
-						}
-					}
-					game.animation.erase(game.animation.begin() + i);
-				}
-			}
-
-			// È­¸é Ãâ·Â
-			if (game.GamePlay == StageStop) {
-				if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381)
-					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // ¸ŞÀÎÈ­¸é ¹öÆ° À§ Ä¿¼­
-				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494)
-					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 3000, 0, game.window.right, game.window.bottom); // ½ºÅ×ÀÌÁö ¹öÆ° À§ Ä¿¼­
-				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606)
-					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 4500, 0, game.window.right, game.window.bottom); // Àç½ÃÀÛ À§ Ä¿¼­
-				else
-					imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // ±âº» Á¤ÁöÈ­¸é
-			}
-			else if (game.GamePlay == StageClear) {
-				if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155)
-					imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom);
-				else
-					imgClearScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
-			}
-		}
-
-		BitBlt(hdc, 0, 0, game.window.right, game.window.bottom, mdc, 0, 0, SRCCOPY);
-
-		SelectObject(mdc, OldBitmap);
-		DeleteObject(HBitmap);
-		DeleteDC(mdc);
-		EndPaint(hwnd, &ps);
-		break;
-	}
 	case WM_TIMER: {
-		// ¸®½ºÆù
-		if (game.GamePlay == StageDeath && game.animation.size() == 0) { // µÚÁö°í ¾Ö´Ï¸ŞÀÌ¼Ç ³¡³ª¸é ¸®½ºÆùµÊ
+		// ë¦¬ìŠ¤í°
+		if (game.GamePlay == StageDeath && game.animation.size() == 0) { // ë’¤ì§€ê³  ì• ë‹ˆë©”ì´ì…˜ ëë‚˜ë©´ ë¦¬ìŠ¤í°ë¨
 			game.MakeVector();
 			game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 };
 			game.GamePlay = StagePlay;
@@ -463,63 +616,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			game.GamePlay = CustomPlay;
 		}
 
-		// °ø °ü·Ã È¿°úÀ½ Àç»ı
-		switch (game.Scheck)
-		{
-		case ballcrach: {
-			ssystem->playSound(ballCrach_Sound, 0, false, &channel);
-			channel->setVolume(0.35);
-			game.Scheck = X;
-			break;
-		}
-		case telpo: {
-			ssystem->playSound(Telpo_Sound, 0, false, &channel);
-			channel->setVolume(0.5);
-			game.Scheck = X;
-			break;
-		}
-		case eatstar: {
-			ssystem->playSound(EatStar_Sound, 0, false, &channel);
-			channel->setVolume(1);
-			game.Scheck = X;
-			break;
-		}
-		case balldeath: {
-			ssystem->playSound(ballDeath_Sound, 0, false, &channel);
-			channel->setVolume(0.5);
-			game.Scheck = X;
-			break;
-		}
-		case click: {
-			ssystem->playSound(Click_Sound, 0, false, &channel);
-			channel->setVolume(1);
-			game.Scheck = X;
-			break;
-		}
-		case gameclear: {
-			ssystem->playSound(GameClear_Sound, 0, false, &channel);
-			channel->setVolume(1);
-			game.Scheck = X;
-			break;
-		}
-		case music: {
-			ssystem->playSound(MusicBk_Sound, 0, false, &channel);
-			channel->setVolume(1);
-			game.Scheck = X;
-			break;
-		}
-		}
+		
 
-		//ºí·°/°ø ÀÌµ¿, Ãæµ¹Ã¼Å©
+		//ë¸”ëŸ­/ê³µ ì´ë™, ì¶©ëŒì²´í¬
 		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) {
-			//°ø ÀÌµ¿
+			//ê³µ ì´ë™
 			game.MoveBall();
 
 			game.ballrc = { (float)game.ball.x - rd, (float)game.ball.y - rd, (float)game.ball.x + rd, (float)game.ball.y + rd };
 
-			// °ø Ãæµ¹Ã¼Å©
-			if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay) { // ÀÌ¹Ì µÚÁ³À»¶© ¾Èµ¹¾Æ°¡°Ô ÇÏ·Á°í. °è¼Ó µ¹¾Æ°¡¸é ¾Ö´Ï¸ŞÀÌ¼Ç º¤ÅÍ¿¡ ÀÚ²Ùµé¾î°¨
-				// ¹Ù´Ú°ú Ãæµ¹
+			// ê³µ ì¶©ëŒì²´í¬
+			if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay) { // ì´ë¯¸ ë’¤ì¡Œì„ë• ì•ˆëŒì•„ê°€ê²Œ í•˜ë ¤ê³ . ê³„ì† ëŒì•„ê°€ë©´ ì• ë‹ˆë©”ì´ì…˜ ë²¡í„°ì— ìê¾¸ë“¤ì–´ê°
+				// ë°”ë‹¥ê³¼ ì¶©ëŒ
 				if (game.ball.y + rd >= game.window.bottom) {
 					game.animation.emplace_back(Block{ (int)game.ball.x - 90, (int)game.ball.y - 90, StageDeath, rand() % 4, 0 });
 					game.Scheck = balldeath;
@@ -529,7 +637,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						game.GamePlay = CustomDeath;
 				}
 
-				// ºí·°°ú Ãæµ¹
+				// ë¸”ëŸ­ê³¼ ì¶©ëŒ
 				else game.CrashExamin();
 			}
 		}
@@ -539,11 +647,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_LBUTTONDOWN: {
 		if (game.GamePlay == Start) {
-			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // ½ºÅ×ÀÌÁö ¹öÆ°
+			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // ìŠ¤í…Œì´ì§€ ë²„íŠ¼
 				game.Scheck = click;
 				game.GamePlay = StageSelect;
 			}
-			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // ¸ÊÅø ¹öÆ°
+			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // ë§µíˆ´ ë²„íŠ¼
 				game.Scheck = click;
 				game.GamePlay = CustomMode;
 				BallStartLC = { -1, -1 };
@@ -554,8 +662,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (game.GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage1.txt" };
+				game.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage1.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -573,8 +681,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				in.close();
 			}
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage2.txt" };
+				game.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage2.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -592,8 +700,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				in.close();
 			}
 			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage3.txt" };
+				game.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage3.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -615,8 +723,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = Start;
 			}
 			else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
-				game.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage4.txt" };
+				game.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage4.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -635,24 +743,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		else if (game.GamePlay == StageStop) {
-			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // ¸ŞÀÎÈ­¸é ¹öÆ° À§ Ä¿¼­ 
+			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // ë©”ì¸í™”ë©´ ë²„íŠ¼ ìœ„ ì»¤ì„œ 
 				game.Scheck = click;
 				game.GamePlay = Start;
 			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // ½ºÅ×ÀÌÁö ¹öÆ° À§ Ä¿¼­ 
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // ìŠ¤í…Œì´ì§€ ë²„íŠ¼ ìœ„ ì»¤ì„œ 
 				game.Scheck = click;
 				game.GamePlay = StageSelect;
 			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // Àç½ÃÀÛ ¹öÆ° À§ Ä¿¼­
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // ì¬ì‹œì‘ ë²„íŠ¼ ìœ„ ì»¤ì„œ
 				game.Scheck = click;
 				game.MakeVector();
 				game.GamePlay = StageDeath;
-				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 }; // Àç½ÃÀÛ Àü¿¡°É·Î ÇÏ¸é death·Î ¹Ù²î°í ¾Ö´Ï¸ŞÀÌ¼Ç ³¡³ª°í ³Ñ¾î°¡¾ßµÅ¼­ °Á ¹Ù·Î ¸®½ºÆù½ÃÅ´
+				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 }; // ì¬ì‹œì‘ ì „ì—ê±¸ë¡œ í•˜ë©´ deathë¡œ ë°”ë€Œê³  ì• ë‹ˆë©”ì´ì…˜ ëë‚˜ê³  ë„˜ì–´ê°€ì•¼ë¼ì„œ ê± ë°”ë¡œ ë¦¬ìŠ¤í°ì‹œí‚´
 			}
 		}
 		else if (game.GamePlay == CustomMode) {
 			drag = true;
-			//ºí·° ¼±ÅÃ
+			//ë¸”ëŸ­ ì„ íƒ
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
 				game.Scheck = click;
 				for (int i = 0; i < 14; i++) {
@@ -667,13 +775,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						selection = i + 14;
 				}
 			}
-			// ÇÃ·¹ÀÌ ¹öÆ°
+			// í”Œë ˆì´ ë²„íŠ¼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				game.Scheck = click;
 				if (BallStartLC.x == -1 || BallStartLC.y == -1) {
 					TCHAR a[100];
-					wsprintf(a, L"°ø À§Ä¡¸¦ ¼±Á¤ÇØÁÖ¼¼¿ä.");
-					MessageBox(hwnd, a, L"¾Ë¸²", MB_OK);
+					wsprintf(a, L"ê³µ ìœ„ì¹˜ë¥¼ ì„ ì •í•´ì£¼ì„¸ìš”.");
+					MessageBox(hwnd, a, L"ì•Œë¦¼", MB_OK);
 					drag = false;
 					break;
 				}
@@ -681,21 +789,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = CustomPlay;
 				game.MakeVector();
 			}
-			// Áö¿ì°³ ¹öÆ°
+			// ì§€ìš°ê°œ ë²„íŠ¼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
 				selection = -1;
 			}
-			// ¸®¼Â ¹öÆ°
+			// ë¦¬ì…‹ ë²„íŠ¼
 			else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
 				memset(game.Map, 0, sizeof(game.Map));
 				BallStartLC = { -1, -1 };
 			}
-			// ºÒ·¯¿À±â ¹öÆ°
+			// ë¶ˆëŸ¬ì˜¤ê¸° ë²„íŠ¼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- ±¸Á¶Ã¼ ÃÊ±âÈ­
+				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 				OFN.lStructSize = sizeof(OPENFILENAME);
 				OFN.hwndOwner = hwnd;
 				OFN.lpstrFilter = filter;
@@ -703,10 +811,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				OFN.nMaxFile = 256;
 				OFN.lpstrInitialDir = L".";
 
-				if (GetOpenFileNameW(&OFN) != 0) { //--- ÆÄÀÏ ÇÔ¼ö È£Ãâ
+				if (GetOpenFileNameW(&OFN) != 0) { //--- íŒŒì¼ í•¨ìˆ˜ í˜¸ì¶œ
 					TCHAR a[100];
-					wsprintf(a, L"%s ÆÄÀÏÀ» ¿©½Ã°Ú½À´Ï±î ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"¿­±â ¼±ÅÃ", MB_OK);
+					wsprintf(a, L"%s íŒŒì¼ì„ ì—¬ì‹œê² ìŠµë‹ˆê¹Œ ?", OFN.lpstrFile);
+					MessageBox(hwnd, a, L"ì—´ê¸° ì„ íƒ", MB_OK);
 
 					ifstream in{ OFN.lpstrFile };
 
@@ -724,10 +832,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				drag = false;
 			}
-			// ÀúÀå ¹öÆ°
+			// ì €ì¥ ë²„íŠ¼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				game.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- ±¸Á¶Ã¼ ÃÊ±âÈ­
+				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 				OFN.lStructSize = sizeof(OPENFILENAME);
 				OFN.hwndOwner = hwnd;
 				OFN.lpstrFilter = filter;
@@ -735,24 +843,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				OFN.nMaxFile = 256;
 				OFN.lpstrInitialDir = L".";
 
-				if (GetSaveFileNameW(&OFN) != 0) { //--- ÆÄÀÏ ÇÔ¼ö È£Ãâ
+				if (GetSaveFileNameW(&OFN) != 0) { //--- íŒŒì¼ í•¨ìˆ˜ í˜¸ì¶œ
 					TCHAR a[100];
-					wsprintf(a, L"%s À§Ä¡¿¡ ÆÄÀÏÀ» ÀúÀåÇÏ½Ã°Ú½À´Ï±î ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"ÀúÀåÇÏ±â ¼±ÅÃ", MB_OK);
+					wsprintf(a, L"%s ìœ„ì¹˜ì— íŒŒì¼ì„ ì €ì¥í•˜ì‹œê² ìŠµë‹ˆê¹Œ ?", OFN.lpstrFile);
+					MessageBox(hwnd, a, L"ì €ì¥í•˜ê¸° ì„ íƒ", MB_OK);
 					TCHAR b[100];
 					wsprintf(b, L"%s.txt", OFN.lpstrFile);
 
 					ofstream out{ b };
 
 
-					// ¸ÊÅø¹è¿­ ÀúÀå
+					// ë§µíˆ´ë°°ì—´ ì €ì¥
 					for (int y = 0; y < 15; ++y) {
 						for (int x = 0; x < 25; ++x) {
 							out << game.Map[y][x] << " ";
 						}
 						out << endl;
 					}
-					// °ø ½ÃÀÛÀ§Ä¡, Àü±â »óÅÂ ÀúÀå
+					// ê³µ ì‹œì‘ìœ„ì¹˜, ì „ê¸° ìƒíƒœ ì €ì¥
 					out << BallStartLC.x << " " << BallStartLC.y << " " << game.isSwitchOff << endl;
 
 					out.close();
@@ -766,18 +874,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = StageSelect;
 			}
 		}
-		break;
-	}
-	case WM_MOUSEMOVE: {
-		if (game.GamePlay == Start || game.GamePlay == StageSelect || game.GamePlay == StageStop || game.GamePlay == StageClear || game.GamePlay == CustomMode) {
-			MouseLC.x = LOWORD(lParam);
-			MouseLC.y = HIWORD(lParam);
-		}
-		break;
-	}
-	case WM_LBUTTONUP: {
-		if (drag == true)
-			drag = false;
 		break;
 	}
 	case WM_DESTROY: {
