@@ -17,6 +17,7 @@ public:
 	struct sockaddr_in clientaddr;
 	int addrlen;
 	HANDLE hThread;
+	Common cm;
 
 	array<Session, MAX_USER> clients;
 	int cl_num;
@@ -27,10 +28,12 @@ public:
 	void S_Bind_Listen();
 	void S_Accept();
 	void MakeThreads();
+	void MakeSendThreads();
 	void WorkThreads();
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);
-	
-	static DWORD WINAPI Session_Do_Recv(LPVOID arg);  // static 멤버 함수로 변경
+
+	void Do_Send(const std::shared_ptr<PACKET>& packet);
+	void ProcessSendQueue();
 };

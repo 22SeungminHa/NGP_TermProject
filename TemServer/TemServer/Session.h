@@ -72,6 +72,7 @@ public:
 	int		id;
 	SOCKET	sock;
 	Common cm;
+	ServerManager* serverManager;
 
 	void Send_login_info_packet(Session* client);
 	void Send_move_ball_packet(Session* client);
@@ -83,7 +84,6 @@ public:
 	void Send_load_map_packet(Session* client);
 
 	DWORD Do_Recv(LPVOID arg);
-	void Do_Send(void* packet);
 
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 };

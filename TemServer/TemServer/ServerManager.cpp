@@ -4,11 +4,17 @@ ServerManager::ServerManager()
 {
     cl_num = 0;
 
+    for (unsigned int i = 0; i < clients.size(); ++i) {
+        clients[i].serverManager = this;
+    }
+
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
 	s_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 
 	S_Bind_Listen();
+
+    MakeSendThreads();
 
 	S_Accept();
 }
@@ -65,15 +71,22 @@ void ServerManager::MakeThreads()
     args->num = cl_num;
     args->client_sock = c_sock;
 
-    // 스레드 생성
+    // Session 객체를 첫 번째로 할당
     Session* session = &clients[0];  // 첫 번째 Session 객체 사용
-    hThread = CreateThread(NULL, 0, ServerManager::Session_Do_Recv, (LPVOID)session, 0, NULL);
 
-    if (hThread == NULL) {
-        delete args;
-        closesocket(c_sock);
-    }
-    else { CloseHandle(hThread); }
+    // std::thread로 스레드 생성
+    std::thread recvThread([session]() {
+        session->Do_Recv((LPVOID)session);  // Session의 Do_Recv 호출
+        });
+
+    // 스레드 종료를 관리하기 위해 detach() 또는 join()을 사용할 수 있습니다.
+    recvThread.detach();  // 백그라운드에서 실행되도록 스레드를 분리
+}
+
+void ServerManager::MakeSendThreads()
+{
+    std::thread sendThread([this]() { ProcessSendQueue(); });
+    sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
 }
 
 void ServerManager::WorkThreads()
@@ -92,10 +105,39 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 {
 }
 
-DWORD __stdcall ServerManager::Session_Do_Recv(LPVOID arg)
+void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet) 
 {
-    Session* session = (Session*)arg;  // Session 객체로 변환
-    return session->Do_Recv(arg);  // Session의 Do_Recv 호출
+    if (!packet) return;
+
+    unsigned int sessionID = packet->sessionID;
+    if (sessionID >= clients.size()) {
+        std::cerr << "Do_Send() Packet session ID: " << sessionID << std::endl;
+        return;
+    }
+
+    Session& session = clients[sessionID];
+
+    // 전송할 데이터
+    int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
+
+    if (retval == SOCKET_ERROR) {
+        std::cerr << "Failed to send packet to session " << sessionID << std::endl;
+    }
 }
 
+void ServerManager::ProcessSendQueue() 
+{
+    while (true) {  // 무한 루프 (패킷이 있을 때 계속 처리)
+        std::shared_ptr<PACKET> packet;
+
+        // 큐에서 패킷을 가져옴
+        if (sendPacketQ.try_pop(packet)) {
+            // 큐에서 꺼낸 패킷을 전송
+            Do_Send(packet);
+        }
+
+        // 33.33ms 대기 (30프레임 / 1초 기준)
+        std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
+    }
+}
 
