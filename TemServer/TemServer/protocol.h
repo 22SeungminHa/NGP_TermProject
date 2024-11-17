@@ -53,12 +53,12 @@ typedef struct CS_LOGIN_PACKET : PACKET {
 
 typedef struct CS_KEY_PACKET : PACKET {
     KEY_TYPE keyType;
-    CS_KEY_PACKET() : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS) {}
+    CS_KEY_PACKET(unsigned int sID) : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS, sID) {}
 };
 
 typedef struct CS_MOUSE_POSITION_PACKET : PACKET {
     POINT mousePos;
-    CS_MOUSE_POSITION_PACKET() : PACKET(sizeof(CS_MOUSE_POSITION_PACKET), CS_MOUSE_POS) {}
+    CS_MOUSE_POSITION_PACKET(unsigned int sID) : PACKET(sizeof(CS_MOUSE_POSITION_PACKET), CS_MOUSE_POS, sID) {}
 };
 
 // Server -> Client Packet -----------------------
