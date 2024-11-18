@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "stdafx.h"
 
 class ServerManager;
@@ -44,7 +44,7 @@ public:
 	int					blockDown;
 	int					random;
 	int					PrintLc;
-	float remx, remy;
+	float				remx, remy;
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);
@@ -65,17 +65,13 @@ public:
 	SOCKET	sock;
 	ServerManager* serverManager;
 
-	void Send_login_info_packet(Session* client);
-	void Send_move_ball_packet(Session* client);
-	void Send_death_packet(Session* client);
-	void Send_edit_map_packet(Session* clieㅁnt);
-	void Send_respawn_packet(Session* client);
-	void Send_change_state_packet(Session* client);
-	void Send_move_block_packet(Session* client);
-	void Send_load_map_packet(Session* client);
-
 	DWORD Do_Recv(LPVOID arg);
 
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
+
+	void Send_login_info_packet();
+	void Send_frame_packet(Session* client);
+	void Send_edit_map_packet(Session* client);
+	void Send_load_map_packet(Session* client);
 };
 

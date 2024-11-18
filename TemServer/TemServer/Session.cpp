@@ -1,4 +1,3 @@
-#include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
 
@@ -40,7 +39,35 @@ void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
     std::cout << "Packet added to the send queue. Packet ID: " << packet->packetID << std::endl;
 
 }
+
+void Session::Send_login_info_packet()
+{
+	// SC_LOGIN_INFO_PACKET 객체 생성
+	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
+
+	// 패킷을 큐에 추가
+	AddPacketToQueue(p);
+}
+
+void Session::Send_frame_packet(Session* client)
+{
+
+}
+
+void Session::Send_edit_map_packet(Session* client)
+{
+}
+
+void Session::Send_load_map_packet(Session* client)
+{
+}
     
+
+
+// ----------------------------------------------------
+// ----------------------------------------------------
+// ----------------------------------------------------
+
 void Session::Initialize() {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;

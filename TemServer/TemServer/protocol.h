@@ -6,11 +6,11 @@
 
 constexpr int NAME_SIZE = 20;
 constexpr int M_WIDTH   = 25;
-constexpr int M_HEIGHT  = 15;    // map size, block의 크기
+constexpr int M_HEIGHT  = 15;    // map size, block�� ����
 constexpr int B_WIDTH   = 20;
-constexpr int B_HEIGHT  = 15;    // block size, block
+constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
 
-static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread와 send()를 돌리는 쓰레드 두 개 제외
+static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
 
 constexpr short g           = 10;
 constexpr short t           = 0.19;
@@ -28,10 +28,8 @@ constexpr char CS_MOUSE_POS     = 2;
 // Server -> Client Packet ID --------------------
 
 constexpr char SC_LOGIN_INFO    = 0;
-constexpr char SC_MOVE_BALL     = 1;
-constexpr char SC_DEATH         = 2;
+constexpr char SC_FRAME         = 1;
 constexpr char SC_EDIT_MAP      = 3;
-constexpr char SC_RESPAWN       = 4;
 constexpr char SC_LOAD_MAP      = 5;
 
 typedef struct PACKET {
@@ -68,16 +66,12 @@ typedef struct SC_LOGIN_INFO_PACKET : PACKET {
     SC_LOGIN_INFO_PACKET(unsigned int sID) : PACKET(sizeof(SC_LOGIN_INFO_PACKET), SC_LOGIN_INFO, sID) {}
 };
 
-typedef struct SC_MOVE_BALL_PACKET : PACKET {
-    unsigned short  c_id;
-    unsigned short  x, y;
-    SC_MOVE_BALL_PACKET(unsigned int sID) : PACKET(sizeof(SC_MOVE_BALL_PACKET), SC_MOVE_BALL, sID) {}
-};
-
-typedef struct SC_DEATH_PACKET : PACKET {
-    unsigned short  c_id;
-    short           x, y;
-    SC_DEATH_PACKET(unsigned int sID) : PACKET(sizeof(SC_DEATH_PACKET), SC_DEATH, sID) {}
+typedef struct SC_FRAME_PACKET : PACKET {
+    unsigned short  c1_id;
+    unsigned short  x1, y1;
+    unsigned short  c2_id;
+    unsigned short  x2, y2;
+    SC_FRAME_PACKET(unsigned int sID) : PACKET(sizeof(SC_FRAME_PACKET), SC_FRAME, sID) {}
 };
 
 typedef struct SC_EDIT_MAP_PACKET : PACKET {
@@ -89,10 +83,4 @@ typedef struct SC_EDIT_MAP_PACKET : PACKET {
 typedef struct SC_LOAD_MAP_PACKET : PACKET {
     char            map[M_WIDTH * M_HEIGHT];
     SC_LOAD_MAP_PACKET(unsigned int sID) : PACKET(sizeof(SC_LOAD_MAP_PACKET), SC_LOAD_MAP, sID) {}
-};
-
-typedef struct SC_RESPAWN_PACKET : PACKET {
-    unsigned short  c_id;
-    short           x, y;
-    SC_RESPAWN_PACKET(unsigned int sID) : PACKET(sizeof(SC_RESPAWN_PACKET), SC_RESPAWN, sID) {}
 };

@@ -1,4 +1,4 @@
-#include"stdafx.h"
+#include "stdafx.h"
 #include "ServerManager.h"
 
 ServerManager::ServerManager()
@@ -103,7 +103,23 @@ void ServerManager::Disconnect(int c_id)
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
-{
+{    // size 추출
+    unsigned short size = *reinterpret_cast<unsigned short*>(&packet[0]);
+
+    // packetID 추출
+    char packetID = packet[2];
+
+    // sessionID 추출
+    unsigned int sessionID = *reinterpret_cast<unsigned int*>(&packet[3]);
+
+    std::cout << "ProcessPacket - Size: " << size << ", PacketID: " << (int)packetID
+        << ", SessionID: " << sessionID << std::endl;
+
+    switch (packetID)
+    {
+    default:
+        break;
+    }
 }
 
 void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet) 
