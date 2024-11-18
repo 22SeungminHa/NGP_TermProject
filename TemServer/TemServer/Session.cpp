@@ -29,5 +29,14 @@ DWORD Session::Do_Recv(LPVOID arg)
 
 void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
 {
+    if (!packet) {
+        std::cerr << "Invalid packet received." << std::endl;
+        return;
+    }
+
+    // 큐에 패킷을 추가
+    serverManager->sendPacketQ.push(packet);
+    std::cout << "Packet added to the send queue. Packet ID: " << packet->packetID << std::endl;
+
 }
     
