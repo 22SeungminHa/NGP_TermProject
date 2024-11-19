@@ -60,6 +60,18 @@ void Session::Send_edit_map_packet(Session* client)
 
 void Session::Send_load_map_packet(Session* client)
 {
+	// SC_LOGIN_INFO_PACKET 객체 생성
+	auto p = std::make_shared<SC_LOAD_MAP_PACKET>(id);
+
+	int cnt = 0;
+	for (int y = 0; y < 15; ++y) {
+		for (int x = 0; x < 25; ++x) {
+			p->map[cnt++] = Map[y][x];
+		}
+	}
+
+	// 패킷을 큐에 추가
+	AddPacketToQueue(p);
 }
     
 
