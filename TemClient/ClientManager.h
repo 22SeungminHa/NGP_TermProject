@@ -70,7 +70,7 @@ public:
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
 
-	void UsingPacket(char* id);
+	void UsingPacket(char* buffer);
 
 	void LoadMap(char* map);
 	void ClearVector();

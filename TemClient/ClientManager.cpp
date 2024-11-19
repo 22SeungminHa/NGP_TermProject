@@ -115,10 +115,85 @@ bool ClientManager::ReceivePlayerID()
 
 bool ClientManager::ReceiveServerData()
 {
+	char buffer[1024]; // 버퍼 크기를 충분히 크게 설정
+	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+	if (retval == SOCKET_ERROR) {
+		err_display("recv()");
+		return false;
+	}
+	else if (retval == 0) {
+		return false;
+	}
+
+	// 수신된 데이터를 패킷으로 해석
+	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+
+	// 실제 패킷 크기와 수신된 데이터 크기 검증
+	if (retval < pPacket->size) {
+		return false;
+	}
+
+	UsingPacket(buffer);
+
+	return true;
 }
 
-void ClientManager::UsingPacket(char* id)
+void ClientManager::UsingPacket(char* buffer)
 {
+	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+
+	switch (pPacket->packetID) {
+	case SC_LOGIN_INFO: {
+		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Login Info received: c_id = " + std::to_string(loginInfoPacket->c_id));
+		break;
+	}
+	case SC_MOVE_BALL: {
+		SC_MOVE_BALL_PACKET* moveBallPacket = reinterpret_cast<SC_MOVE_BALL_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Ball moved: c_id = " + std::to_string(moveBallPacket->c_id) +
+			", x = " + std::to_string(moveBallPacket->x) +
+			", y = " + std::to_string(moveBallPacket->y));
+		break;
+	}
+	case SC_DEATH: {
+		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Player died: c_id = " + std::to_string(deathPacket->c_id) +
+			", x = " + std::to_string(deathPacket->x) +
+			", y = " + std::to_string(deathPacket->y));
+		break;
+	}
+	case SC_EDIT_MAP: {
+		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Map edited at: x = " + std::to_string(editMapPacket->x) +
+			", y = " + std::to_string(editMapPacket->y) +
+			", block = " + std::to_string(editMapPacket->block));
+		break;
+	}
+	case SC_LOAD_MAP: {
+		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Map loaded");
+		// 예: map 데이터를 출력하거나 복사
+		break;
+	}
+	case SC_RESPAWN: {
+		SC_RESPAWN_PACKET* respawnPacket = reinterpret_cast<SC_RESPAWN_PACKET*>(buffer);
+		// 받은 데이터 처리
+		log_display("Player respawned: c_id = " + std::to_string(respawnPacket->c_id) +
+			", x = " + std::to_string(respawnPacket->x) +
+			", y = " + std::to_string(respawnPacket->y));
+		break;
+	}
+	default:
+		log_display("Unknown packet received: ID = " + std::to_string(pPacket->packetID));
+		break;
+	}
+
 }
 
 // 맵 배열에서 벡터로 변환 (공 좌표, 스위치 상태는 따로 받기)
