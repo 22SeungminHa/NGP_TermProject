@@ -37,3 +37,13 @@ constexpr int SVMAPCNT = 24;
 constexpr const char* serverIP = "asdf";
 constexpr const WORD serverPort = 9000;
 
+#define MAKE_SINGLETON(T)		\
+private:						\
+	T() {}						\
+	~T() {}						\
+public:							\
+	static T& GetInstance()		\
+	{							\
+		static T instance;		\
+		return instance;		\
+	}							\
