@@ -1,13 +1,15 @@
 #pragma once
 #include "enum.h"
 
+#define SERVERPORT 9000
+
 constexpr int NAME_SIZE = 20;
 constexpr int M_WIDTH   = 25;
 constexpr int M_HEIGHT  = 15;    // map size, block의 개수
 constexpr int B_WIDTH   = 20;
 constexpr int B_HEIGHT  = 15;    // block size, block의 크기
 
-static const int MAX_USER = std::thread::hardware_concurrency() - 2; // MainThread와 send()할 스레드 제외
+static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread와 send()할 스레드 제외
 
 constexpr short g           = 10;
 constexpr short t           = 0.19;
