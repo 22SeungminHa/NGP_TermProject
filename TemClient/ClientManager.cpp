@@ -1,6 +1,11 @@
 #include "ClientManager.h"
 
-bool ClientManager::Initialize() 
+ClientManager::~ClientManager()
+{
+	WSACleanup();
+}
+
+bool ClientManager::Initialize()
 {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;

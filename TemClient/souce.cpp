@@ -11,10 +11,13 @@
 // 끈적이 블럭 좌 vy = 5 우 vy = 5.1
 
 ClientManager game;
+HANDLE hThreadNetwork;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
+
+DWORD WINAPI ClientMain(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
@@ -45,12 +48,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		return 1;
 	}
 
+	//네트워크용 쓰레드 생성
+	hThreadNetwork = CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
+
+
 	while (GetMessage(&Message, 0, 0, 0)) {
 		TranslateMessage(&Message);
 		DispatchMessage(&Message);
 	}
 
+	CloseHandle(hThreadNetwork);
 	return Message.wParam;
+}
+
+DWORD __stdcall ClientMain(LPVOID arg)
+{
+
+
+
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

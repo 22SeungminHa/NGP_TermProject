@@ -52,7 +52,7 @@ public:
 
 public:
 	ClientManager() {}
-	~ClientManager() {}
+	~ClientManager();
 
 public:
 	bool Initialize();
