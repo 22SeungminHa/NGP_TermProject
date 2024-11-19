@@ -1,7 +1,7 @@
-#pragma once
+ï»¿#pragma once
 #include "Session.h"
 
-// thread¿¡°Ô ³Ñ°ÜÁÖ±â À§ÇÔ
+// threadì—ê²Œ ë„˜ê²¨ì£¼ê¸° ìœ„í•¨
 struct ThreadArgs {
 	int num;
 	SOCKET client_sock;
@@ -17,7 +17,6 @@ public:
 	struct sockaddr_in clientaddr;
 	int addrlen;
 	HANDLE hThread;
-	Common cm;
 
 	array<Session, MAX_USER> clients;
 	int cl_num;

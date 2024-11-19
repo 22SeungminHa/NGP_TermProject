@@ -1,3 +1,4 @@
+#include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
 
@@ -7,7 +8,7 @@ DWORD Session::Do_Recv(LPVOID arg)
 
     int receivedBytes = recv(sock, buf, sizeof(buf), 0);
     if (receivedBytes <= 0) {
-        cm.err_display("recv()");
+        err_display("recv()");
         return 1;
     }
 

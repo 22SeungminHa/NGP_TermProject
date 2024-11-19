@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "client_pch.h"
 
 struct floatRECT {

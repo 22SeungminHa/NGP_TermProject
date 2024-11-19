@@ -1,3 +1,4 @@
+#include"stdafx.h"
 #include "ServerManager.h"
 
 ServerManager::ServerManager()
@@ -33,7 +34,7 @@ void ServerManager::S_Bind_Listen()
 
     // 家南 积己
     listen_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_sock == INVALID_SOCKET) cm.err_quit("socket()");
+    if (listen_sock == INVALID_SOCKET) err_quit("socket()");
 
     // bind()
     struct sockaddr_in serveraddr;
@@ -42,11 +43,11 @@ void ServerManager::S_Bind_Listen()
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serveraddr.sin_port = htons(SERVERPORT);
     retval = bind(listen_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-    if (retval == SOCKET_ERROR) cm.err_quit("bind()");
+    if (retval == SOCKET_ERROR) err_quit("bind()");
 
     // listen()
     retval = listen(listen_sock, SOMAXCONN);
-    if (retval == SOCKET_ERROR) cm.err_quit("listen()");
+    if (retval == SOCKET_ERROR) err_quit("listen()");
 }
 
 void ServerManager::S_Accept()
@@ -56,7 +57,7 @@ void ServerManager::S_Accept()
         addrlen = sizeof(clientaddr);
         c_sock = accept(listen_sock, (struct sockaddr*)&clientaddr, &addrlen);
         if (c_sock == INVALID_SOCKET) {
-            cm.err_display("accept()");
+            err_display("accept()");
             return;
         }
 

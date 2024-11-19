@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 #include "stdafx.h"
-#include "Common.h"
 
 class ServerManager;
 
@@ -64,13 +63,12 @@ public:
 
 	int		id;
 	SOCKET	sock;
-	Common cm;
 	ServerManager* serverManager;
 
 	void Send_login_info_packet(Session* client);
 	void Send_move_ball_packet(Session* client);
 	void Send_death_packet(Session* client);
-	void Send_edit_map_packet(Session* client);
+	void Send_edit_map_packet(Session* clieㅁnt);
 	void Send_respawn_packet(Session* client);
 	void Send_change_state_packet(Session* client);
 	void Send_move_block_packet(Session* client);
