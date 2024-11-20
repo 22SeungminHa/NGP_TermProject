@@ -1,4 +1,4 @@
-ï»¿#include "ClientManager.h"
+#include "ClientManager.h"
 
 ClientManager::~ClientManager()
 {
@@ -17,7 +17,7 @@ bool ClientManager::Initialize(HWND _hwnd)
 	isSwitchOff = false;
 	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
 
-	// ë§µíˆ´ ë¸”ëŸ­ ë¦¬ìŠ¤íŠ¸
+	// ¸ÊÅø ºí·° ¸®½ºÆ®
 	list[0].type = Star;
 	list[1].type = JumpBk;
 	list[2].type = RStraightBk;
@@ -115,7 +115,7 @@ bool ClientManager::ReceivePlayerID()
 
 bool ClientManager::ReceiveServerData()
 {
-	char buffer[1024]; // ¹öÆÛ Å©±â¸¦ ÃæºĞÈ÷ Å©°Ô ¼³Á¤
+	char buffer[1024];
 	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
 
 	if (retval == SOCKET_ERROR) {
@@ -126,10 +126,8 @@ bool ClientManager::ReceiveServerData()
 		return false;
 	}
 
-	// ¼ö½ÅµÈ µ¥ÀÌÅÍ¸¦ ÆĞÅ¶À¸·Î ÇØ¼®
 	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
 
-	// ½ÇÁ¦ ÆĞÅ¶ Å©±â¿Í ¼ö½ÅµÈ µ¥ÀÌÅÍ Å©±â °ËÁõ
 	if (retval < pPacket->size) {
 		return false;
 	}
@@ -188,26 +186,26 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 }
 
-// ë§µ ë°°ì—´ì—ì„œ ë²¡í„°ë¡œ ë³€í™˜ (ê³µ ì¢Œí‘œ, ìŠ¤ìœ„ì¹˜ ìƒíƒœëŠ” ë”°ë¡œ ë°›ê¸°)
+// ¸Ê ¹è¿­¿¡¼­ º¤ÅÍ·Î º¯È¯ (°ø ÁÂÇ¥, ½ºÀ§Ä¡ »óÅÂ´Â µû·Î ¹Ş±â)
 void ClientManager::MakeVector() {
 	ClearVector();
 	Block temp;
-	int groupcnt = 1; // ì´ë™ë¸”ëŸ­ ê·¸ë£¹
+	int groupcnt = 1; // ÀÌµ¿ºí·° ±×·ì
 	bool Continuous = false;
 	starcnt = 0;
 
 	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
-				if (Map[i][j]) { // ë¸”ëŸ­ì¼ ê²½ìš°
-					// ë³„
+				if (Map[i][j]) { // ºí·°ÀÏ °æ¿ì
+					// º°
 					if (Map[i][j] == 1)
 						starcnt++;
 
 					temp.x = Map[i][j] - 1 == 17 ? j * side : j;
 					temp.y = Map[i][j] - 1 == 17 ? i * side : i;
 					temp.type = list[Map[i][j] - 1].type;
-					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // ì „ê¸° ê´€ë ¨ ë¸”ëŸ­
+					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // Àü±â °ü·Ã ºí·°
 						temp.subtype = isSwitchOff;
 					else
 						temp.subtype = list[Map[i][j] - 1].subtype;
@@ -225,15 +223,15 @@ void ClientManager::MakeVector() {
 					if (Map[i][j] - 1 != 17)
 						temp.ani = list[Map[i][j] - 1].ani;
 
-					// ëˆëˆì´ ê·¸ë£¹í™”
+					// ²ö²öÀÌ ±×·ìÈ­
 					if (Map[i][j] == 20) {
-						// ë§µ ê°€ì¥ ìœ„ì´ê±°ë‚˜, ë§µ ê°€ì¥ ì•„ë˜ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ê°€ ëˆëˆì´ê°€ ì•„ë‹ˆê³  ì•„ë˜ê°€ ëˆëˆì´ë©´ 1ë²ˆ
+						// ¸Ê °¡Àå À§ÀÌ°Å³ª, ¸Ê °¡Àå ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°¡ ¾Æ´Ï°í ¾Æ·¡°¡ ²ö²öÀÌ¸é 1¹ø
 						if (i == 0 || i < 14 && Map[i - 1][j] != 20 && Map[i + i][j] == 20)
 							temp.subtype = 1;
-						// ë§µ ê°€ì¥ ìœ„ë‚˜ ì•„ë˜ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ì™€ ì•„ë˜ê°€ ëˆëˆì´ë©´ 2ë²ˆ
+						// ¸Ê °¡Àå À§³ª ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§¿Í ¾Æ·¡°¡ ²ö²öÀÌ¸é 2¹ø
 						else if (i > 0 && i < 14 && Map[i - 1][j] == 20 && Map[i + 1][j] == 20)
 							temp.subtype = 2;
-						// ë§µ ê°€ì¥ ì•„ë˜ì´ê±°ë‚˜, ë§µ ê°€ì¥ ìœ„ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ê°€ ëˆëˆì´ê³  ì•„ë˜ê°€ ëˆëˆì´ê°€ ì•„ë‹ˆë©´ 2ë²ˆ
+						// ¸Ê °¡Àå ¾Æ·¡ÀÌ°Å³ª, ¸Ê °¡Àå À§°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°í ¾Æ·¡°¡ ²ö²öÀÌ°¡ ¾Æ´Ï¸é 2¹ø
 						else if (i == 14 || i > 0 && Map[i - 1][j] == 20 && Map[i + 1][j] != 20)
 							temp.subtype = 3;
 						else
@@ -249,7 +247,7 @@ void ClientManager::LoadMap(char* map)
 {
 }
 
-void ClientManager::ClearVector() { // ê± ë‹¤ ì´ˆê¸°í™”í•˜ê²Œí•¨
+void ClientManager::ClearVector() { // °Á ´Ù ÃÊ±âÈ­ÇÏ°ÔÇÔ
 	animation.clear();
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
@@ -296,7 +294,7 @@ void ClientManager::err_display(int errcode)
 		NULL, errcode,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(char*)&lpMsgBuf, 0, NULL);
-	printf("[ì˜¤ë¥˜] %s\n", (char*)lpMsgBuf);
+	printf("[¿À·ù] %s\n", (char*)lpMsgBuf);
 	LocalFree(lpMsgBuf);
 }
 
