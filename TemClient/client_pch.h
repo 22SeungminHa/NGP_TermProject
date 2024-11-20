@@ -47,3 +47,5 @@ public:							\
 		static T instance;		\
 		return instance;		\
 	}							\
+
+#define INSTANCE(T) T::GetInstance()

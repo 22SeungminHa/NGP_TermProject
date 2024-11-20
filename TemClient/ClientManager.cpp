@@ -2,11 +2,14 @@
 
 ClientManager::~ClientManager()
 {
-	WSACleanup();
+	
 }
 
-bool ClientManager::Initialize()
+bool ClientManager::Initialize(HWND _hwnd)
 {
+	hwnd = _hwnd;
+	GetClientRect(hwnd, &window);
+
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
@@ -37,6 +40,11 @@ bool ClientManager::Initialize()
 		return false;
 
 	return true;
+}
+
+void ClientManager::Destroy()
+{
+	WSACleanup();
 }
 
 void ClientManager::ConnectWithServer()
