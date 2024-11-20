@@ -115,10 +115,77 @@ bool ClientManager::ReceivePlayerID()
 
 bool ClientManager::ReceiveServerData()
 {
+	char buffer[1024]; // ¹öÆÛ Å©±â¸¦ ÃæºĞÈ÷ Å©°Ô ¼³Á¤
+	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+	if (retval == SOCKET_ERROR) {
+		err_display("recv()");
+		return false;
+	}
+	else if (retval == 0) {
+		return false;
+	}
+
+	// ¼ö½ÅµÈ µ¥ÀÌÅÍ¸¦ ÆĞÅ¶À¸·Î ÇØ¼®
+	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+
+	// ½ÇÁ¦ ÆĞÅ¶ Å©±â¿Í ¼ö½ÅµÈ µ¥ÀÌÅÍ Å©±â °ËÁõ
+	if (retval < pPacket->size) {
+		return false;
+	}
+
+	UsingPacket(buffer);
+
+	return true;
 }
 
-void ClientManager::UsingPacket(char* id)
+void ClientManager::UsingPacket(char* buffer)
 {
+	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+
+	switch (pPacket->packetID) {
+	case SC_LOGIN_INFO: {
+		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
+		break;
+	}
+	case SC_MOVE_BALL: {
+		SC_MOVE_BALL_PACKET* moveBallPacket = reinterpret_cast<SC_MOVE_BALL_PACKET*>(buffer);
+		log_display("SC_MOVE_BALL_PACKET\nc_id = " + std::to_string(moveBallPacket->c_id) +
+			", x = " + std::to_string(moveBallPacket->x) +
+			", y = " + std::to_string(moveBallPacket->y));
+		break;
+	}
+	case SC_DEATH: {
+		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
+		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c_id) +
+			", x = " + std::to_string(deathPacket->x) +
+			", y = " + std::to_string(deathPacket->y));
+		break;
+	}
+	case SC_EDIT_MAP: {
+		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
+		log_display("SC_EDIT_MAP_PACKET\nx = " + std::to_string(editMapPacket->x) +
+			", y = " + std::to_string(editMapPacket->y) +
+			", block = " + std::to_string(editMapPacket->block));
+		break;
+	}
+	case SC_LOAD_MAP: {
+		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
+		log_display("SC_LOAD_MAP_PACKET");
+		break;
+	}
+	case SC_RESPAWN: {
+		SC_RESPAWN_PACKET* respawnPacket = reinterpret_cast<SC_RESPAWN_PACKET*>(buffer);
+		log_display("SC_RESPAWN_PACKET\nc_id = " + std::to_string(respawnPacket->c_id) +
+			", x = " + std::to_string(respawnPacket->x) +
+			", y = " + std::to_string(respawnPacket->y));
+		break;
+	}
+	default:
+		log_display("Unknown packet received: ID = " + std::to_string(pPacket->packetID));
+		break;
+	}
 }
 
 // ë§µ ë°°ì—´ì—ì„œ ë²¡í„°ë¡œ ë³€í™˜ (ê³µ ì¢Œí‘œ, ìŠ¤ìœ„ì¹˜ ìƒíƒœëŠ” ë”°ë¡œ ë°›ê¸°)
@@ -231,4 +298,14 @@ void ClientManager::err_display(int errcode)
 		(char*)&lpMsgBuf, 0, NULL);
 	printf("[ì˜¤ë¥˜] %s\n", (char*)lpMsgBuf);
 	LocalFree(lpMsgBuf);
+}
+
+void ClientManager::log_display(const std::string& msg)
+{
+	MessageBoxA(
+		NULL, 
+		msg.c_str(),
+		"Log Message",
+		MB_OK | MB_ICONINFORMATION
+	);
 }
