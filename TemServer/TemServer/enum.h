@@ -27,6 +27,43 @@ enum Game {
 enum SoundCheck {
 	X, ballcrach, telpo, eatstar, balldeath, click, gameclear, music
 };
-enum Key {
-	Space, LeftDown, RightDown, LeftUp, RightUp, ESC
+
+enum class KEY_TYPE
+{
+	UP = VK_UP,
+	DOWN = VK_DOWN,
+	LEFT = VK_LEFT,
+	RIGHT = VK_RIGHT,
+	SHIFT = VK_SHIFT,
+	CTRL = VK_CONTROL,
+	ESCAPE = VK_ESCAPE,
+	SPACE = VK_SPACE,
+
+	LBUTTON = VK_LBUTTON,
+	RBUTTON = VK_RBUTTON,
+
+	W = 'W',
+	A = 'A',
+	S = 'S',
+	D = 'D',
+
+	Q = 'Q',
+	E = 'E',
+	Z = 'Z',
+	C = 'C',
+};
+
+enum KEY_STATE : char
+{
+	NONE,
+	PRESS,
+	DOWN,
+	UP,
+	END
+};
+
+enum
+{
+	KEY_TYPE_COUNT = static_cast<UINT>(UINT8_MAX + 1),
+	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END),
 };

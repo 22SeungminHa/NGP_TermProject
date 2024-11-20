@@ -76,8 +76,17 @@ void ClientManager::SendLoginPacket(int sock, char* name)
 {
 }
 
-void ClientManager::SendKeyPacket(int sock, int key)
+void ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 {
+	CS_KEY_PACKET keyPacket{};
+	keyPacket.keyType = key;
+
+	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+	}
 }
 
 void ClientManager::ReceivePlayerID()

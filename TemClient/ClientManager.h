@@ -63,7 +63,7 @@ public:
 	void LoginToGame();
 
 	void SendLoginPacket(int sock, char* name);
-	void SendKeyPacket(int sock, int key);
+	void SendKeyPacket(int sock, KEY_TYPE key);
 
 	void ReceivePlayerID();
 	void ReceiveServerData();

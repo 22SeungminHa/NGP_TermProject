@@ -1,5 +1,6 @@
 #include "client_pch.h"
 #include "ClientManager.h"
+#include"InputManager.h"
 #include"Timer.h"
 
 // 최대 vx = 21
@@ -19,7 +20,7 @@ HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
 
-POINT BallStartLC, MouseLC;
+POINT BallStartLC;
 OPENFILENAME OFN;
 TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
 TCHAR lpstrFile[100], str[20];
@@ -53,8 +54,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 {
 	srand((unsigned int)time(NULL));
 	HWND hwnd;
-	MSG Message;
-	WNDCLASSEX WndClass;
+	MSG Message{};
+	WNDCLASSEX WndClass{};
 	g_hInst = hInstance;
 	WndClass.cbSize = sizeof(WndClass);
 	WndClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -77,13 +78,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		return 1;
 	}
 	TIMER.Initilaize();
+	INPUT.Initialize(hwnd);
 	LoadResources();
 
-	MouseLC = { 0, 0 };
 
 	//네트워크용 쓰레드 생성
 	hThreadNetwork = CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
-
 
 	while (Message.message != WM_QUIT)
 	{
@@ -156,7 +156,29 @@ void LoadResources()
 
 void Update()
 {
+	INPUT.Update();
 
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyPress(KEY_TYPE::RIGHT)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT) || INPUT.IsKeyPress(KEY_TYPE::LEFT)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::A)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::Q)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
+
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
+
+	}
 
 	// 공 관련 효과음 재생
 	switch (game.Scheck)
@@ -447,7 +469,7 @@ void Render()
 
 DWORD __stdcall ClientMain(LPVOID arg)
 {
-
+	game.ConnectWithServer();
 
 	return 0;
 }
