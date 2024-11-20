@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ClientManager.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="souce.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
@@ -146,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="ClientManager.h" />
     <ClInclude Include="client_pch.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>
   <ItemGroup>
