@@ -76,8 +76,10 @@ public:
 	void Send_change_state_packet(Session* client);
 	void Send_move_block_packet(Session* client);
 	void Send_load_map_packet(Session* client);
-	void Do_Recv();
+
+	DWORD Do_Recv(LPVOID arg);
 	void Do_Send();
+
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 };
 
