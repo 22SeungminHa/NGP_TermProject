@@ -23,6 +23,7 @@
 #include <random>
 #include <time.h>
 #include <thread>
+#include<array>
 
 #include <protocol.h>
 	// #include <enum.h>
@@ -46,4 +47,5 @@ public:							\
 	{							\
 		static T instance;		\
 		return instance;		\
-	}							\
+	}							
+								
