@@ -42,16 +42,13 @@ void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
 
 void Session::Send_login_info_packet()
 {
-	// SC_LOGIN_INFO_PACKET 객체 생성
 	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
 
-	// 패킷을 큐에 추가
 	AddPacketToQueue(p);
 }
 
 void Session::Send_frame_packet(Session* client)
 {
-
 }
 
 void Session::Send_edit_map_packet(Session* client)

@@ -10,7 +10,7 @@ constexpr int M_HEIGHT  = 15;    // map size, block�� ����
 constexpr int B_WIDTH   = 20;
 constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
 
-static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
+static const int MAX_USER = 2; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
 
 constexpr short g           = 10;
 constexpr short t           = 0.19;
@@ -29,13 +29,14 @@ constexpr char CS_MOUSE_POS     = 2;
 
 constexpr char SC_LOGIN_INFO    = 0;
 constexpr char SC_FRAME         = 1;
+constexpr char SC_DEATH         = 2;
 constexpr char SC_EDIT_MAP      = 3;
-constexpr char SC_LOAD_MAP      = 5;
+constexpr char SC_LOAD_MAP      = 4;
 
 typedef struct PACKET {
     unsigned short  size;
     char            packetID;
-    unsigned int sessionID;
+    unsigned int    sessionID;
 
     PACKET(unsigned short s, char id, unsigned int sid)
         : size(s), packetID(id), sessionID(sid) {}
@@ -72,6 +73,11 @@ typedef struct SC_FRAME_PACKET : PACKET {
     unsigned short  c2_id;
     unsigned short  x2, y2;
     SC_FRAME_PACKET(unsigned int sID) : PACKET(sizeof(SC_FRAME_PACKET), SC_FRAME, sID) {}
+};
+
+typedef struct SC_DEATH_PACKET : PACKET {
+    unsigned short  c1_id;
+    SC_DEATH_PACKET(unsigned int sID) : PACKET(sizeof(SC_DEATH_PACKET), SC_DEATH, sID) {}
 };
 
 typedef struct SC_EDIT_MAP_PACKET : PACKET {

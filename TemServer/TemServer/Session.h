@@ -36,7 +36,6 @@ public:
 	floatRECT			ballrc;
 	Block				list[43];
 	int					Map[15][25];
-	int					SurvivalMap[SVMAPCNT][4][9];
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
@@ -44,7 +43,6 @@ public:
 	int					blockDown;
 	int					random;
 	int					PrintLc;
-	float				remx, remy;
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);

@@ -9,10 +9,6 @@ ServerManager::ServerManager()
         clients[i].serverManager = this;
     }
 
-	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 2), &WSAData);
-	s_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-
 	S_Bind_Listen();
 
     MakeSendThreads();
@@ -90,10 +86,6 @@ void ServerManager::MakeSendThreads()
     sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
 }
 
-void ServerManager::WorkThreads()
-{
-}
-
 void ServerManager::Do_timer()
 {
 }
@@ -158,3 +150,19 @@ void ServerManager::ProcessSendQueue()
     }
 }
 
+void ServerManager::Send_frame_packet()
+{
+    auto p = std::make_shared<SC_FRAME_PACKET>(clients[0].id);
+
+    p->c1_id = clients[0].id;
+    p->x1 = clients[0].ball.x;
+    p->y1 = clients[0].ball.y;
+    p->c2_id = clients[1].id;
+    p->x2 = clients[1].ball.x;
+    p->y2 = clients[1].ball.y;
+
+    clients[0].AddPacketToQueue(p);
+
+    p->sessionID = clients[1].id;
+    clients[1].AddPacketToQueue(p);
+}

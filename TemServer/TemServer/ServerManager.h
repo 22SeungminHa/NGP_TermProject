@@ -28,11 +28,12 @@ public:
 	void S_Accept();
 	void MakeThreads();
 	void MakeSendThreads();
-	void WorkThreads();
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);
 
 	void Do_Send(const std::shared_ptr<PACKET>& packet);
 	void ProcessSendQueue();
+
+	void Send_frame_packet();
 };
