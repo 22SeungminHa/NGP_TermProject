@@ -147,37 +147,29 @@ void ClientManager::UsingPacket(char* buffer)
 		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
 		break;
 	}
-	case SC_MOVE_BALL: {
-		SC_MOVE_BALL_PACKET* moveBallPacket = reinterpret_cast<SC_MOVE_BALL_PACKET*>(buffer);
-		log_display("SC_MOVE_BALL_PACKET\nc_id = " + std::to_string(moveBallPacket->c_id) +
-			", x = " + std::to_string(moveBallPacket->x) +
-			", y = " + std::to_string(moveBallPacket->y));
+	case SC_FRAME: {
+		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
+		log_display("SC_MOVE_BALL_PACKET\nc1_id = " + std::to_string(framePacket->c1_id) +
+			", x = " + std::to_string(framePacket->x1) +
+			", y = " + std::to_string(framePacket->y1) + 
+			"\nc2_id = " + std::to_string(framePacket->c2_id) +
+			", x = " + std::to_string(framePacket->x2) +
+			", y = " + std::to_string(framePacket->y2));
 		break;
 	}
 	case SC_DEATH: {
 		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
-		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c_id) +
-			", x = " + std::to_string(deathPacket->x) +
-			", y = " + std::to_string(deathPacket->y));
+		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c1_id));
 		break;
 	}
 	case SC_EDIT_MAP: {
 		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
-		log_display("SC_EDIT_MAP_PACKET\nx = " + std::to_string(editMapPacket->x) +
-			", y = " + std::to_string(editMapPacket->y) +
-			", block = " + std::to_string(editMapPacket->block));
+		log_display("SC_EDIT_MAP_PACKET\nblock = " + std::to_string(editMapPacket->block));
 		break;
 	}
 	case SC_LOAD_MAP: {
 		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
 		log_display("SC_LOAD_MAP_PACKET");
-		break;
-	}
-	case SC_RESPAWN: {
-		SC_RESPAWN_PACKET* respawnPacket = reinterpret_cast<SC_RESPAWN_PACKET*>(buffer);
-		log_display("SC_RESPAWN_PACKET\nc_id = " + std::to_string(respawnPacket->c_id) +
-			", x = " + std::to_string(respawnPacket->x) +
-			", y = " + std::to_string(respawnPacket->y));
 		break;
 	}
 	default:
