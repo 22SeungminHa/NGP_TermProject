@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "client_pch.h"
 
 struct floatRECT {
 	float left, top, right, bottom;
@@ -22,6 +22,7 @@ struct CrashedBk {
 class ClientManager
 {
 public:
+	HWND hwnd;
 	RECT window{};
 
 	Ball ball{};
@@ -52,19 +53,22 @@ public:
 
 public:
 	ClientManager() {}
-	~ClientManager() {}
+	~ClientManager();
 
 public:
-	bool Initialize();
+	bool Initialize(HWND _hwnd);
+	void Destroy();
 
-	void ConnectWithServer();
+	bool ConnectWithServer();
 	void LoginToGame();
 
-	void SendLoginPacket(int sock, char* name);
-	void SendKeyPacket(int sock, int key);
+	
+	bool SendLoginPacket(int sock, char* name);
+	bool SendKeyPacket(int sock, KEY_TYPE key);
+	bool SendMousePositionPacket(POINT mousePos);
 
-	void ReceivePlayerID();
-	void ReceiveServerData();
+	bool ReceivePlayerID();
+	bool ReceiveServerData();
 
 	void UsingPacket(char* id);
 

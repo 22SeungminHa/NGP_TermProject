@@ -1,7 +1,15 @@
 #include "ClientManager.h"
 
-bool ClientManager::Initialize() 
+ClientManager::~ClientManager()
 {
+	
+}
+
+bool ClientManager::Initialize(HWND _hwnd)
+{
+	hwnd = _hwnd;
+	GetClientRect(hwnd, &window);
+
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
@@ -34,7 +42,12 @@ bool ClientManager::Initialize()
 	return true;
 }
 
-void ClientManager::ConnectWithServer()
+void ClientManager::Destroy()
+{
+	WSACleanup();
+}
+
+bool ClientManager::ConnectWithServer()
 {
 	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -52,26 +65,55 @@ void ClientManager::ConnectWithServer()
 
 	if (retval == SOCKET_ERROR) {
 		err_quit("connect()");
+		return false;
 	}
+	return true;
 }
 
 void ClientManager::LoginToGame()
 {
 }
 
-void ClientManager::SendLoginPacket(int sock, char* name)
+bool ClientManager::SendLoginPacket(int sock, char* name)
 {
 }
 
-void ClientManager::SendKeyPacket(int sock, int key)
+bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
+{
+	CS_KEY_PACKET keyPacket{};
+	keyPacket.keyType = key;
+
+	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+	return true;
+}
+
+bool ClientManager::SendMousePositionPacket(POINT mousePos)
+{
+	CS_MOUSE_POSITION_PACKET mousePacket{};
+	mousePacket.mousePos = mousePos;
+
+	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+
+	return true;
+}
+
+bool ClientManager::ReceivePlayerID()
 {
 }
 
-void ClientManager::ReceivePlayerID()
-{
-}
-
-void ClientManager::ReceiveServerData()
+bool ClientManager::ReceiveServerData()
 {
 }
 

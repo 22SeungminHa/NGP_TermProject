@@ -1,11 +1,21 @@
 #pragma once
 #include"client_pch.h"
 
+#define TIMER INSTANCE(CGameTimer)
+
 const ULONG MAX_SAMPLE_COUNT = 50; // Maximum frame time sample count
 
 class CGameTimer
 {
-	MAKE_SINGLETON(CGameTimer)
+private:						
+	CGameTimer() {}						
+	~CGameTimer() {}						
+public:							
+	static CGameTimer& GetInstance()		
+{							
+static CGameTimer instance;		
+return instance;		
+}
 
 private:
 	double secondsPerCount{};
