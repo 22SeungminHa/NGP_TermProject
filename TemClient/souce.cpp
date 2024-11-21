@@ -165,7 +165,6 @@ void LoadResources()
 
 void Update()
 {
-
 #pragma region key event
 	INPUT.Update();
 
@@ -252,6 +251,8 @@ void Render()
 	HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
 	OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
 	FillRect(mdc, &game.window, WHITE_BRUSH);
+
+	POINT MouseLC = INPUT.GetMousePosition();
 
 	//맵툴 블럭 설치
 	if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
@@ -490,19 +491,21 @@ void SendKeyPackets()
 	}
 
 	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON) || INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
-
+		game.SendMousePositionPacket(INPUT.GetMousePosition());
 	}
 	LeaveCriticalSection(&keyEventCS);
 }
 
 DWORD __stdcall ClientMain(LPVOID arg)
 {
-	game.ConnectWithServer();
+	if (!game.ConnectWithServer()) {
+		return;
+	}
 
 	while (true)
 	{
 		SendKeyPackets();
-
+		game.ReceiveServerData();
 
 	}
 
@@ -871,18 +874,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				game.GamePlay = StageSelect;
 			}
 		}
-		break;
-	}
-	case WM_MOUSEMOVE: {
-		if (game.GamePlay == Start || game.GamePlay == StageSelect || game.GamePlay == StageStop || game.GamePlay == StageClear || game.GamePlay == CustomMode) {
-			MouseLC.x = LOWORD(lParam);
-			MouseLC.y = HIWORD(lParam);
-		}
-		break;
-	}
-	case WM_LBUTTONUP: {
-		if (drag == true)
-			drag = false;
 		break;
 	}
 	case WM_DESTROY: {

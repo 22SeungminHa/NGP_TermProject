@@ -59,7 +59,7 @@ public:
 	bool Initialize(HWND _hwnd);
 	void Destroy();
 
-	void ConnectWithServer();
+	bool ConnectWithServer();
 	void LoginToGame();
 
 	

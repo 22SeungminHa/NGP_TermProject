@@ -47,7 +47,7 @@ void ClientManager::Destroy()
 	WSACleanup();
 }
 
-void ClientManager::ConnectWithServer()
+bool ClientManager::ConnectWithServer()
 {
 	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -65,7 +65,9 @@ void ClientManager::ConnectWithServer()
 
 	if (retval == SOCKET_ERROR) {
 		err_quit("connect()");
+		return false;
 	}
+	return true;
 }
 
 void ClientManager::LoginToGame()
