@@ -3,6 +3,8 @@
 
 #define INPUT INSTANCE(CInputManager)
 
+CRITICAL_SECTION keyEventCS{};
+
 class CInputManager
 {
 	MAKE_SINGLETON(CInputManager)

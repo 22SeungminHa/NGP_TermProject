@@ -72,11 +72,11 @@ void ClientManager::LoginToGame()
 {
 }
 
-void ClientManager::SendLoginPacket(int sock, char* name)
+bool ClientManager::SendLoginPacket(int sock, char* name)
 {
 }
 
-void ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
+bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 {
 	CS_KEY_PACKET keyPacket{};
 	keyPacket.keyType = key;
@@ -89,11 +89,11 @@ void ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 	}
 }
 
-void ClientManager::ReceivePlayerID()
+bool ClientManager::ReceivePlayerID()
 {
 }
 
-void ClientManager::ReceiveServerData()
+bool ClientManager::ReceiveServerData()
 {
 }
 

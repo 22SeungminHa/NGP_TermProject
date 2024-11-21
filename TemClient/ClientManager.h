@@ -62,11 +62,12 @@ public:
 	void ConnectWithServer();
 	void LoginToGame();
 
-	void SendLoginPacket(int sock, char* name);
-	void SendKeyPacket(int sock, KEY_TYPE key);
+	
+	bool SendLoginPacket(int sock, char* name);
+	bool SendKeyPacket(int sock, KEY_TYPE key);
 
-	void ReceivePlayerID();
-	void ReceiveServerData();
+	bool ReceivePlayerID();
+	bool ReceiveServerData();
 
 	void UsingPacket(char* id);
 

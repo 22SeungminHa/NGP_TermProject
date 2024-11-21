@@ -21,6 +21,7 @@ void CInputManager::Update()
 		return;
 	}
 
+	EnterCriticalSection(&keyEventCS);
 	for (UINT16 key = 0; key < KEY_TYPE_COUNT; key++)
 	{
 		KEY_STATE& state = mStates[key];
