@@ -65,6 +65,7 @@ public:
 	
 	bool SendLoginPacket(int sock, char* name);
 	bool SendKeyPacket(int sock, KEY_TYPE key);
+	bool SendMousePositionPacket(POINT mousePos);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();

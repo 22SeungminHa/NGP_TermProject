@@ -86,7 +86,25 @@ bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 	if (retval == SOCKET_ERROR) {
 
 		err_display("send()");
+		return false;
 	}
+	return true;
+}
+
+bool ClientManager::SendMousePositionPacket(POINT mousePos)
+{
+	CS_MOUSE_POSITION_PACKET mousePacket{};
+	mousePacket.mousePos = mousePos;
+
+	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+
+	return true;
 }
 
 bool ClientManager::ReceivePlayerID()
