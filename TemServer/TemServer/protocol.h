@@ -6,11 +6,11 @@
 
 constexpr int NAME_SIZE = 20;
 constexpr int M_WIDTH   = 25;
-constexpr int M_HEIGHT  = 15;    // map size, block�� ����
+constexpr int M_HEIGHT  = 15;    // map size, block의 크기
 constexpr int B_WIDTH   = 20;
-constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
+constexpr int B_HEIGHT  = 15;    // block size, block
 
-static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
+static const int MAX_USER = 4; /*std::thread::hardware_concurrency() - 2*/ // MainThread와 send()를 돌리는 쓰레드 두 개 제외
 
 constexpr short g           = 10;
 constexpr short t           = 0.19;

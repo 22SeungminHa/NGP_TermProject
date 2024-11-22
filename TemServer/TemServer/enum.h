@@ -1,4 +1,4 @@
-#pragma once
+О╩©#pragma once
 
 enum Direction {
 	dirRight, dirLeft, dirDown, dirUp
@@ -8,7 +8,7 @@ enum BlockType {
 	RectBHBk, CircleBHBk, RectWHBk, CircleWHBk,
 	ClimbBK, MusicBk,
 	Star,
-	// ©╘╠Б╨нем Fuction©║ ╬х╣И╬Н╟╗
+	// Л≈╛Й╦╟К╤─М└╟ FuctionЛ≈░ Л∙┬К⌠╓Л√╢Й╟░
 	BasicBk, SwitchBk, ElectricBk
 };
 enum Game {
