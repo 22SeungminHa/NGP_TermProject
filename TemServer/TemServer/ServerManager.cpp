@@ -7,6 +7,7 @@ ServerManager::ServerManager()
 
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
+        clients[i].id = i;
     }
 
 	S_Bind_Listen();
@@ -63,13 +64,13 @@ void ServerManager::S_Accept()
 
 void ServerManager::MakeThreads()
 {
-    // 스레드 인자 준비
-    ThreadArgs* args = new ThreadArgs;
-    args->num = cl_num;
-    args->client_sock = c_sock;
+    int id;
+    for (auto& c : clients) {
+        if (c.ball.x == -999) id = c.id;
+    }
 
     // Session 객체를 첫 번째로 할당
-    Session* session = &clients[0];  // 첫 번째 Session 객체 사용
+    Session* session = &clients[id]; 
 
     // std::thread로 스레드 생성
     std::thread recvThread([session]() {
@@ -109,6 +110,21 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
     switch (packetID)
     {
+    case CS_LOGIN: {
+        strncpy(&packet[7], clients[sessionID].name, size - 7);
+
+        for (auto& c : clients) {
+            c.Send_login_info_packet();
+        }
+
+        break;
+    }
+    case CS_KEY_PRESS: {
+        break;
+    }
+    case CS_MOUSE_POS: {
+        break;
+    }
     default:
         break;
     }

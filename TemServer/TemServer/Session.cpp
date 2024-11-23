@@ -47,12 +47,13 @@ void Session::Send_login_info_packet()
 	AddPacketToQueue(p);
 }
 
-void Session::Send_frame_packet(Session* client)
-{
-}
-
 void Session::Send_edit_map_packet(Session* client)
 {
+	auto p = std::make_shared<SC_EDIT_MAP_PACKET>(id);
+
+	p->block = isSwitchOff;
+
+	AddPacketToQueue(p);
 }
 
 void Session::Send_load_map_packet(Session* client)

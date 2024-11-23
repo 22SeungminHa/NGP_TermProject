@@ -46,7 +46,7 @@ typedef struct PACKET {
 // Client -> Server Packet -----------------------
 
 typedef struct CS_LOGIN_PACKET : PACKET {
-    char            name[NAME_SIZE];
+    char name[NAME_SIZE];
     CS_LOGIN_PACKET(unsigned int sID) : PACKET(sizeof(CS_LOGIN_PACKET), CS_LOGIN, sID) {}
 };
 
@@ -64,6 +64,7 @@ typedef struct CS_MOUSE_POSITION_PACKET : PACKET {
 
 typedef struct SC_LOGIN_INFO_PACKET : PACKET {
     unsigned short  c_id;
+    char            name[NAME_SIZE];
     SC_LOGIN_INFO_PACKET(unsigned int sID) : PACKET(sizeof(SC_LOGIN_INFO_PACKET), SC_LOGIN_INFO, sID) {}
 };
 
@@ -81,7 +82,6 @@ typedef struct SC_DEATH_PACKET : PACKET {
 };
 
 typedef struct SC_EDIT_MAP_PACKET : PACKET {
-    short           x, y;
     char            block;
     SC_EDIT_MAP_PACKET(unsigned int sID) : PACKET(sizeof(SC_EDIT_MAP_PACKET), SC_EDIT_MAP, sID) {}
 };

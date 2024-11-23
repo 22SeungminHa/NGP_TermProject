@@ -8,7 +8,7 @@ struct floatRECT {
 };
 
 struct Ball {
-	float x = 30, y = 10, vx, vy, ax, remx, remy;
+	float x = -999, y = 10, vx, vy, ax, remx, remy;
 };
 
 struct Block {
@@ -25,6 +25,7 @@ class Session
 {
 public:
 	Ball				ball;
+	char				name[NAME_SIZE];
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;
 	vector <Block>		block[15];
@@ -68,7 +69,6 @@ public:
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 
 	void Send_login_info_packet();
-	void Send_frame_packet(Session* client);
 	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet(Session* client);
 };
