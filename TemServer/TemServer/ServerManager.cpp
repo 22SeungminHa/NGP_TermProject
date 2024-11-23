@@ -96,22 +96,12 @@ void ServerManager::Disconnect(int c_id)
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
-{    // size 추출
-    unsigned short size = *reinterpret_cast<unsigned short*>(&packet[0]);
-
-    // packetID 추출
-    char packetID = packet[2];
-
-    // sessionID 추출
-    unsigned int sessionID = *reinterpret_cast<unsigned int*>(&packet[3]);
-
-    std::cout << "ProcessPacket - Size: " << size << ", PacketID: " << (int)packetID
-        << ", SessionID: " << sessionID << std::endl;
-
-    switch (packetID)
+{   
+    switch (packet[2])
     {
     case CS_LOGIN: {
-        strncpy(&packet[7], clients[sessionID].name, size - 7);
+        CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+        strncpy(p->name, clients[p->sessionID].name, p->size - 7);
 
         for (auto& c : clients) {
             c.Send_login_info_packet();
@@ -120,6 +110,31 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         break;
     }
     case CS_KEY_PRESS: {
+        CS_KEY_PACKET* p = reinterpret_cast<CS_KEY_PACKET*>(packet);
+
+        switch (p->keyType)
+        {
+        case KEY_TYPE::LEFT: {
+            break;
+        }
+        case KEY_TYPE::RIGHT: {
+            break;
+        }
+        case KEY_TYPE::ESCAPE: {
+            break;
+        }
+        case KEY_TYPE::SPACE: {
+            break;
+        }
+        case KEY_TYPE::LBUTTON: {
+            break;
+        }
+        case KEY_TYPE::RBUTTON: {
+            break;
+        }
+        default:
+            break;
+        }
         break;
     }
     case CS_MOUSE_POS: {
