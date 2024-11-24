@@ -5,6 +5,8 @@ void CInputManager::Initialize(HWND hwnd)
 {
 	mHwnd = hwnd;
 	mStates.fill(KEY_STATE::NONE);
+
+	InitializeCriticalSection(&keyEventCS);
 }
 
 void CInputManager::Update()
