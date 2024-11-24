@@ -14,7 +14,8 @@
 
 //전역 변수
 ClientManager game;
-HANDLE hThreadNetwork;
+HANDLE hThreadForSend;
+HANDLE hThreadForReceive;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
@@ -51,7 +52,8 @@ void Render();
 
 void SendKeyPackets();
 
-DWORD WINAPI ClientMain(LPVOID arg);
+DWORD WINAPI ClientSend(LPVOID arg);
+DWORD WINAPI ClientReceive(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
@@ -85,12 +87,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	INPUT.Initialize(hwnd);
 	LoadResources();
 
+	InitializeCriticalSection(&keyEventCS);
+
+	if (!game.ConnectWithServer()) {
+		return 1;
+	}
 
 	//네트워크용 쓰레드 생성
-	hThreadNetwork = CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
+	hThreadForSend = CreateThread(NULL, 0, ClientSend, NULL, 0, NULL);
+	hThreadForReceive = CreateThread(NULL, 0, ClientReceive, NULL, 0, NULL);
 
 	//키 이벤트 전송 이벤트
-	InitializeCriticalSection(&keyEventCS);
 
 	while (Message.message != WM_QUIT)
 	{
@@ -108,9 +115,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		}
 	}
 
+	HANDLE threads[] = { hThreadForSend, hThreadForReceive };
+	WaitForMultipleObjects(2, threads, TRUE, INFINITE);
+
+	CloseHandle(hThreadForSend);
+	CloseHandle(hThreadForReceive);
+
 	game.Destroy();
 
-	CloseHandle(hThreadNetwork);
 	return Message.wParam;
 }
 
@@ -490,17 +502,21 @@ void SendKeyPackets()
 	LeaveCriticalSection(&keyEventCS);
 }
 
-DWORD __stdcall ClientMain(LPVOID arg)
+DWORD __stdcall ClientSend(LPVOID arg)
 {
-	if (!game.ConnectWithServer()) {
-		return;
-	}
-
 	while (true)
 	{
 		SendKeyPackets();
-		game.ReceiveServerData();
+	}
 
+	return 0;
+}
+
+DWORD __stdcall ClientReceive(LPVOID arg)
+{
+	while (true)
+	{
+		game.ReceiveServerData();
 	}
 
 	return 0;
