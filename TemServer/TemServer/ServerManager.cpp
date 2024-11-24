@@ -72,7 +72,7 @@ void ServerManager::MakeThreads()
     // Session 객체를 첫 번째로 할당
     Session* session = &clients[id]; 
 	session->sock = c_sock;
-	cout << c_sock << '/t' << clients[id].sock;
+	cout << c_sock << endl;
 
     // std::thread로 스레드 생성
     std::thread recvThread([session]() {

@@ -82,7 +82,6 @@ bool ClientManager::SendLoginPacket(int sock, const char* name)
 	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
 
 	if (retval == SOCKET_ERROR) {
-
 		err_display("send()");
 		return false;
 	}
@@ -129,7 +128,7 @@ bool ClientManager::ReceivePlayerID()
 
 bool ClientManager::ReceiveServerData()
 {
-	char buffer[1024];
+	char buffer[BUFSIZE + 1];
 	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
 
 	if (retval == SOCKET_ERROR) {

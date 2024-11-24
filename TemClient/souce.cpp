@@ -434,7 +434,7 @@ void Render()
 
 		//공 출력
 		if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // 죽으면 출력 안하게
-			imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // 활성화공
+			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25); // 활성화공
 		}
 
 		// 파티클 출력
