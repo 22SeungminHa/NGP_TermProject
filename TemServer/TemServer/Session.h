@@ -25,6 +25,7 @@ class Session
 {
 public:
 	Ball				ball;
+	POINT				ballStartPos{};
 	char				name[NAME_SIZE];
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;

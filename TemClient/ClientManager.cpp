@@ -1,3 +1,4 @@
+#include"client_pch.h"
 #include "ClientManager.h"
 
 ClientManager::~ClientManager()
@@ -76,6 +77,7 @@ void ClientManager::LoginToGame()
 
 bool ClientManager::SendLoginPacket(int sock, char* name)
 {
+	return true;
 }
 
 bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
@@ -93,13 +95,13 @@ bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 	return true;
 }
 
-bool ClientManager::SendMousePositionPacket(POINT mousePos)
+bool ClientManager::SendMousePacket(KEY_TYPE key, POINT mousePos)
 {
-	
-	CS_MOUSE_POSITION_PACKET mousePacket(ball.playerID);
+	CS_MOUSE_PACKET mousePacket(ball.playerID);
+	mousePacket.keyType = key;
 	mousePacket.mousePos = mousePos;
 
-	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
+	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_PACKET), 0);
 
 	if (retval == SOCKET_ERROR) {
 
@@ -112,6 +114,7 @@ bool ClientManager::SendMousePositionPacket(POINT mousePos)
 
 bool ClientManager::ReceivePlayerID()
 {
+	return true;
 }
 
 bool ClientManager::ReceiveServerData()

@@ -1,12 +1,11 @@
 ﻿#pragma once
 
+#define _CRT_SECURE_NO_WARNINGS // 구형 C 함수 사용 시 경고 끄기
+#define _WINSOCK_DEPRECATED_NO_WARNINGS // 구형 소켓 API 사용 시 경고 끄기
 #define _CRT_NON_CONFORMINGS_SWPRINTFS
 //#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
-#pragma comment(lib,"winmm.lib")
-#pragma comment(lib,"msimg32.lib")
 #pragma comment (lib, "fmod_vc.lib")
 
-#include <windows.h> 
 #include <winsock2.h> 
 #include <ws2tcpip.h> 
 #include <tchar.h>
@@ -25,19 +24,17 @@
 #include <thread>
 #include<array>
 #include<queue>
+#include <windows.h>
+
+#pragma comment(lib, "WS2_32.lib")
+#pragma comment(lib, "MSWSock.lib")
+#pragma comment(lib, "ws2_32")
 
 #include <protocol.h>
 	// #include <enum.h>
 using namespace std;
 
-constexpr int g = 10;
-constexpr float t = 0.19; 
-constexpr int side = 60; 
-constexpr float rd = 12.5;
-constexpr int SVMAPCNT = 24;
 
-constexpr const char* serverIP = "asdf";
-constexpr const WORD serverPort = 9000;
 
 #define MAKE_SINGLETON(T)		\
 private:						\

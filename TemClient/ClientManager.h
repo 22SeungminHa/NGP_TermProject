@@ -27,6 +27,7 @@ public:
 	RECT window{};
 
 	Ball ball{};
+	POINT ballStartPos{};
 	std::vector<Ball> otherPlayers{};
 
 	floatRECT ballrc{};
@@ -65,10 +66,9 @@ public:
 	bool ConnectWithServer();
 	void LoginToGame();
 
-	
 	bool SendLoginPacket(int sock, char* name);
 	bool SendKeyPacket(int sock, KEY_TYPE key);
-	bool SendMousePositionPacket(POINT mousePos);
+	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
