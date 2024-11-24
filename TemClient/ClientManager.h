@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "client_pch.h"
 
 struct floatRECT {
@@ -7,6 +7,7 @@ struct floatRECT {
 
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
+	u_short playerID{};
 };
 
 struct Block {
@@ -26,6 +27,8 @@ public:
 	RECT window{};
 
 	Ball ball{};
+	std::vector<Ball> otherPlayers{};
+
 	floatRECT ballrc{};
 
 	bool isLeftPressed{};
@@ -70,7 +73,7 @@ public:
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
 
-	void UsingPacket(char* id);
+	void UsingPacket(char* buffer);
 
 	void LoadMap(char* map);
 	void ClearVector();
@@ -80,5 +83,6 @@ private:
 	void err_quit(const char* msg);
 	void err_display(const char* msg);
 	void err_display(int errcode);
+	void log_display(const std::string& msg);
 };
 

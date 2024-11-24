@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 enum Direction {
 	dirRight, dirLeft, dirDown, dirUp
@@ -8,7 +8,7 @@ enum BlockType {
 	RectBHBk, CircleBHBk, RectWHBk, CircleWHBk,
 	ClimbBK, MusicBk,
 	Star,
-	// ø©±‚∫Œ≈Õ Fuctionø° æ»µÈæÓ∞®
+	// Ïó¨Í∏∞Î∂ÄÌÑ∞ FuctionÏóê ÏïàÎì§Ïñ¥Í∞ê
 	BasicBk, SwitchBk, ElectricBk
 };
 enum Game {
@@ -30,36 +30,13 @@ enum SoundCheck {
 
 enum class KEY_TYPE
 {
-	UP = VK_UP,
-	DOWN = VK_DOWN,
 	LEFT = VK_LEFT,
 	RIGHT = VK_RIGHT,
-	SHIFT = VK_SHIFT,
-	CTRL = VK_CONTROL,
 	ESCAPE = VK_ESCAPE,
 	SPACE = VK_SPACE,
 
 	LBUTTON = VK_LBUTTON,
-	RBUTTON = VK_RBUTTON,
-
-	W = 'W',
-	A = 'A',
-	S = 'S',
-	D = 'D',
-
-	Q = 'Q',
-	E = 'E',
-	Z = 'Z',
-	C = 'C',
-};
-
-enum KEY_STATE : char
-{
-	NONE,
-	PRESS,
-	DOWN,
-	UP,
-	END
+	RBUTTON = VK_RBUTTON
 };
 
 enum

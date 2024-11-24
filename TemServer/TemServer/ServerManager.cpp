@@ -1,14 +1,18 @@
+#include "stdafx.h"
 #include "ServerManager.h"
 
 ServerManager::ServerManager()
 {
     cl_num = 0;
 
-	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 2), &WSAData);
-	s_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    for (unsigned int i = 0; i < clients.size(); ++i) {
+        clients[i].serverManager = this;
+        clients[i].id = i;
+    }
 
 	S_Bind_Listen();
+
+    MakeSendThreads();
 
 	S_Accept();
 }
@@ -60,24 +64,27 @@ void ServerManager::S_Accept()
 
 void ServerManager::MakeThreads()
 {
-    // 스레드 인자 준비
-    ThreadArgs* args = new ThreadArgs;
-    args->num = cl_num;
-    args->client_sock = c_sock;
-
-    // 스레드 생성
-    Session* session = &clients[0];  // 첫 번째 Session 객체 사용
-    hThread = CreateThread(NULL, 0, ServerManager::Session_Do_Recv, (LPVOID)session, 0, NULL);
-
-    if (hThread == NULL) {
-        delete args;
-        closesocket(c_sock);
+    int id;
+    for (auto& c : clients) {
+        if (c.ball.x == -999) id = c.id;
     }
-    else { CloseHandle(hThread); }
+
+    // Session 객체를 첫 번째로 할당
+    Session* session = &clients[id]; 
+
+    // std::thread로 스레드 생성
+    std::thread recvThread([session]() {
+        session->Do_Recv((LPVOID)session);  // Session의 Do_Recv 호출
+        });
+
+    // 스레드 종료를 관리하기 위해 detach() 또는 join()을 사용할 수 있습니다.
+    recvThread.detach();  // 백그라운드에서 실행되도록 스레드를 분리
 }
 
-void ServerManager::WorkThreads()
+void ServerManager::MakeSendThreads()
 {
+    std::thread sendThread([this]() { ProcessSendQueue(); });
+    sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
 }
 
 void ServerManager::Do_timer()
@@ -89,54 +96,104 @@ void ServerManager::Disconnect(int c_id)
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
-{
+{   
+    switch (packet[2])
+    {
+    case CS_LOGIN: {
+        CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+        strncpy(p->name, clients[p->sessionID].name, p->size - 7);
+
+        for (auto& c : clients) {
+            c.Send_login_info_packet();
+        }
+
+        break;
+    }
+    case CS_KEY_PRESS: {
+        CS_KEY_PACKET* p = reinterpret_cast<CS_KEY_PACKET*>(packet);
+
+        switch (p->keyType)
+        {
+        case KEY_TYPE::LEFT: {
+            break;
+        }
+        case KEY_TYPE::RIGHT: {
+            break;
+        }
+        case KEY_TYPE::ESCAPE: {
+            break;
+        }
+        case KEY_TYPE::SPACE: {
+            break;
+        }
+        case KEY_TYPE::LBUTTON: {
+            break;
+        }
+        case KEY_TYPE::RBUTTON: {
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    case CS_MOUSE_POS: {
+        break;
+    }
+    default:
+        break;
+    }
 }
 
-DWORD __stdcall ServerManager::Session_Do_Recv(LPVOID arg)
+void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet) 
 {
-    Session* session = (Session*)arg;  // Session 객체로 변환
-    return session->Do_Recv(arg);  // Session의 Do_Recv 호출
+    if (!packet) return;
+
+    unsigned int sessionID = packet->sessionID;
+    if (sessionID >= clients.size()) {
+        std::cerr << "Do_Send() Packet session ID: " << sessionID << std::endl;
+        return;
+    }
+
+    Session& session = clients[sessionID];
+
+    // 전송할 데이터
+    int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
+
+    if (retval == SOCKET_ERROR) {
+        std::cerr << "Failed to send packet to session " << sessionID << std::endl;
+    }
 }
 
-
-
-
-// 소켓 함수 오류 출력 후 종료
-void ServerManager::err_quit(const char* msg)
+void ServerManager::ProcessSendQueue() 
 {
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	MessageBoxA(NULL, (const char*)lpMsgBuf, msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-	exit(1);
+    while (true) {  // 무한 루프 (패킷이 있을 때 계속 처리)
+        std::shared_ptr<PACKET> packet;
+
+        // 큐에서 패킷을 가져옴
+        if (sendPacketQ.try_pop(packet)) {
+            // 큐에서 꺼낸 패킷을 전송
+            Do_Send(packet);
+        }
+
+        // 33.33ms 대기 (30프레임 / 1초 기준)
+        std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
+    }
 }
 
-// 소켓 함수 오류 출력
-void ServerManager::err_display(const char* msg)
+void ServerManager::Send_frame_packet()
 {
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s\n", msg, (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
+    auto p = std::make_shared<SC_FRAME_PACKET>(clients[0].id);
 
-// 소켓 함수 오류 출력
-void ServerManager::err_display(int errcode)
-{
-	LPVOID lpMsgBuf;
-	FormatMessageA(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, errcode,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(char*)&lpMsgBuf, 0, NULL);
-	printf("[오류] %s\n", (char*)lpMsgBuf);
-	LocalFree(lpMsgBuf);
+    p->c1_id = clients[0].id;
+    p->x1 = clients[0].ball.x;
+    p->y1 = clients[0].ball.y;
+    p->c2_id = clients[1].id;
+    p->x2 = clients[1].ball.x;
+    p->y2 = clients[1].ball.y;
+
+    clients[0].AddPacketToQueue(p);
+
+    p->sessionID = clients[1].id;
+    clients[1].AddPacketToQueue(p);
 }

@@ -1,9 +1,18 @@
-#pragma once
+﻿#pragma once
 #include"client_pch.h"
 
 #define INPUT INSTANCE(CInputManager)
 
 CRITICAL_SECTION keyEventCS{};
+
+enum KEY_STATE : char
+{
+	NONE,
+	PRESS,
+	DOWN,
+	UP,
+	END
+};
 
 class CInputManager
 {

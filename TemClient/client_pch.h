@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define _CRT_NON_CONFORMINGS_SWPRINTFS
 //#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
@@ -6,7 +6,7 @@
 #pragma comment(lib,"msimg32.lib")
 #pragma comment (lib, "fmod_vc.lib")
 
-#include <windows.h> //--- ������ ��� ����
+#include <windows.h> 
 #include <winsock2.h> 
 #include <ws2tcpip.h> 
 #include <tchar.h>
@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string.h>
-#include <atlImage.h> // cimg ������ �ʿ��� ���
+#include <atlImage.h>
 #include <vector>
 #include <string>
 #include <fstream>

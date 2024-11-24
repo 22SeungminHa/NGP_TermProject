@@ -1,7 +1,7 @@
-#pragma once
+ï»¿#pragma once
 #include "Session.h"
 
-// thread¿¡°Ô ³Ñ°ÜÁÖ±â À§ÇÔ
+// threadì—ê²Œ ë„˜ê²¨ì£¼ê¸° ìœ„í•¨
 struct ThreadArgs {
 	int num;
 	SOCKET client_sock;
@@ -27,14 +27,13 @@ public:
 	void S_Bind_Listen();
 	void S_Accept();
 	void MakeThreads();
-	void WorkThreads();
+	void MakeSendThreads();
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);
 
-	static DWORD WINAPI Session_Do_Recv(LPVOID arg);
+	void Do_Send(const std::shared_ptr<PACKET>& packet);
+	void ProcessSendQueue();
 
-	void err_quit(const char* msg);
-	void err_display(const char* msg);
-	void err_display(int errcode);
+	void Send_frame_packet();
 };

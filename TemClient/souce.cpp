@@ -177,12 +177,6 @@ void Update()
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
 		keyEventQueue.push(KEY_TYPE::ESCAPE);
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::A)) {
-		keyEventQueue.push(KEY_TYPE::A);
-	}
-	if (INPUT.IsKeyDown(KEY_TYPE::Q)) {
-		keyEventQueue.push(KEY_TYPE::Q);
-	}
 	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
 		keyEventQueue.push(KEY_TYPE::LBUTTON);
 	}
@@ -614,32 +608,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			game.MakeVector();
 			game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
 			game.GamePlay = CustomPlay;
-		}
-
-		
-
-		//블럭/공 이동, 충돌체크
-		if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) {
-			//공 이동
-			game.MoveBall();
-
-			game.ballrc = { (float)game.ball.x - rd, (float)game.ball.y - rd, (float)game.ball.x + rd, (float)game.ball.y + rd };
-
-			// 공 충돌체크
-			if (game.GamePlay == StagePlay || game.GamePlay == CustomPlay) { // 이미 뒤졌을땐 안돌아가게 하려고. 계속 돌아가면 애니메이션 벡터에 자꾸들어감
-				// 바닥과 충돌
-				if (game.ball.y + rd >= game.window.bottom) {
-					game.animation.emplace_back(Block{ (int)game.ball.x - 90, (int)game.ball.y - 90, StageDeath, rand() % 4, 0 });
-					game.Scheck = balldeath;
-					if (game.GamePlay == StagePlay)
-						game.GamePlay = StageDeath;
-					else if (game.GamePlay == CustomPlay)
-						game.GamePlay = CustomDeath;
-				}
-
-				// 블럭과 충돌
-				else game.CrashExamin();
-			}
 		}
 
 		InvalidateRect(hwnd, NULL, FALSE);
