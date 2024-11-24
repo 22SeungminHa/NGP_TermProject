@@ -243,6 +243,7 @@ void ClientManager::MakeVector() {
 		}
 	}
 }
+
 void ClientManager::LoadMap(char* map)
 {
 }

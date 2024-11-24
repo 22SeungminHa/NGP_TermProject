@@ -5,6 +5,15 @@
 
 CRITICAL_SECTION keyEventCS{};
 
+enum KEY_STATE : char
+{
+	NONE,
+	PRESS,
+	DOWN,
+	UP,
+	END
+};
+
 class CInputManager
 {
 	MAKE_SINGLETON(CInputManager)

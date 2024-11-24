@@ -177,12 +177,6 @@ void Update()
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
 		keyEventQueue.push(KEY_TYPE::ESCAPE);
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::A)) {
-		keyEventQueue.push(KEY_TYPE::A);
-	}
-	if (INPUT.IsKeyDown(KEY_TYPE::Q)) {
-		keyEventQueue.push(KEY_TYPE::Q);
-	}
 	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
 		keyEventQueue.push(KEY_TYPE::LBUTTON);
 	}
