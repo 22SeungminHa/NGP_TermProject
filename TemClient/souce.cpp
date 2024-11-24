@@ -116,8 +116,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		}
 	}
 
-	HANDLE threads[] = { hThreadForSend, hThreadForReceive };
-	WaitForMultipleObjects(2, threads, TRUE, INFINITE);
+	/*HANDLE threads[] = { hThreadForSend, hThreadForReceive };
+	WaitForMultipleObjects(2, threads, TRUE, INFINITE);*/
 
 	CloseHandle(hThreadForSend);
 	CloseHandle(hThreadForReceive);
@@ -250,14 +250,12 @@ void Update()
 
 void Render()
 {
-	PAINTSTRUCT ps;
 	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
-
-	hdc = BeginPaint(game.hwnd, &ps);
+	hdc = GetDC(game.hwnd);
 	mdc = CreateCompatibleDC(hdc);
 	HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
 	OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
-	HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
+	HBRUSH brush = CreateSolidBrush(RGB(255, 0, 0));
 	FillRect(mdc, &game.window, brush);
 	DeleteObject(brush);
 
@@ -490,12 +488,12 @@ void Render()
 	SelectObject(mdc, OldBitmap);
 	DeleteObject(HBitmap);
 	DeleteDC(mdc);
-	EndPaint(game.hwnd, &ps);
+	ReleaseDC(game.hwnd, hdc);
 }
 
 void SendKeyPackets()
 {
-	EnterCriticalSection(&INPUT.keyEventCS);
+	EnterCriticalSection(&(INPUT.keyEventCS));
 	while (!keyEventQueue.empty()) {
 		game.SendKeyPacket(0, keyEventQueue.front());
 		keyEventQueue.pop();
@@ -506,7 +504,7 @@ void SendKeyPackets()
 		mouseEventQueue.pop();
 	}
 	
-	LeaveCriticalSection(&INPUT.keyEventCS);
+	LeaveCriticalSection(&(INPUT.keyEventCS));
 }
 
 DWORD __stdcall ClientSend(LPVOID arg)
