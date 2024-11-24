@@ -493,18 +493,19 @@ void Render()
 
 void SendKeyPackets()
 {
-	EnterCriticalSection(&(INPUT.keyEventCS));
 	while (!keyEventQueue.empty()) {
+		EnterCriticalSection(&(INPUT.keyEventCS));
 		game.SendKeyPacket(0, keyEventQueue.front());
 		keyEventQueue.pop();
+		LeaveCriticalSection(&(INPUT.keyEventCS));
 	}
 
 	while (!mouseEventQueue.empty()) {
+		EnterCriticalSection(&(INPUT.mouseEventCS));
 		game.SendMousePacket(mouseEventQueue.front(), INPUT.GetMousePosition());
 		mouseEventQueue.pop();
+		LeaveCriticalSection(&(INPUT.mouseEventCS));
 	}
-	
-	LeaveCriticalSection(&(INPUT.keyEventCS));
 }
 
 DWORD __stdcall ClientSend(LPVOID arg)

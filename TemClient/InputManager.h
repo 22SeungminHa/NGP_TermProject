@@ -28,6 +28,7 @@ private:
 
 public:
 	CRITICAL_SECTION keyEventCS{};
+	CRITICAL_SECTION mouseEventCS{};
 
 public:
 	void Initialize(HWND hwnd);
