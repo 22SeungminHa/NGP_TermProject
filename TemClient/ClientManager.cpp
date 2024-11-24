@@ -13,7 +13,7 @@ bool ClientManager::Initialize(HWND _hwnd)
 
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = Start;
+	GamePlay = StagePlay;
 	starcnt = 0;
 	isSwitchOff = false;
 	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
@@ -73,10 +73,20 @@ bool ClientManager::ConnectWithServer()
 
 void ClientManager::LoginToGame()
 {
+	SendLoginPacket(0, "");
 }
 
-bool ClientManager::SendLoginPacket(int sock, char* name)
+bool ClientManager::SendLoginPacket(int sock, const char* name)
 {
+	CS_LOGIN_PACKET loginPacket(0);
+	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+
 	return true;
 }
 

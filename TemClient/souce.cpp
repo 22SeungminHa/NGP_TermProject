@@ -87,11 +87,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	INPUT.Initialize(hwnd);
 	LoadResources();
 
-	InitializeCriticalSection(&INPUT.keyEventCS);
-
 	if (!game.ConnectWithServer()) {
 		return 1;
 	}
+
+	game.LoginToGame();
 
 	//네트워크용 쓰레드 생성
 	hThreadForSend = CreateThread(NULL, 0, ClientSend, NULL, 0, NULL);
@@ -533,89 +533,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
 	case WM_CREATE: {
-		break;
-	}
-	case WM_CHAR: {
-		switch (wParam)
-		{
-		case 'a':
-			game.Scheck = ballcrach;
-			break;
-		case 'q':
-		case 'Q':
-			PostQuitMessage(0);
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	case WM_KEYDOWN: {
-		switch (wParam)
-		{
-		case VK_ESCAPE: {
-			if (game.GamePlay == StagePlay)
-				game.GamePlay = StageStop;
-			else if (game.GamePlay == StageStop)
-				game.GamePlay = StagePlay;
-			else if (game.GamePlay == CustomMode || game.GamePlay == StageSelect)
-				game.GamePlay = Start;
-			else if (game.GamePlay == CustomPlay)
-				game.GamePlay = CustomMode;
-			else if (game.GamePlay == StageClear)
-				game.GamePlay = StageSelect;
-			break;
-		}
-		case VK_RIGHT: {
-			if (game.isRightPressed == false) {
-				if (game.ball.vy == 5) {
-					game.Scheck = telpo;
-					game.ball.vx = -21;
-					game.ball.vy = -40;
-				}
-				else if (game.ball.vy == 5.1) {
-					game.Scheck = telpo;
-					game.ball.vy = -40;
-					game.ball.vx = 21;
-				}
-			}
-			break;
-		}
-		case VK_LEFT: {
-			if (game.isLeftPressed == false) {
-				if (game.ball.vy == 5) {
-					game.Scheck = telpo;
-					game.ball.vy = -40;
-					game.ball.vx = -21;
-				}
-				else if (game.ball.vy == 5.1) {
-					game.Scheck = telpo;
-					game.ball.vx = 21;
-					game.ball.vy = -40;
-				}
-			}
-			break;
-		}
-		default:
-			break;
-		}
-		break;
-	}
-	case WM_KEYUP: {
-		switch (wParam) {
-		case VK_RIGHT: {
-			if (game.ball.vy == 5 || game.ball.vy == 5.1)
-				game.isRightPressed = false;
-			break;
-		}
-		case VK_LEFT: {
-			if (game.ball.vy == 5 || game.ball.vy == 5.1)
-				game.isLeftPressed = false;
-			break;
-		}
-		default:
-			break;
-		}
 		break;
 	}
 	case WM_TIMER: {

@@ -66,7 +66,7 @@ public:
 	bool ConnectWithServer();
 	void LoginToGame();
 
-	bool SendLoginPacket(int sock, char* name);
+	bool SendLoginPacket(int sock, const char* name);
 	bool SendKeyPacket(int sock, KEY_TYPE key);
 	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
 
