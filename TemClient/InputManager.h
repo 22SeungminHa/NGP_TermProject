@@ -16,15 +16,6 @@ enum {
 	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END)
 };
 
-enum KEY_STATE : char
-{
-	NONE,
-	PRESS,
-	DOWN,
-	UP,
-	END
-};
-
 class CInputManager
 {
 	MAKE_SINGLETON(CInputManager)

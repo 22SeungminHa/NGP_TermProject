@@ -18,7 +18,7 @@ constexpr short side        = 60;
 constexpr short rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
-constexpr const char* serverIP = "192.168.219.101";
+constexpr const char* serverIP = "127.0.0.1";
 constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
