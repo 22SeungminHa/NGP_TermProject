@@ -7,6 +7,7 @@ struct floatRECT {
 
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
+	u_short playerID{};
 };
 
 struct Block {
@@ -26,6 +27,8 @@ public:
 	RECT window{};
 
 	Ball ball{};
+	std::vector<Ball> otherPlayers{};
+
 	floatRECT ballrc{};
 
 	bool isLeftPressed{};

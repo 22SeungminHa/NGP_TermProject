@@ -80,7 +80,7 @@ bool ClientManager::SendLoginPacket(int sock, char* name)
 
 bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 {
-	CS_KEY_PACKET keyPacket{};
+	CS_KEY_PACKET keyPacket(ball.playerID);
 	keyPacket.keyType = key;
 
 	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
@@ -95,7 +95,8 @@ bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 
 bool ClientManager::SendMousePositionPacket(POINT mousePos)
 {
-	CS_MOUSE_POSITION_PACKET mousePacket{};
+	
+	CS_MOUSE_POSITION_PACKET mousePacket(ball.playerID);
 	mousePacket.mousePos = mousePos;
 
 	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
@@ -144,6 +145,7 @@ void ClientManager::UsingPacket(char* buffer)
 	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
 		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		ball.playerID = loginInfoPacket->c_id;
 		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
 		break;
 	}
@@ -156,7 +158,7 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_DEATH: {
 		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
-		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c_id) +
+		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c1_id) +
 			", x = " + std::to_string(deathPacket->x) +
 			", y = " + std::to_string(deathPacket->y));
 		break;
