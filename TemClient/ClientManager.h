@@ -7,6 +7,7 @@ struct floatRECT {
 
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
+	u_short playerID{};
 };
 
 struct Block {
@@ -26,6 +27,9 @@ public:
 	RECT window{};
 
 	Ball ball{};
+	POINT ballStartPos{};
+	std::vector<Ball> otherPlayers{};
+
 	floatRECT ballrc{};
 
 	bool isLeftPressed{};
@@ -62,10 +66,9 @@ public:
 	bool ConnectWithServer();
 	void LoginToGame();
 
-	
 	bool SendLoginPacket(int sock, char* name);
 	bool SendKeyPacket(int sock, KEY_TYPE key);
-	bool SendMousePositionPacket(POINT mousePos);
+	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();

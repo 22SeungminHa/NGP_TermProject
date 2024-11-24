@@ -1,3 +1,4 @@
+#include"client_pch.h"
 #include "ClientManager.h"
 
 ClientManager::~ClientManager()
@@ -17,7 +18,7 @@ bool ClientManager::Initialize(HWND _hwnd)
 	isSwitchOff = false;
 	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
 
-	// ¸ÊÅø ºí·° ¸®½ºÆ®
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
 	list[0].type = Star;
 	list[1].type = JumpBk;
 	list[2].type = RStraightBk;
@@ -76,11 +77,12 @@ void ClientManager::LoginToGame()
 
 bool ClientManager::SendLoginPacket(int sock, char* name)
 {
+	return true;
 }
 
 bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 {
-	CS_KEY_PACKET keyPacket{};
+	CS_KEY_PACKET keyPacket(ball.playerID);
 	keyPacket.keyType = key;
 
 	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
@@ -93,12 +95,13 @@ bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 	return true;
 }
 
-bool ClientManager::SendMousePositionPacket(POINT mousePos)
+bool ClientManager::SendMousePacket(KEY_TYPE key, POINT mousePos)
 {
-	CS_MOUSE_POSITION_PACKET mousePacket{};
+	CS_MOUSE_PACKET mousePacket(ball.playerID);
+	mousePacket.keyType = key;
 	mousePacket.mousePos = mousePos;
 
-	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
+	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_PACKET), 0);
 
 	if (retval == SOCKET_ERROR) {
 
@@ -111,6 +114,7 @@ bool ClientManager::SendMousePositionPacket(POINT mousePos)
 
 bool ClientManager::ReceivePlayerID()
 {
+	return true;
 }
 
 bool ClientManager::ReceiveServerData()
@@ -144,6 +148,7 @@ void ClientManager::UsingPacket(char* buffer)
 	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
 		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		ball.playerID = loginInfoPacket->c_id;
 		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
 		break;
 	}
@@ -178,26 +183,26 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 }
 
-// ¸Ê ¹è¿­¿¡¼­ º¤ÅÍ·Î º¯È¯ (°ø ÁÂÇ¥, ½ºÀ§Ä¡ »óÅÂ´Â µû·Î ¹Þ±â)
+// ï¿½ï¿½ ï¿½è¿­ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í·ï¿½ ï¿½ï¿½È¯ (ï¿½ï¿½ ï¿½ï¿½Ç¥, ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½Â´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ±ï¿½)
 void ClientManager::MakeVector() {
 	ClearVector();
 	Block temp;
-	int groupcnt = 1; // ÀÌµ¿ºí·° ±×·ì
+	int groupcnt = 1; // ï¿½Ìµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½
 	bool Continuous = false;
 	starcnt = 0;
 
 	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
-				if (Map[i][j]) { // ºí·°ÀÏ °æ¿ì
-					// º°
+				if (Map[i][j]) { // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+					// ï¿½ï¿½
 					if (Map[i][j] == 1)
 						starcnt++;
 
 					temp.x = Map[i][j] - 1 == 17 ? j * side : j;
 					temp.y = Map[i][j] - 1 == 17 ? i * side : i;
 					temp.type = list[Map[i][j] - 1].type;
-					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // Àü±â °ü·Ã ºí·°
+					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 						temp.subtype = isSwitchOff;
 					else
 						temp.subtype = list[Map[i][j] - 1].subtype;
@@ -215,15 +220,15 @@ void ClientManager::MakeVector() {
 					if (Map[i][j] - 1 != 17)
 						temp.ani = list[Map[i][j] - 1].ani;
 
-					// ²ö²öÀÌ ±×·ìÈ­
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½È­
 					if (Map[i][j] == 20) {
-						// ¸Ê °¡Àå À§ÀÌ°Å³ª, ¸Ê °¡Àå ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°¡ ¾Æ´Ï°í ¾Æ·¡°¡ ²ö²öÀÌ¸é 1¹ø
+						// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì°Å³ï¿½, ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½Æ´Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½Æ´Ï°ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ 1ï¿½ï¿½
 						if (i == 0 || i < 14 && Map[i - 1][j] != 20 && Map[i + i][j] == 20)
 							temp.subtype = 1;
-						// ¸Ê °¡Àå À§³ª ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§¿Í ¾Æ·¡°¡ ²ö²öÀÌ¸é 2¹ø
+						// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½Æ´Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ 2ï¿½ï¿½
 						else if (i > 0 && i < 14 && Map[i - 1][j] == 20 && Map[i + 1][j] == 20)
 							temp.subtype = 2;
-						// ¸Ê °¡Àå ¾Æ·¡ÀÌ°Å³ª, ¸Ê °¡Àå À§°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°í ¾Æ·¡°¡ ²ö²öÀÌ°¡ ¾Æ´Ï¸é 2¹ø
+						// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½Ì°Å³ï¿½, ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½Æ´Ï¸ï¿½ 2ï¿½ï¿½
 						else if (i == 14 || i > 0 && Map[i - 1][j] == 20 && Map[i + 1][j] != 20)
 							temp.subtype = 3;
 						else
@@ -240,7 +245,7 @@ void ClientManager::LoadMap(char* map)
 {
 }
 
-void ClientManager::ClearVector() { // °Á ´Ù ÃÊ±âÈ­ÇÏ°ÔÇÔ
+void ClientManager::ClearVector() { // ï¿½ï¿½ ï¿½ï¿½ ï¿½Ê±ï¿½È­ï¿½Ï°ï¿½ï¿½ï¿½
 	animation.clear();
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
@@ -287,7 +292,7 @@ void ClientManager::err_display(int errcode)
 		NULL, errcode,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(char*)&lpMsgBuf, 0, NULL);
-	printf("[¿À·ù] %s\n", (char*)lpMsgBuf);
+	printf("[ï¿½ï¿½ï¿½ï¿½] %s\n", (char*)lpMsgBuf);
 	LocalFree(lpMsgBuf);
 }
 

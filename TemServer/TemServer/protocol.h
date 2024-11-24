@@ -18,6 +18,8 @@ constexpr short side        = 60;
 constexpr short rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
+constexpr const char* serverIP = "192.168.219.101";
+constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
 
@@ -55,9 +57,10 @@ typedef struct CS_KEY_PACKET : PACKET {
     CS_KEY_PACKET(unsigned int sID) : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS, sID) {}
 };
 
-typedef struct CS_MOUSE_POSITION_PACKET : PACKET {
+typedef struct CS_MOUSE_PACKET : PACKET {
+    KEY_TYPE keyType;
     POINT mousePos;
-    CS_MOUSE_POSITION_PACKET(unsigned int sID) : PACKET(sizeof(CS_MOUSE_POSITION_PACKET), CS_MOUSE_POS, sID) {}
+    CS_MOUSE_PACKET(unsigned int sID) : PACKET(sizeof(CS_MOUSE_PACKET), CS_MOUSE_POS, sID) {}
 };
 
 // Server -> Client Packet -----------------------

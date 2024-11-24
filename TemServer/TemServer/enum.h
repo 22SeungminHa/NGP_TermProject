@@ -41,6 +41,5 @@ enum class KEY_TYPE
 
 enum
 {
-	KEY_TYPE_COUNT = static_cast<UINT>(UINT8_MAX + 1),
-	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END),
+	KEY_TYPE_COUNT = static_cast<UINT>(UINT8_MAX + 1)
 };

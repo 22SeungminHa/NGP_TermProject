@@ -3,7 +3,18 @@
 
 #define INPUT INSTANCE(CInputManager)
 
-CRITICAL_SECTION keyEventCS{};
+enum KEY_STATE : char
+{
+	NONE,
+	PRESS,
+	DOWN,
+	UP,
+	END
+};
+
+enum {
+	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END)
+};
 
 enum KEY_STATE : char
 {
@@ -23,6 +34,9 @@ private:
 	std::array<KEY_STATE, KEY_TYPE_COUNT> mStates{};
 
 	POINT mMousePos{};
+
+public:
+	CRITICAL_SECTION keyEventCS{};
 
 public:
 	void Initialize(HWND hwnd);

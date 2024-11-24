@@ -142,6 +142,9 @@
     <ClCompile Include="ClientManager.cpp" />
     <ClCompile Include="client_pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">client_pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">client_pch</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="souce.cpp">
