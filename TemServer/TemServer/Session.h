@@ -64,6 +64,7 @@ public:
 	int		id;
 	SOCKET	sock;
 	ServerManager* serverManager;
+	int		recv_remain = 0;
 
 	DWORD Do_Recv(LPVOID arg);
 
