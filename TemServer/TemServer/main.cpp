@@ -5,5 +5,5 @@ ServerManager s_mng;
 
 int main()
 {
-	//s_mng.WorkThreads();
+	
 }
