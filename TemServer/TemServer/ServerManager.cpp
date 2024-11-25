@@ -103,14 +103,7 @@ void ServerManager::MakeTimerThreads()
 
 void ServerManager::Do_timer()
 {
-	while (true) {
-		// 33.33ms 대기 (30프레임 / 1초 기준)
-		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
-
-		clients[0].ball.x++;
-
-		Send_frame_packet();
-	}
+	
 }
 
 void ServerManager::Disconnect(int c_id)
@@ -486,7 +479,6 @@ void ServerManager::ProcessSendQueue()
         }
 		
 		if (clients[0].ball.x != -999) {
-			clients[0].ball.x++;
 			Send_frame_packet();
 		}
 
