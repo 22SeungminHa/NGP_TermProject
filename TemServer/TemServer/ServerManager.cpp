@@ -59,6 +59,7 @@ void ServerManager::S_Accept()
         }
 
         MakeThreads();
+		MakeTimerThreads();
     }
 }
 
@@ -92,8 +93,22 @@ void ServerManager::MakeSendThreads()
     sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
 }
 
+void ServerManager::MakeTimerThreads()
+{
+	std::thread timerThread([this]() { Do_timer(); });
+	timerThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
+}
+
 void ServerManager::Do_timer()
 {
+	while (true) {
+		// 33.33ms 대기 (30프레임 / 1초 기준)
+		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
+
+		clients[0].ball.x++;
+
+		Send_frame_packet();
+	}
 }
 
 void ServerManager::Disconnect(int c_id)
@@ -440,7 +455,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
     unsigned int sessionID = packet->sessionID;
     if (sessionID >= clients.size()) {
-        std::cerr << "Do_Send() Packet session ID: " << sessionID << std::endl;
+        std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
         return;
     }
 
@@ -450,7 +465,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
     int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
     if (retval == SOCKET_ERROR) {
-        std::cerr << "Failed to send packet to session " << sessionID << std::endl;
+        std::cerr << "[send()] Failed to send packet" << (int)packet->packetID << " to session" << sessionID << std::endl;
     }
 }
 

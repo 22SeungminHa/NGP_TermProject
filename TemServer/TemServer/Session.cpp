@@ -24,7 +24,7 @@ DWORD Session::Do_Recv(LPVOID arg)
 
 			// 패킷 크기 검증
 			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
-				std::cerr << "Invalid packet size: " << packet_size << std::endl;
+				std::cerr << "[Do_Recv()] Invalid packet size: " << packet_size << std::endl;
 				recv_remain = 0;
 				remain_data = 0;
 				break;
@@ -48,7 +48,7 @@ DWORD Session::Do_Recv(LPVOID arg)
 		if (remain_data > 0) {
 			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
 			if (remain_data > sizeof(save_buf)) {
-				std::cerr << "Remaining data exceeds buffer size, data may be lost!" << std::endl;
+				std::cerr << "[Do_Recv()] Remaining data exceeds buffer size, data may be lost!" << std::endl;
 				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
 			}
 
@@ -62,14 +62,13 @@ DWORD Session::Do_Recv(LPVOID arg)
 void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
 {
     if (!packet) {
-        std::cerr << "Invalid packet received." << std::endl;
+        std::cerr << "[AddPacket()] Invalid packet received." << std::endl;
         return;
     }
 
     // 큐에 패킷을 추가
     serverManager->sendPacketQ.push(packet);
-    std::cout << "Packet added to the send queue. Packet ID: " << packet->packetID << std::endl;
-
+    std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << packet->packetID << std::endl;
 }
 
 void Session::Send_login_info_packet()

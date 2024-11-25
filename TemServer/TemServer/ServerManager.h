@@ -28,6 +28,7 @@ public:
 	void S_Accept();
 	void MakeThreads();
 	void MakeSendThreads();
+	void MakeTimerThreads();
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);
