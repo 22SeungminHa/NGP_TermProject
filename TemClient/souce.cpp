@@ -203,6 +203,7 @@ void Update()
 	LeaveCriticalSection(&(INPUT.mouseEventCS));
 #pragma endregion
 
+	game.ProcessPackets();
 	// 공 관련 효과음 재생
 	switch (game.Scheck)
 	{

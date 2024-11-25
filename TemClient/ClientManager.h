@@ -57,6 +57,8 @@ public:
 
 	SOCKET clientSocket{};
 	
+	CRITICAL_SECTION packetQueueCS{};
+	std::queue<std::shared_ptr<PACKET>> packetQueue{};
 
 public:
 	ClientManager() {}
@@ -76,7 +78,8 @@ public:
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
 
-	void UsingPacket(char* buffer);
+	void ProcessPackets();
+	void UsingPacket(std::shared_ptr<PACKET> packet);
 
 	void LoadMap(char* map);
 	void ClearVector();
