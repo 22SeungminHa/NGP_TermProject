@@ -83,7 +83,9 @@ void Session::Send_login_info_packet(Session* client)
 
 void Session::Send_logout_packet(Session* client)
 {
-	auto p = std::make_shared<SC_LOGOUT_PACKET>(client->id);
+	auto p = std::make_shared<SC_LOGOUT_PACKET>(id);
+
+	p->c_id = client->id;
 
 	AddPacketToQueue(p);
 }

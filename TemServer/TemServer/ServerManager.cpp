@@ -8,7 +8,6 @@ ServerManager::ServerManager()
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
         clients[i].id = i;
-        clients[i].last_send_ball.x = 0;
     }
 
 	MakeTimerThreads();
@@ -35,13 +34,6 @@ void ServerManager::S_Bind_Listen()
     // 소켓 생성
     s_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (s_sock == INVALID_SOCKET) err_quit("socket()"); 
-	else {
-		int flag = 1; // 1: Nagle 알고리즘 비활성화
-		int result = setsockopt(s_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
-		if (result == SOCKET_ERROR) {
-			std::cerr << "setsockopt TCP_NODELAY 실패, 오류 코드: " << WSAGetLastError() << std::endl;
-		}
-	}
 
     // bind()
     struct sockaddr_in serveraddr;
@@ -66,6 +58,13 @@ void ServerManager::S_Accept()
             err_display("accept()");
             return;
         }
+		else {
+			int flag = 1; // 1: Nagle 알고리즘 비활성화
+			int result = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
+			if (result == SOCKET_ERROR) {
+				std::cerr << "setsockopt TCP_NODELAY 실패, 오류 코드: " << WSAGetLastError() << std::endl;
+			}
+		}
 
         MakeThreads();
     }

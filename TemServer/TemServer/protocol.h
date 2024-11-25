@@ -13,7 +13,7 @@ constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
 static const int MAX_USER = 2; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
 
 constexpr short g           = 10;
-constexpr float t           = 0.5;
+constexpr float t           = 0.3;
 constexpr short side        = 60;
 constexpr float rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
