@@ -40,6 +40,8 @@ bool ClientManager::Initialize(HWND _hwnd)
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		return false;
 
+	InitializeCriticalSection(&packetQueueCS);
+
 	return true;
 }
 
@@ -158,8 +160,11 @@ bool ClientManager::ReceiveServerData()
 
 			// 패킷 처리 가능 여부 확인
 			if (packet_size <= remain_data) {
-				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
-				UsingPacket(reinterpret_cast<char*>(receivedPacket));
+				shared_ptr<PACKET> receivedPacket(reinterpret_cast<PACKET*>(p));
+				
+				EnterCriticalSection(&packetQueueCS);
+				packetQueue.push(receivedPacket);
+				LeaveCriticalSection(&packetQueueCS);
 
 				p += packet_size;       // 다음 패킷으로 이동
 				remain_data -= packet_size;
@@ -184,19 +189,27 @@ bool ClientManager::ReceiveServerData()
 	return true;
 }
 
-void ClientManager::UsingPacket(char* buffer)
+void ClientManager::ProcessPackets()
 {
-	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+	EnterCriticalSection(&packetQueueCS);
+	while (!packetQueue.empty()) {
+		UsingPacket(packetQueue.front());
+		packetQueue.pop();
+	}
+	LeaveCriticalSection(&packetQueueCS);
+}
 
-	switch (pPacket->packetID) {
+void ClientManager::UsingPacket(std::shared_ptr<PACKET> packet)
+{
+	switch (packet->packetID) {
 	case SC_LOGIN_INFO: {
-		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet.get());
 		ball.playerID = loginInfoPacket->sessionID;
-		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->sessionID));
+		log_display("SC_LOGIN_INFO_PACKET c_id = " + std::to_string(loginInfoPacket->sessionID));
 		break;
 	}
 	case SC_FRAME: {
-		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
+		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(packet.get());
 		log_display("SC_MOVE_BALL_PACKET\nc1_id = " + std::to_string(framePacket->c1_id) +
 			", x = " + std::to_string(framePacket->x1) +
 			", y = " + std::to_string(framePacket->y1) + 
@@ -208,22 +221,22 @@ void ClientManager::UsingPacket(char* buffer)
 		break;
 	}
 	case SC_DEATH: {
-		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
+		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(packet.get());
 		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c1_id));
 		break;
 	}
 	case SC_EDIT_MAP: {
-		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
+		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(packet.get());
 		log_display("SC_EDIT_MAP_PACKET\nblock = " + std::to_string(editMapPacket->block));
 		break;
 	}
 	case SC_LOAD_MAP: {
-		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
+		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(packet.get());
 		log_display("SC_LOAD_MAP_PACKET");
 		break;
 	}
 	default:
-		log_display("Unknown packet received: ID = " + std::to_string(pPacket->packetID));
+		log_display("Unknown packet received: ID = " + std::to_string(packet->packetID));
 		break;
 	}
 }

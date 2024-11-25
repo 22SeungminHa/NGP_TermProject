@@ -134,11 +134,13 @@
     <ClInclude Include="ServerManager.h" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Session.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

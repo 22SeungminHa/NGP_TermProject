@@ -123,7 +123,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         switch (p->keyType)
         {
         case KEY_TYPE::LEFT: {
-			if (client.ball.vy == 5) {
+			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
 				client.ball.vy = -40;
 				client.ball.vx = -21;
@@ -132,11 +132,12 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.Scheck = telpo;
 				client.ball.vx = 21;
 				client.ball.vy = -40;
-			}
+			}*/
+			client.ball.x -= 5;
             break;
         }
         case KEY_TYPE::RIGHT: {
-			if (client.ball.vy == 5) {
+			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
 				client.ball.vx = -21;
 				client.ball.vy = -40;
@@ -145,7 +146,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.Scheck = telpo;
 				client.ball.vy = -40;
 				client.ball.vx = 21;
-			}
+			}*/
+			client.ball.x += 5;
             break;
         }
         case KEY_TYPE::ESCAPE: {
