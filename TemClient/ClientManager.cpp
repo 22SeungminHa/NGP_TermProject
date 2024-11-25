@@ -1,3 +1,4 @@
+#include"client_pch.h"
 #include "ClientManager.h"
 
 ClientManager::~ClientManager()
@@ -12,7 +13,7 @@ bool ClientManager::Initialize(HWND _hwnd)
 
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = Start;
+	GamePlay = StagePlay;
 	starcnt = 0;
 	isSwitchOff = false;
 	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
@@ -38,6 +39,8 @@ bool ClientManager::Initialize(HWND _hwnd)
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		return false;
+
+	InitializeCriticalSection(&packetQueueCS);
 
 	return true;
 }
@@ -72,16 +75,28 @@ bool ClientManager::ConnectWithServer()
 
 void ClientManager::LoginToGame()
 {
+	SendLoginPacket(0, "");
 }
 
-bool ClientManager::SendLoginPacket(int sock, char* name)
+bool ClientManager::SendLoginPacket(int sock, const char* name)
 {
+
+	CS_LOGIN_PACKET loginPacket(0);
+	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+		err_display("send()");
+		return false;
+	}
+
+	return true;
 }
 
-bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
+bool ClientManager::SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key)
 {
 	CS_KEY_PACKET keyPacket(ball.playerID);
-	keyPacket.keyType = key;
+	keyPacket.keyType = key.first;
+	keyPacket.keyState = key.second;
 
 	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
 
@@ -93,13 +108,13 @@ bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
 	return true;
 }
 
-bool ClientManager::SendMousePositionPacket(POINT mousePos)
+bool ClientManager::SendMousePacket(KEY_TYPE key, POINT mousePos)
 {
-	
-	CS_MOUSE_POSITION_PACKET mousePacket(ball.playerID);
+	CS_MOUSE_PACKET mousePacket(ball.playerID);
+	mousePacket.keyType = key;
 	mousePacket.mousePos = mousePos;
 
-	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_POSITION_PACKET), 0);
+	retval = send(clientSocket, (char*)&mousePacket, sizeof(CS_MOUSE_PACKET), 0);
 
 	if (retval == SOCKET_ERROR) {
 
@@ -112,30 +127,68 @@ bool ClientManager::SendMousePositionPacket(POINT mousePos)
 
 bool ClientManager::ReceivePlayerID()
 {
+	return true;
 }
 
 bool ClientManager::ReceiveServerData()
 {
-	char buffer[1024];
-	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
+	char buf[BUFSIZE + 1] = { 0 };
 
-	if (retval == SOCKET_ERROR) {
-		err_display("recv()");
-		return false;
+	while(true) {
+		// 데이터 수신
+		int receivedBytes = recv(clientSocket, buf, sizeof(buf), 0);
+		if (receivedBytes <= 0) {
+			err_display("recv()");
+			return 1;
+		}
+		cout << "receivedBytes : " << receivedBytes << endl;
+
+		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
+		char* p = buf; // 패킷 처리 시작 위치
+
+		// 패킷 처리 루프
+		while (remain_data > 0) {
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // 패킷 크기 읽기
+			int packet_size = *byte;
+
+			// 패킷 크기 검증
+			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
+				std::cerr << "Invalid packet size: " << packet_size << std::endl;
+				recv_remain = 0;
+				remain_data = 0;
+				break;
+			}
+
+			// 패킷 처리 가능 여부 확인
+			if (packet_size <= remain_data) {
+				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
+				UsingPacket(reinterpret_cast<char*>(receivedPacket));
+
+				p += packet_size;       // 다음 패킷으로 이동
+				remain_data -= packet_size;
+			}
+			else {
+				break; // 패킷 데이터가 부족함
+			}
+		}
+
+		recv_remain = remain_data;
+		if (remain_data > 0) {
+			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
+			if (remain_data > sizeof(save_buf)) {
+				std::cerr << "Remaining data exceeds buffer size, data may be lost!" << std::endl;
+				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
+			}
+
+			memmove(save_buf, p, remain_data); // 남은 데이터를 save_buf로 이동
+		}
 	}
-	else if (retval == 0) {
-		return false;
-	}
-
-	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
-
-	if (retval < pPacket->size) {
-		return false;
-	}
-
-	UsingPacket(buffer);
 
 	return true;
+}
+
+void ClientManager::ProcessPackets()
+{
 }
 
 void ClientManager::UsingPacket(char* buffer)
@@ -144,38 +197,39 @@ void ClientManager::UsingPacket(char* buffer)
 
 	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
-		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
-		ball.playerID = loginInfoPacket->c_id;
-		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
+		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
+		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)loginInfoPacket->sessionID << std::endl;
+
+		ball.playerID = loginInfoPacket->sessionID;
 		break;
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
-		log_display("SC_MOVE_BALL_PACKET\nc1_id = " + std::to_string(framePacket->c1_id) +
-			", x = " + std::to_string(framePacket->x1) +
-			", y = " + std::to_string(framePacket->y1) + 
-			"\nc2_id = " + std::to_string(framePacket->c2_id) +
-			", x = " + std::to_string(framePacket->x2) +
-			", y = " + std::to_string(framePacket->y2));
+		std::cout << "SC_MOVE_BALL_PACKET "<<
+			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
+			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
+
+		ball.x = framePacket->x1;
+		ball.y = framePacket->y1;
 		break;
 	}
 	case SC_DEATH: {
 		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
-		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c1_id));
+		std::cout << "SC_DEATH_PACKET c_id = " << deathPacket->c1_id << std::endl;
 		break;
 	}
 	case SC_EDIT_MAP: {
 		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
-		log_display("SC_EDIT_MAP_PACKET\nblock = " + std::to_string(editMapPacket->block));
+		std::cout << "SC_EDIT_MAP_PACKET block = " << editMapPacket->block << std::endl;
 		break;
 	}
 	case SC_LOAD_MAP: {
 		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
-		log_display("SC_LOAD_MAP_PACKET");
+		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
 	default:
-		log_display("Unknown packet received: ID = " + std::to_string(pPacket->packetID));
+		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)pPacket->packetID << std::endl;
 		break;
 	}
 }
@@ -295,10 +349,5 @@ void ClientManager::err_display(int errcode)
 
 void ClientManager::log_display(const std::string& msg)
 {
-	MessageBoxA(
-		NULL, 
-		msg.c_str(),
-		"Log Message",
-		MB_OK | MB_ICONINFORMATION
-	);
+	cout << msg << endl;
 }

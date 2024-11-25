@@ -39,8 +39,16 @@ enum class KEY_TYPE
 	RBUTTON = VK_RBUTTON
 };
 
+enum KEY_STATE : char
+{
+	NONE,
+	PRESS,
+	DOWN,
+	UP,
+	END
+};
+
 enum
 {
-	KEY_TYPE_COUNT = static_cast<UINT>(UINT8_MAX + 1),
-	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END),
+	KEY_TYPE_COUNT = static_cast<UINT>(UINT8_MAX + 1)
 };

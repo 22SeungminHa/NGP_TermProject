@@ -14,13 +14,13 @@
 
 //전역 변수
 ClientManager game;
-HANDLE hThreadNetwork;
+HANDLE hThreadForSend;
+HANDLE hThreadForReceive;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
 
-POINT BallStartLC;
 OPENFILENAME OFN;
 TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
 TCHAR lpstrFile[100], str[20];
@@ -34,7 +34,8 @@ FMOD_RESULT result;
 void* extradriverdata = 0;
 
 
-std::queue<KEY_TYPE> keyEventQueue{};
+std::queue<pair<KEY_TYPE, KEY_STATE>> keyEventQueue{};
+std::queue<KEY_TYPE> mouseEventQueue{};
 
 #pragma region Images
 CImage imgBall, imgBasicBlock, imgFuctionBlock, imgSwitchBk, imgElectricBk,
@@ -51,7 +52,8 @@ void Render();
 
 void SendKeyPackets();
 
-DWORD WINAPI ClientMain(LPVOID arg);
+DWORD WINAPI ClientSend(LPVOID arg);
+DWORD WINAPI ClientReceive(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
@@ -85,12 +87,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	INPUT.Initialize(hwnd);
 	LoadResources();
 
+	if (!game.ConnectWithServer()) {
+		return 1;
+	}
+
+	game.LoginToGame();
 
 	//네트워크용 쓰레드 생성
-	hThreadNetwork = CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
+	hThreadForSend = CreateThread(NULL, 0, ClientSend, NULL, 0, NULL);
+	hThreadForReceive = CreateThread(NULL, 0, ClientReceive, NULL, 0, NULL);
 
 	//키 이벤트 전송 이벤트
-	InitializeCriticalSection(&keyEventCS);
+	TIMER.Reset();
 
 	while (Message.message != WM_QUIT)
 	{
@@ -102,15 +110,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		}
 		else
 		{
-			TIMER.Tick(120.f);
+			TIMER.Tick(30.f);
 			Update();
 			Render();
 		}
 	}
 
+	/*HANDLE threads[] = { hThreadForSend, hThreadForReceive };
+	WaitForMultipleObjects(2, threads, TRUE, INFINITE);*/
+
+	CloseHandle(hThreadForSend);
+	CloseHandle(hThreadForReceive);
+
 	game.Destroy();
 
-	CloseHandle(hThreadNetwork);
 	return Message.wParam;
 }
 
@@ -168,23 +181,32 @@ void Update()
 #pragma region key event
 	INPUT.Update();
 
-	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyPress(KEY_TYPE::RIGHT)) {
-		keyEventQueue.push(KEY_TYPE::RIGHT);
+	EnterCriticalSection(&(INPUT.keyEventCS));
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::LEFT) || INPUT.IsKeyPress(KEY_TYPE::LEFT)) {
-		keyEventQueue.push(KEY_TYPE::LEFT);
+	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
+	}
+	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
 	}
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
-		keyEventQueue.push(KEY_TYPE::ESCAPE);
+		keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
 	}
+	LeaveCriticalSection(&(INPUT.keyEventCS));
+
+	EnterCriticalSection(&(INPUT.mouseEventCS));
 	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
-		keyEventQueue.push(KEY_TYPE::LBUTTON);
+		mouseEventQueue.push(KEY_TYPE::LBUTTON);
 	}
 	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
-		keyEventQueue.push(KEY_TYPE::RBUTTON);
+		mouseEventQueue.push(KEY_TYPE::RBUTTON);
 	}
-
-	LeaveCriticalSection(&keyEventCS);
+	LeaveCriticalSection(&(INPUT.mouseEventCS));
 #pragma endregion
 
 	// 공 관련 효과음 재생
@@ -237,16 +259,18 @@ void Update()
 
 void Render()
 {
-	PAINTSTRUCT ps;
 	HDC hdc; HDC mdc; HBITMAP HBitmap, OldBitmap;
-
-	hdc = BeginPaint(game.hwnd, &ps);
+	hdc = GetDC(game.hwnd);
 	mdc = CreateCompatibleDC(hdc);
 	HBitmap = CreateCompatibleBitmap(hdc, game.window.right, game.window.bottom);
 	OldBitmap = (HBITMAP)SelectObject(mdc, (HBITMAP)HBitmap);
-	FillRect(mdc, &game.window, WHITE_BRUSH);
+	HBRUSH brush = CreateSolidBrush(RGB(255, 0, 0));
+	FillRect(mdc, &game.window, brush);
+	DeleteObject(brush);
 
 	POINT MouseLC = INPUT.GetMousePosition();
+
+	POINT BallStartLC = game.ballStartPos;
 
 	//맵툴 블럭 설치
 	if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
@@ -419,7 +443,7 @@ void Render()
 
 		//공 출력
 		if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // 죽으면 출력 안하게
-			imgBall.AlphaBlend(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, rd * 2, rd * 2, 255, AC_SRC_OVER); // 활성화공
+			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25); // 활성화공
 		}
 
 		// 파티클 출력
@@ -473,35 +497,39 @@ void Render()
 	SelectObject(mdc, OldBitmap);
 	DeleteObject(HBitmap);
 	DeleteDC(mdc);
-	EndPaint(game.hwnd, &ps);
+	ReleaseDC(game.hwnd, hdc);
 }
 
 void SendKeyPackets()
 {
-	EnterCriticalSection(&keyEventCS);
+	EnterCriticalSection(&(INPUT.keyEventCS));
 	while (!keyEventQueue.empty()) {
 		game.SendKeyPacket(0, keyEventQueue.front());
 		keyEventQueue.pop();
 	}
+	LeaveCriticalSection(&(INPUT.keyEventCS));
 
-	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON) || INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
-		game.SendMousePositionPacket(INPUT.GetMousePosition());
+	EnterCriticalSection(&(INPUT.mouseEventCS));
+	while (!mouseEventQueue.empty()) {
+		game.SendMousePacket(mouseEventQueue.front(), INPUT.GetMousePosition());
+		mouseEventQueue.pop();
 	}
-	LeaveCriticalSection(&keyEventCS);
+	LeaveCriticalSection(&(INPUT.mouseEventCS));
 }
 
-DWORD __stdcall ClientMain(LPVOID arg)
+DWORD __stdcall ClientSend(LPVOID arg)
 {
-	if (!game.ConnectWithServer()) {
-		return;
-	}
-
 	while (true)
 	{
 		SendKeyPackets();
-		game.ReceiveServerData();
-
 	}
+
+	return 0;
+}
+
+DWORD __stdcall ClientReceive(LPVOID arg)
+{
+	game.ReceiveServerData();
 
 	return 0;
 }
@@ -512,337 +540,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE: {
 		break;
 	}
-	case WM_CHAR: {
-		switch (wParam)
-		{
-		case 'a':
-			game.Scheck = ballcrach;
-			break;
-		case 'q':
-		case 'Q':
-			PostQuitMessage(0);
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-	case WM_KEYDOWN: {
-		switch (wParam)
-		{
-		case VK_ESCAPE: {
-			if (game.GamePlay == StagePlay)
-				game.GamePlay = StageStop;
-			else if (game.GamePlay == StageStop)
-				game.GamePlay = StagePlay;
-			else if (game.GamePlay == CustomMode || game.GamePlay == StageSelect)
-				game.GamePlay = Start;
-			else if (game.GamePlay == CustomPlay)
-				game.GamePlay = CustomMode;
-			else if (game.GamePlay == StageClear)
-				game.GamePlay = StageSelect;
-			break;
-		}
-		case VK_RIGHT: {
-			if (game.isRightPressed == false) {
-				if (game.ball.vy == 5) {
-					game.Scheck = telpo;
-					game.ball.vx = -21;
-					game.ball.vy = -40;
-				}
-				else if (game.ball.vy == 5.1) {
-					game.Scheck = telpo;
-					game.ball.vy = -40;
-					game.ball.vx = 21;
-				}
-			}
-			break;
-		}
-		case VK_LEFT: {
-			if (game.isLeftPressed == false) {
-				if (game.ball.vy == 5) {
-					game.Scheck = telpo;
-					game.Scheck = telpo;
-					game.ball.vy = -40;
-					game.ball.vx = -21;
-				}
-				else if (game.ball.vy == 5.1) {
-					game.Scheck = telpo;
-					game.Scheck = telpo;
-					game.ball.vx = 21;
-					game.ball.vy = -40;
-				}
-			}
-			break;
-		}
-		default:
-			break;
-		}
-		break;
-	}
-	case WM_KEYUP: {
-		switch (wParam) {
-		case VK_RIGHT: {
-			if (game.ball.vy == 5 || game.ball.vy == 5.1)
-				game.isRightPressed = false;
-			break;
-		}
-		case VK_LEFT: {
-			if (game.ball.vy == 5 || game.ball.vy == 5.1)
-				game.isLeftPressed = false;
-			break;
-		}
-		default:
-			break;
-		}
-		break;
-	}
 	case WM_TIMER: {
-		// 리스폰
-		if (game.GamePlay == StageDeath && game.animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
-			game.MakeVector();
-			game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 };
-			game.GamePlay = StagePlay;
-		}
-		else if (game.GamePlay == CustomDeath && game.animation.size() == 0) {
-			game.MakeVector();
-			game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
-			game.GamePlay = CustomPlay;
-		}
+		//// 리스폰
+		//if (game.GamePlay == StageDeath && game.animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
+		//	game.MakeVector();
+		//	game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 };
+		//	game.GamePlay = StagePlay;
+		//}
+		//else if (game.GamePlay == CustomDeath && game.animation.size() == 0) {
+		//	game.MakeVector();
+		//	game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
+		//	game.GamePlay = CustomPlay;
+		//}
 
-		InvalidateRect(hwnd, NULL, FALSE);
-		break;
-	}
-	case WM_LBUTTONDOWN: {
-		if (game.GamePlay == Start) {
-			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // 스테이지 버튼
-				game.Scheck = click;
-				game.GamePlay = StageSelect;
-			}
-			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // 맵툴 버튼
-				game.Scheck = click;
-				game.GamePlay = CustomMode;
-				BallStartLC = { -1, -1 };
-				game.isSwitchOff = 0;
-				memset(game.Map, 0, sizeof(game.Map));
-				selection = 0;
-			}
-		}
-		else if (game.GamePlay == StageSelect) {
-			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-				ifstream in{ "바운스볼 맵/Stage1.txt" };
-
-				for (int y = 0; y < 15; ++y) {
-					for (int x = 0; x < 25; ++x) {
-						in >> game.Map[y][x];
-					}
-				}
-
-				in >> BallStartLC.x;
-				in >> BallStartLC.y;
-				in >> game.isSwitchOff;
-				BallStartLC.x = BallStartLC.x * side + 30;
-				BallStartLC.y = BallStartLC.y * side + 30;
-
-				game.GamePlay = StageDeath;
-				in.close();
-			}
-			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-				ifstream in{ "바운스볼 맵/Stage2.txt" };
-
-				for (int y = 0; y < 15; ++y) {
-					for (int x = 0; x < 25; ++x) {
-						in >> game.Map[y][x];
-					}
-				}
-
-				in >> BallStartLC.x;
-				in >> BallStartLC.y;
-				in >> game.isSwitchOff;
-				BallStartLC.x = BallStartLC.x * side + 30;
-				BallStartLC.y = BallStartLC.y * side + 30;
-
-				game.GamePlay = StageDeath;
-				in.close();
-			}
-			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				game.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-				ifstream in{ "바운스볼 맵/Stage3.txt" };
-
-				for (int y = 0; y < 15; ++y) {
-					for (int x = 0; x < 25; ++x) {
-						in >> game.Map[y][x];
-					}
-				}
-
-				in >> BallStartLC.x;
-				in >> BallStartLC.y;
-				in >> game.isSwitchOff;
-				BallStartLC.x = BallStartLC.x * side + 30;
-				BallStartLC.y = BallStartLC.y * side + 30;
-
-				game.GamePlay = StageDeath;
-				in.close();
-			}
-			else if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128) {
-				game.Scheck = click;
-				game.GamePlay = Start;
-			}
-			else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
-				game.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-				ifstream in{ "바운스볼 맵/Stage4.txt" };
-
-				for (int y = 0; y < 15; ++y) {
-					for (int x = 0; x < 25; ++x) {
-						in >> game.Map[y][x];
-					}
-				}
-
-				in >> BallStartLC.x;
-				in >> BallStartLC.y;
-				in >> game.isSwitchOff;
-				BallStartLC.x = BallStartLC.x * side + 30;
-				BallStartLC.y = BallStartLC.y * side + 30;
-
-				game.GamePlay = StageDeath;
-				in.close();
-			}
-		}
-		else if (game.GamePlay == StageStop) {
-			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // 메인화면 버튼 위 커서 
-				game.Scheck = click;
-				game.GamePlay = Start;
-			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // 스테이지 버튼 위 커서 
-				game.Scheck = click;
-				game.GamePlay = StageSelect;
-			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
-				game.Scheck = click;
-				game.MakeVector();
-				game.GamePlay = StageDeath;
-				game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
-			}
-		}
-		else if (game.GamePlay == CustomMode) {
-			drag = true;
-			//블럭 선택
-			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
-				game.Scheck = click;
-				for (int i = 0; i < 14; i++) {
-					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-						selection = i;
-				}
-			}
-			else if (MouseLC.y >= 756 + 60 + 7 && MouseLC.y <= 756 + 60 + 7 + 60) {
-				game.Scheck = click;
-				for (int i = 0; i < 14; i++) {
-					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-						selection = i + 14;
-				}
-			}
-			// 플레이 버튼
-			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
-				game.Scheck = click;
-				if (BallStartLC.x == -1 || BallStartLC.y == -1) {
-					TCHAR a[100];
-					wsprintf(a, L"공 위치를 선정해주세요.");
-					MessageBox(hwnd, a, L"알림", MB_OK);
-					drag = false;
-					break;
-				}
-				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
-				game.GamePlay = CustomPlay;
-				game.MakeVector();
-			}
-			// 지우개 버튼
-			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-				game.Scheck = click;
-				selection = -1;
-			}
-			// 리셋 버튼
-			else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-				game.Scheck = click;
-				memset(game.Map, 0, sizeof(game.Map));
-				BallStartLC = { -1, -1 };
-			}
-			// 불러오기 버튼
-			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-				game.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- 구조체 초기화
-				OFN.lStructSize = sizeof(OPENFILENAME);
-				OFN.hwndOwner = hwnd;
-				OFN.lpstrFilter = filter;
-				OFN.lpstrFile = lpstrFile;
-				OFN.nMaxFile = 256;
-				OFN.lpstrInitialDir = L".";
-
-				if (GetOpenFileNameW(&OFN) != 0) { //--- 파일 함수 호출
-					TCHAR a[100];
-					wsprintf(a, L"%s 파일을 여시겠습니까 ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"열기 선택", MB_OK);
-
-					ifstream in{ OFN.lpstrFile };
-
-					for (int y = 0; y < 15; ++y) {
-						for (int x = 0; x < 25; ++x) {
-							in >> game.Map[y][x];
-						}
-					}
-
-					in >> BallStartLC.x;
-					in >> BallStartLC.y;
-					in >> game.isSwitchOff;
-
-					in.close();
-				}
-				drag = false;
-			}
-			// 저장 버튼
-			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
-				game.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- 구조체 초기화
-				OFN.lStructSize = sizeof(OPENFILENAME);
-				OFN.hwndOwner = hwnd;
-				OFN.lpstrFilter = filter;
-				OFN.lpstrFile = lpstrFile;
-				OFN.nMaxFile = 256;
-				OFN.lpstrInitialDir = L".";
-
-				if (GetSaveFileNameW(&OFN) != 0) { //--- 파일 함수 호출
-					TCHAR a[100];
-					wsprintf(a, L"%s 위치에 파일을 저장하시겠습니까 ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"저장하기 선택", MB_OK);
-					TCHAR b[100];
-					wsprintf(b, L"%s.txt", OFN.lpstrFile);
-
-					ofstream out{ b };
-
-
-					// 맵툴배열 저장
-					for (int y = 0; y < 15; ++y) {
-						for (int x = 0; x < 25; ++x) {
-							out << game.Map[y][x] << " ";
-						}
-						out << endl;
-					}
-					// 공 시작위치, 전기 상태 저장
-					out << BallStartLC.x << " " << BallStartLC.y << " " << game.isSwitchOff << endl;
-
-					out.close();
-				}
-				drag = false;
-			}
-		}
-		else if (game.GamePlay == StageClear) {
-			if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155) {
-				game.Scheck = click;
-				game.GamePlay = StageSelect;
-			}
-		}
-		break;
+		//InvalidateRect(hwnd, NULL, FALSE);
+		//break;
 	}
 	case WM_DESTROY: {
 		PostQuitMessage(0);

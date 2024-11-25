@@ -11,7 +11,7 @@ class ServerManager
 {
 public:
 	SOCKET s_sock, c_sock, listen_sock;
-	concurrency::concurrent_priority_queue<std::shared_ptr<PACKET>> sendPacketQ;
+	concurrency::concurrent_queue<std::shared_ptr<PACKET>> sendPacketQ;
 	CRITICAL_SECTION cs;
 	int retval;
 	struct sockaddr_in clientaddr;
@@ -28,6 +28,7 @@ public:
 	void S_Accept();
 	void MakeThreads();
 	void MakeSendThreads();
+	void MakeTimerThreads();
 	void Do_timer();
 	void Disconnect(int c_id);
 	void ProcessPacket(int c_id, char* packet);

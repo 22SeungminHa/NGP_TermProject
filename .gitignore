@@ -134,6 +134,9 @@ StyleCopReport.xml
 *.svclog
 *.scc
 
+Debug/
+Release/
+
 # Chutzpah Test files
 _Chutzpah*
 
@@ -427,6 +430,8 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+
 
 # JetBrains Rider
 *.sln.iml

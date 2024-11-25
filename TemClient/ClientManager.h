@@ -27,6 +27,7 @@ public:
 	RECT window{};
 
 	Ball ball{};
+	POINT ballStartPos{};
 	std::vector<Ball> otherPlayers{};
 
 	floatRECT ballrc{};
@@ -51,8 +52,13 @@ public:
 	int PrintLc{};
 
 	int retval{};
+	int	recv_remain{};
+	char save_buf[BUFSIZE * 2]{};
+
 	SOCKET clientSocket{};
 	
+	CRITICAL_SECTION packetQueueCS{};
+	std::queue<std::shared_ptr<PACKET>> packetQueue{};
 
 public:
 	ClientManager() {}
@@ -65,14 +71,14 @@ public:
 	bool ConnectWithServer();
 	void LoginToGame();
 
-	
-	bool SendLoginPacket(int sock, char* name);
-	bool SendKeyPacket(int sock, KEY_TYPE key);
-	bool SendMousePositionPacket(POINT mousePos);
+	bool SendLoginPacket(int sock, const char* name);
+	bool SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key);
+	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
 
+	void ProcessPackets();
 	void UsingPacket(char* buffer);
 
 	void LoadMap(char* map);

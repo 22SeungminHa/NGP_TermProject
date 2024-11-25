@@ -3,46 +3,80 @@
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
-    char buf[BUFSIZE + 1];
+	char buf[BUFSIZE + 1] = { 0 };
 
-    int receivedBytes = recv(sock, buf, sizeof(buf), 0);
-    if (receivedBytes <= 0) {
-        err_display("recv()");
-        return 1;
-    }
+	while (true) {
+		// 데이터 수신
+		int receivedBytes = recv(sock, buf, sizeof(buf), 0);
+		if (receivedBytes <= 0) {
+			err_display("recv()");
+			return 1;
+		}
+		cout << "receivedBytes : " << receivedBytes << endl;
 
-    // 버퍼에서 size 추출
-    unsigned short packetSize = *reinterpret_cast<unsigned short*>(buf);
+		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
+		char* p = buf; // 패킷 처리 시작 위치
 
-    // 수신된 데이터 확인
-    if (receivedBytes < packetSize) {
-        // 아직 전체 패킷이 도착하지 않음. 추가 수신 필요.
-        return 1;
-    }
+		// 패킷 처리 루프
+		while (remain_data > 0) {
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // 패킷 크기 읽기
+			int packet_size = *byte;
 
-    // 패킷 처리
-    PACKET* receivedPacket = reinterpret_cast<PACKET*>(buf);
-    serverManager->ProcessPacket(id, (char*)receivedPacket);
+			// 패킷 크기 검증
+			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
+				std::cerr << "[Do_Recv()] Invalid packet size: " << packet_size << std::endl;
+				recv_remain = 0;
+				remain_data = 0;
+				break;
+			}
 
-    return 0;
+			// 패킷 처리 가능 여부 확인
+			if (packet_size <= remain_data) {
+				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
+				serverManager->ProcessPacket(id, reinterpret_cast<char*>(receivedPacket));
+
+				p += packet_size;       // 다음 패킷으로 이동
+				remain_data -= packet_size;
+			}
+			else {
+				break; // 패킷 데이터가 부족함
+			}
+		}
+
+		// 남은 데이터 보관
+		recv_remain = remain_data;
+		if (remain_data > 0) {
+			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
+			if (remain_data > sizeof(save_buf)) {
+				std::cerr << "[Do_Recv()] Remaining data exceeds buffer size, data may be lost!" << std::endl;
+				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
+			}
+
+			memmove(save_buf, p, remain_data); // 남은 데이터를 save_buf로 이동
+		}
+	}
+
+	return 0;
 }
 
 void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
 {
     if (!packet) {
-        std::cerr << "Invalid packet received." << std::endl;
+        std::cerr << "[AddPacket()] Invalid packet received." << std::endl;
         return;
     }
 
     // 큐에 패킷을 추가
     serverManager->sendPacketQ.push(packet);
-    std::cout << "Packet added to the send queue. Packet ID: " << packet->packetID << std::endl;
-
+    //std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << std::endl;
 }
 
-void Session::Send_login_info_packet()
+void Session::Send_login_info_packet(Session* client)
 {
 	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
+	p->c_id = client->id;
+
+	cout << "Send_login_info_packet 완료     " << id << ">>" << client->id << endl;
 
 	AddPacketToQueue(p);
 }
@@ -81,10 +115,10 @@ void Session::Send_load_map_packet(Session* client)
 void Session::Initialize() {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = Start;
+	GamePlay = StagePlay;
 	starcnt = 0;
 	isSwitchOff = false;
-	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
+	Scheck = 0, score = 0;
 
 	// 맵툴 블럭 리스트
 	list[0].type = Star;

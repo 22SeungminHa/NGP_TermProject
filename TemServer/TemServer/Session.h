@@ -7,8 +7,24 @@ struct floatRECT {
 	float left, top, right, bottom;
 };
 
+#define EPSILON	1.0e-6f
+inline bool IsZero(float fValue) {
+	return((fabsf(fValue) < EPSILON));
+}
+inline bool IsEqual(float fA, float fB) {
+	return(IsZero(fA - fB));
+}
+
 struct Ball {
 	float x = -999, y = 10, vx, vy, ax, remx, remy;
+
+	bool SameBall(Ball a, Ball b) {
+		return IsEqual(a.x, b.x) && IsEqual(a.y, b.y);
+	}
+	void BallXYCopy(Ball& a, Ball& in) {
+		a.x = in.x;
+		a.y = in.y;
+	}
 };
 
 struct Block {
@@ -24,13 +40,12 @@ struct CrashedBk {
 class Session
 {
 public:
-	Ball				ball;
+	Ball				ball, last_send_ball;
+	POINT				ballStartPos{};
 	char				name[NAME_SIZE];
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;
 	vector <Block>		block[15];
-	vector <Block>		bullet;
-	vector <Block>		Readyblock[4];
 	vector <Block>		animation;
 	vector <CrashedBk>	crash;
 	RECT				window;
@@ -41,9 +56,6 @@ public:
 	bool				isSwitchOff;
 	int					Scheck;
 	int					score;
-	int					blockDown;
-	int					random;
-	int					PrintLc;
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);
@@ -63,12 +75,14 @@ public:
 	int		id;
 	SOCKET	sock;
 	ServerManager* serverManager;
+	int		recv_remain = 0;
+	char	save_buf[BUFSIZE * 2] = { 0 };
 
 	DWORD Do_Recv(LPVOID arg);
 
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 
-	void Send_login_info_packet();
+	void Send_login_info_packet(Session* client);
 	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet(Session* client);
 };

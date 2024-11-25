@@ -18,6 +18,8 @@ constexpr short side        = 60;
 constexpr short rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
+constexpr const char* serverIP = "127.0.0.1";
+constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
 
@@ -33,60 +35,67 @@ constexpr char SC_DEATH         = 2;
 constexpr char SC_EDIT_MAP      = 3;
 constexpr char SC_LOAD_MAP      = 4;
 
-typedef struct PACKET {
+#pragma pack(push, 1)
+
+struct PACKET {
     unsigned short  size;
     char            packetID;
-    unsigned int    sessionID;
+    char            sessionID;
 
-    PACKET(unsigned short s, char id, unsigned int sid)
-        : size(s), packetID(id), sessionID(sid) {}
-    virtual ~PACKET() = default;
+    PACKET() = default;
+    PACKET(unsigned short s, char id, char sID)
+        : size(s), packetID(id), sessionID(sID) {}
+    ~PACKET() = default;
 };
 
 // Client -> Server Packet -----------------------
 
-typedef struct CS_LOGIN_PACKET : PACKET {
-    char name[NAME_SIZE];
-    CS_LOGIN_PACKET(unsigned int sID) : PACKET(sizeof(CS_LOGIN_PACKET), CS_LOGIN, sID) {}
+struct CS_LOGIN_PACKET : PACKET {
+    char name[NAME_SIZE]{ 0 };
+    CS_LOGIN_PACKET(char sID) : PACKET(sizeof(CS_LOGIN_PACKET), CS_LOGIN, sID) {}
 };
 
-typedef struct CS_KEY_PACKET : PACKET {
+struct CS_KEY_PACKET : PACKET {
     KEY_TYPE keyType;
-    CS_KEY_PACKET(unsigned int sID) : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS, sID) {}
+    KEY_STATE keyState;
+    CS_KEY_PACKET(char sID) : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS, sID) {}
 };
 
-typedef struct CS_MOUSE_POSITION_PACKET : PACKET {
+struct CS_MOUSE_PACKET : PACKET {
+    KEY_TYPE keyType;
     POINT mousePos;
-    CS_MOUSE_POSITION_PACKET(unsigned int sID) : PACKET(sizeof(CS_MOUSE_POSITION_PACKET), CS_MOUSE_POS, sID) {}
+    CS_MOUSE_PACKET(char sID) : PACKET(sizeof(CS_MOUSE_PACKET), CS_MOUSE_POS, sID) {}
 };
 
 // Server -> Client Packet -----------------------
 
-typedef struct SC_LOGIN_INFO_PACKET : PACKET {
+struct SC_LOGIN_INFO_PACKET : PACKET {
     unsigned short  c_id;
     char            name[NAME_SIZE];
-    SC_LOGIN_INFO_PACKET(unsigned int sID) : PACKET(sizeof(SC_LOGIN_INFO_PACKET), SC_LOGIN_INFO, sID) {}
+    SC_LOGIN_INFO_PACKET(char sID) : PACKET(sizeof(SC_LOGIN_INFO_PACKET), SC_LOGIN_INFO, sID) {}
 };
 
-typedef struct SC_FRAME_PACKET : PACKET {
+struct SC_FRAME_PACKET : PACKET {
     unsigned short  c1_id;
     unsigned short  x1, y1;
     unsigned short  c2_id;
     unsigned short  x2, y2;
-    SC_FRAME_PACKET(unsigned int sID) : PACKET(sizeof(SC_FRAME_PACKET), SC_FRAME, sID) {}
+    SC_FRAME_PACKET(char sID) : PACKET(sizeof(SC_FRAME_PACKET), SC_FRAME, sID) {}
 };
 
-typedef struct SC_DEATH_PACKET : PACKET {
+struct SC_DEATH_PACKET : PACKET {
     unsigned short  c1_id;
-    SC_DEATH_PACKET(unsigned int sID) : PACKET(sizeof(SC_DEATH_PACKET), SC_DEATH, sID) {}
+    SC_DEATH_PACKET(char sID) : PACKET(sizeof(SC_DEATH_PACKET), SC_DEATH, sID) {}
 };
 
-typedef struct SC_EDIT_MAP_PACKET : PACKET {
+struct SC_EDIT_MAP_PACKET : PACKET {
     char            block;
-    SC_EDIT_MAP_PACKET(unsigned int sID) : PACKET(sizeof(SC_EDIT_MAP_PACKET), SC_EDIT_MAP, sID) {}
+    SC_EDIT_MAP_PACKET(char sID) : PACKET(sizeof(SC_EDIT_MAP_PACKET), SC_EDIT_MAP, sID) {}
 };
 
-typedef struct SC_LOAD_MAP_PACKET : PACKET {
+struct SC_LOAD_MAP_PACKET : PACKET {
     char            map[M_WIDTH * M_HEIGHT];
-    SC_LOAD_MAP_PACKET(unsigned int sID) : PACKET(sizeof(SC_LOAD_MAP_PACKET), SC_LOAD_MAP, sID) {}
+    SC_LOAD_MAP_PACKET(char sID) : PACKET(sizeof(SC_LOAD_MAP_PACKET), SC_LOAD_MAP, sID) {}
 };
+
+#pragma pack(pop)
