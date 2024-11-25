@@ -390,6 +390,7 @@ void Render()
 		if (BallStartLC.x >= 0 && BallStartLC.y >= 0)
 			imgBall.Draw(mdc, 21 + BallStartLC.x * 48 + 14, 21 + BallStartLC.y * 48 + 14, 20, 20, 0, 0, rd * 2, rd * 2);
 
+
 		//선택된 것
 		if (selection > 0) { // 블럭
 			if (game.list[selection - 1].type < BasicBk) { // 기능블럭 
@@ -444,6 +445,9 @@ void Render()
 		//공 출력
 		if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // 죽으면 출력 안하게
 			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25); // 활성화공
+			if (game.otherPlayer.playerID != 999) {
+				imgBall.Draw(mdc, game.otherPlayer.x - rd, game.otherPlayer.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
+			}
 		}
 
 		// 파티클 출력

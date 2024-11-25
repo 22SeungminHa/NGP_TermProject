@@ -104,4 +104,5 @@ struct SC_LOAD_MAP_PACKET : PACKET {
     SC_LOAD_MAP_PACKET(char sID) : PACKET(sizeof(SC_LOAD_MAP_PACKET), SC_LOAD_MAP, sID) {}
 };
 
+
 #pragma pack(pop)
