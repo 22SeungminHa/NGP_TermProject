@@ -185,6 +185,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
         u_int sessionID = p->sessionID;
         Session& client = clients[sessionID];
+		cout << p->sessionID << endl;
             
         switch (p->keyType)
         {

@@ -144,7 +144,7 @@ bool ClientManager::ReceiveServerData()
 			err_display("recv()");
 			return 1;
 		}
-		cout << "receivedBytes : " << receivedBytes << endl;
+		//cout << "receivedBytes : " << receivedBytes << endl;
 
 		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
 		char* p = buf; // 패킷 처리 시작 위치
@@ -214,9 +214,9 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
-		std::cout << "SC_MOVE_BALL_PACKET "<<
-			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
-			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
+		//std::cout << "SC_MOVE_BALL_PACKET "<<
+		//	"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
+		//	"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
 		if (framePacket->c1_id == ball.playerID) {
 			ball.x = framePacket->x1;

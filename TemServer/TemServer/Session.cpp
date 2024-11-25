@@ -426,15 +426,8 @@ void Session::CrashBasicRight(const Block* block) {
 
 //공 이동
 void Session::MoveBall() {
-	SHORT leftKeyState, rightKeyState;
-
 	// 눌려있는지 확인
 	if (ball.vy != 5.1 && ball.vy != 5 && GamePlay != StageClear) {
-		leftKeyState = GetAsyncKeyState(VK_LEFT);
-		rightKeyState = GetAsyncKeyState(VK_RIGHT);
-		isLeftPressed = (leftKeyState & 0x8000) != 0;
-		isRightPressed = (rightKeyState & 0x8000) != 0;
-
 		if (isLeftPressed && isRightPressed == false) { // 왼쪽만 눌렸을 경우
 			if (abs(ball.vx) == 60) // 직진하고 있었을 경우
 				ball.vx = 0;
