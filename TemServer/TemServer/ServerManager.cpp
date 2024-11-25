@@ -89,8 +89,6 @@ void ServerManager::MakeThreads()
     Session* session = &clients[id]; 
 	session->sock = c_sock;
 
-	clients[id].Initialize();
-
     // std::thread로 스레드 생성
     std::thread recvThread([session]() {
         session->Do_Recv((LPVOID)session);  // Session의 Do_Recv 호출
@@ -120,7 +118,16 @@ void ServerManager::Do_timer()
 		for (Session& client : clients) {
 			Ball& ball = client.ball;
 			if (ball.x != -999) {
-				ball.x += ball.vx * 0.03;
+				client.MoveBall();
+
+				if (ball.y + rd > 500) {
+					ball.y = 500 - rd;
+					ball.vy = -40;
+					ball.ax = 0;
+					if (client.isLeftPressed) ball.vx = ball.vx < 0 ? -21 : ball.vx;
+					else if (client.isRightPressed) ball.vx = ball.vx > 0 ? 21 : ball.vx;
+					else ball.vx = 0;
+				}
 			}
 			if (!ball.SameBall(client.last_send_ball, ball)) {
 				ball.BallXYCopy(client.last_send_ball, ball);
@@ -152,20 +159,24 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
     {
     case CS_LOGIN: {
         CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		cout<<
-        strncpy(p->name, clients[p->sessionID].name, p->size - 7);
 
-        for (auto& c : clients) {
-            c.Send_login_info_packet(&clients[p->sessionID]);
-        }
-
-		if (c_id > 0) {
+		if (p->sessionID == 7) {
+			Session cl;
 			for (auto& c : clients) {
-				if (c.id != c_id) {
-					clients[p->sessionID].Send_login_info_packet(&c);
+				if (c.ball.x == -999) {
+					cl.id = c.id;
+					clients[cl.id].Initialize();
+					strncpy(p->name, clients[cl.id].name, p->size - 7);
+					break;
 				}
 			}
+
+			for (auto& c : clients) {
+				c.Send_login_info_packet(&cl);
+			}
 		}
+
+
 		
         break;
     }

@@ -12,9 +12,9 @@ bool ClientManager::Initialize(HWND _hwnd)
 	GetClientRect(hwnd, &window);
 
 	ball = { 30, 12.5, 0, 0, 0 };
-	ball.playerID = 999;
+	ball.playerID = 7;
 	otherPlayer = { 30, 500, 0, 0, 0 };
-	otherPlayer.playerID = 999;
+	otherPlayer.playerID = 7;
 
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = StagePlay;
@@ -84,10 +84,9 @@ void ClientManager::LoginToGame()
 
 bool ClientManager::SendLoginPacket(int sock, const char* name)
 {
-
-	CS_LOGIN_PACKET loginPacket(0);
+	CS_LOGIN_PACKET loginPacket(ball.playerID);
 	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
-
+	cout << ball.playerID << endl;
 	if (retval == SOCKET_ERROR) {
 		err_display("send()");
 		return false;
@@ -205,7 +204,7 @@ void ClientManager::UsingPacket(char* buffer)
 		u_short newClientID = loginInfoPacket->c_id;
 		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)newClientID << std::endl;
 
-		if (ball.playerID == 999) {
+		if (ball.playerID == 7) {
 			ball.playerID = newClientID;
 		}
 		else if( ball.playerID != newClientID){
