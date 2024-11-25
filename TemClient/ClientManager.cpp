@@ -92,10 +92,11 @@ bool ClientManager::SendLoginPacket(int sock, const char* name)
 	return true;
 }
 
-bool ClientManager::SendKeyPacket(int sock, KEY_TYPE key)
+bool ClientManager::SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key)
 {
 	CS_KEY_PACKET keyPacket(ball.playerID);
-	keyPacket.keyType = key;
+	keyPacket.keyType = key.first;
+	keyPacket.keyState = key.second;
 
 	retval = send(clientSocket, (char*)&keyPacket, sizeof(CS_KEY_PACKET), 0);
 
@@ -160,14 +161,8 @@ bool ClientManager::ReceiveServerData()
 
 			// 패킷 처리 가능 여부 확인
 			if (packet_size <= remain_data) {
-				char* receivedPacket = new char[packet_size];
-				memcpy(receivedPacket, p, packet_size);
-
-				shared_ptr<PACKET> packet(reinterpret_cast<PACKET*>(receivedPacket));
-				
-				EnterCriticalSection(&packetQueueCS);
-				packetQueue.push(packet);
-				LeaveCriticalSection(&packetQueueCS);
+				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
+				UsingPacket(reinterpret_cast<char*>(receivedPacket));
 
 				p += packet_size;       // 다음 패킷으로 이동
 				remain_data -= packet_size;
@@ -194,26 +189,22 @@ bool ClientManager::ReceiveServerData()
 
 void ClientManager::ProcessPackets()
 {
-	EnterCriticalSection(&packetQueueCS);
-	while (!packetQueue.empty()) {
-		UsingPacket(packetQueue.front());
-		packetQueue.pop();
-	}
-	LeaveCriticalSection(&packetQueueCS);
 }
 
-void ClientManager::UsingPacket(std::shared_ptr<PACKET> packet)
+void ClientManager::UsingPacket(char* buffer)
 {
-	switch (packet->packetID) {
+	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
+
+	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
-		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet.get());
+		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
 		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)loginInfoPacket->sessionID << std::endl;
 
 		ball.playerID = loginInfoPacket->sessionID;
 		break;
 	}
 	case SC_FRAME: {
-		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(packet.get());
+		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
 		std::cout << "SC_MOVE_BALL_PACKET "<<
 			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
 			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
@@ -223,22 +214,22 @@ void ClientManager::UsingPacket(std::shared_ptr<PACKET> packet)
 		break;
 	}
 	case SC_DEATH: {
-		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(packet.get());
+		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
 		std::cout << "SC_DEATH_PACKET c_id = " << deathPacket->c1_id << std::endl;
 		break;
 	}
 	case SC_EDIT_MAP: {
-		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(packet.get());
+		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
 		std::cout << "SC_EDIT_MAP_PACKET block = " << editMapPacket->block << std::endl;
 		break;
 	}
 	case SC_LOAD_MAP: {
-		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(packet.get());
+		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
 		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
 	default:
-		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)packet->packetID << std::endl;
+		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)pPacket->packetID << std::endl;
 		break;
 	}
 }

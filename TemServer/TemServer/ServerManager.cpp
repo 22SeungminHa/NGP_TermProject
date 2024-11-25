@@ -133,6 +133,12 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         switch (p->keyType)
         {
         case KEY_TYPE::LEFT: {
+			if (p->keyState == KEY_STATE::DOWN) {
+				client.ball.vx = -20;
+			}
+			else if (p->keyState == KEY_STATE::UP) {
+				client.ball.vx = 0;
+			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
 				client.ball.vy = -40;
@@ -143,10 +149,16 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.ball.vx = 21;
 				client.ball.vy = -40;
 			}*/
-			client.ball.x -= 5;
+			
             break;
         }
         case KEY_TYPE::RIGHT: {
+			if (p->keyState == KEY_STATE::DOWN) {
+				client.ball.vx = 20;
+			}
+			else if (p->keyState == KEY_STATE::UP) {
+				client.ball.vx = 0;
+			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
 				client.ball.vx = -21;
@@ -157,7 +169,6 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.ball.vy = -40;
 				client.ball.vx = 21;
 			}*/
-			client.ball.x += 5;
             break;
         }
         case KEY_TYPE::ESCAPE: {
@@ -450,7 +461,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
     unsigned int sessionID = packet->sessionID;
     if (sessionID >= clients.size()) {
-        std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
+       // std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
         return;
     }
 
@@ -460,10 +471,10 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
     int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
     if (retval == SOCKET_ERROR) {
-        std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+        //std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
     }
 	else {
-		std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+		//std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 }
 
@@ -478,7 +489,10 @@ void ServerManager::ProcessSendQueue()
             Do_Send(packet);
         }
 		
-		if (clients[0].ball.x != -999) {
+		Ball& ball = clients[0].ball;
+		if (ball.x != -999) {
+			ball.x += ball.vx * 0.03;
+
 			Send_frame_packet();
 		}
 

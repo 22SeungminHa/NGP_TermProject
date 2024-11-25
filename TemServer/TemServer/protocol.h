@@ -57,6 +57,7 @@ struct CS_LOGIN_PACKET : PACKET {
 
 struct CS_KEY_PACKET : PACKET {
     KEY_TYPE keyType;
+    KEY_STATE keyState;
     CS_KEY_PACKET(char sID) : PACKET(sizeof(CS_KEY_PACKET), CS_KEY_PRESS, sID) {}
 };
 

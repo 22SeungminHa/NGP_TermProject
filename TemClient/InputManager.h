@@ -3,15 +3,6 @@
 
 #define INPUT INSTANCE(CInputManager)
 
-enum KEY_STATE : char
-{
-	NONE,
-	PRESS,
-	DOWN,
-	UP,
-	END
-};
-
 enum {
 	KEY_STATE_COUNT = static_cast<UINT>(KEY_STATE::END)
 };

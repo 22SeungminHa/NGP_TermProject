@@ -34,7 +34,7 @@ FMOD_RESULT result;
 void* extradriverdata = 0;
 
 
-std::queue<KEY_TYPE> keyEventQueue{};
+std::queue<pair<KEY_TYPE, KEY_STATE>> keyEventQueue{};
 std::queue<KEY_TYPE> mouseEventQueue{};
 
 #pragma region Images
@@ -110,7 +110,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		}
 		else
 		{
-			TIMER.Tick(120.f);
+			TIMER.Tick(30.f);
 			Update();
 			Render();
 		}
@@ -182,14 +182,20 @@ void Update()
 	INPUT.Update();
 
 	EnterCriticalSection(&(INPUT.keyEventCS));
-	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyPress(KEY_TYPE::RIGHT)) {
-		keyEventQueue.push(KEY_TYPE::RIGHT);
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::LEFT) || INPUT.IsKeyPress(KEY_TYPE::LEFT)) {
-		keyEventQueue.push(KEY_TYPE::LEFT);
+	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
+	}
+	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
 	}
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
-		keyEventQueue.push(KEY_TYPE::ESCAPE);
+		keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
 	}
 	LeaveCriticalSection(&(INPUT.keyEventCS));
 
@@ -203,7 +209,6 @@ void Update()
 	LeaveCriticalSection(&(INPUT.mouseEventCS));
 #pragma endregion
 
-	game.ProcessPackets();
 	// 공 관련 효과음 재생
 	switch (game.Scheck)
 	{

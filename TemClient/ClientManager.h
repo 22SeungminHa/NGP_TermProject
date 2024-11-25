@@ -72,14 +72,14 @@ public:
 	void LoginToGame();
 
 	bool SendLoginPacket(int sock, const char* name);
-	bool SendKeyPacket(int sock, KEY_TYPE key);
+	bool SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key);
 	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();
 
 	void ProcessPackets();
-	void UsingPacket(std::shared_ptr<PACKET> packet);
+	void UsingPacket(char* buffer);
 
 	void LoadMap(char* map);
 	void ClearVector();
