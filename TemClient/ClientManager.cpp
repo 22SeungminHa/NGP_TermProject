@@ -215,24 +215,24 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
-		std::cout << "SC_MOVE_BALL_PACKET "<<
-			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
-			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
 		if (framePacket->c1_id == ball.playerID) {
 			ball.x = framePacket->x1;
 			ball.y = framePacket->y1;
-
+			std::cout << "c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl;
 			if (otherPlayer.playerID != 999) {
 				otherPlayer.x = framePacket->x2;
 				otherPlayer.y = framePacket->y2;
+				std::cout << "c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 			}
 		}
 		else if(framePacket->c2_id == ball.playerID){
 			ball.x = framePacket->x2;
 			ball.y = framePacket->y2;
+			std::cout << "c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
 			if (otherPlayer.playerID != 999) {
+				std::cout << "c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl;
 				otherPlayer.x = framePacket->x1;
 				otherPlayer.y = framePacket->y1;
 			}

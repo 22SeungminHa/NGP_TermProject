@@ -8,7 +8,7 @@ ServerManager::ServerManager()
 	float y = 10.f;
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
-        clients[i].id = i;
+        clients[i].id = 999;
 		clients[i].ball.y = y;
 		clients[i].last_send_ball.y = y;
         clients[i].last_send_ball.x = 0;
@@ -71,13 +71,13 @@ void ServerManager::S_Accept()
 
 void ServerManager::MakeThreads()
 {
+
     int id;
-    for (auto& c : clients) {
-		if (c.ball.x == -999) {
-			id = c.id;
+	for (id = 0; id < clients.size(); id++) {
+		if (clients[id].ball.x == -999) {
 			break;
 		}
-    }
+	}
 
     // Session 객체를 첫 번째로 할당
     Session* session = &clients[id]; 
@@ -141,17 +141,25 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
     {
     case CS_LOGIN: {
         CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		cout<<
-        strncpy(p->name, clients[p->sessionID].name, p->size - 7);
+		cout << "로그인패킷 받음" << endl;
+
+		int id{};
+		for (id = 0; id < clients.size(); id++ ) {
+			if (clients[id].id == 999) {
+				clients[id].id = id;
+				break;
+			}
+		}
 
         for (auto& c : clients) {
-            c.Send_login_info_packet(&clients[p->sessionID]);
+			if (c.id == 999) continue;
+            c.Send_login_info_packet(&clients[id]);
         }
 
-		if (c_id > 0) {
+		if (id > 0) {
 			for (auto& c : clients) {
-				if (c.id != c_id) {
-					clients[p->sessionID].Send_login_info_packet(&c);
+				if (c.id != id && c.id != 999) {
+					clients[id].Send_login_info_packet(&c);
 				}
 			}
 		}
@@ -528,6 +536,7 @@ void ServerManager::ProcessSendQueue()
 void ServerManager::Send_frame_packet()
 {
 	for (size_t i = 0; i < clients.size(); ++i) {
+		if (clients[i].id == 999) continue;
 		auto packet = std::make_shared<SC_FRAME_PACKET>(clients[i].id);
 
 		packet->c1_id = clients[0].id;
