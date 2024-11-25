@@ -9,6 +9,14 @@ struct floatRECT {
 
 struct Ball {
 	float x = -999, y = 10, vx, vy, ax, remx, remy;
+
+	bool SameBall(Ball a, Ball b) {
+		return (a.x == b.x && a.y == b.y);
+	}
+	void BallXYCopy(Ball a, Ball in) {
+		a.x = in.x;
+		a.y = in.y;
+	}
 };
 
 struct Block {
@@ -24,7 +32,7 @@ struct CrashedBk {
 class Session
 {
 public:
-	Ball				ball;
+	Ball				ball, last_send_ball;
 	POINT				ballStartPos{};
 	char				name[NAME_SIZE];
 	bool				isLeftPressed, isRightPressed;

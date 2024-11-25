@@ -504,7 +504,6 @@ void SendKeyPackets()
 {
 	EnterCriticalSection(&(INPUT.keyEventCS));
 	while (!keyEventQueue.empty()) {
-		Sleep(100);
 		game.SendKeyPacket(0, keyEventQueue.front());
 		keyEventQueue.pop();
 	}

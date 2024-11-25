@@ -105,12 +105,16 @@ void ServerManager::MakeTimerThreads()
 void ServerManager::Do_timer()
 {
 	while (true) {
-		if (clients[0].ball.x != -999) {
-			// 33.33ms 대기 (30프레임 / 1초 기준)
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000/*33*/)); // 33ms 대기
+		Ball& ball = clients[0].ball;
+		if (ball.x != -999 && !ball.SameBall(clients[0].last_send_ball, ball)) {
+			ball.x += ball.vx * 0.03;
+			ball.BallXYCopy(clients[0].last_send_ball, ball);
 
 			Send_frame_packet();
 		}
+
+		// 33.33ms 대기 (30프레임 / 1초 기준)
+		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
 	}
 }
 
@@ -496,16 +500,6 @@ void ServerManager::ProcessSendQueue()
             // 큐에서 꺼낸 패킷을 전송
             Do_Send(packet);
         }
-		
-		Ball& ball = clients[0].ball;
-		if (ball.x != -999) {
-			ball.x += ball.vx * 0.03;
-
-			Send_frame_packet();
-		}
-
-        // 33.33ms 대기 (30프레임 / 1초 기준)
-        std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
     }
 }
 
