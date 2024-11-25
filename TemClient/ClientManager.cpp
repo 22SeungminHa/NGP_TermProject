@@ -206,39 +206,38 @@ void ClientManager::UsingPacket(std::shared_ptr<PACKET> packet)
 	switch (packet->packetID) {
 	case SC_LOGIN_INFO: {
 		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet.get());
+		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)loginInfoPacket->sessionID << std::endl;
+
 		ball.playerID = loginInfoPacket->sessionID;
-		log_display("SC_LOGIN_INFO_PACKET c_id = " + std::to_string(loginInfoPacket->sessionID));
 		break;
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(packet.get());
-		log_display("SC_MOVE_BALL_PACKET\nc1_id = " + std::to_string(framePacket->c1_id) +
-			", x = " + std::to_string(framePacket->x1) +
-			", y = " + std::to_string(framePacket->y1) + 
-			"\nc2_id = " + std::to_string(framePacket->c2_id) +
-			", x = " + std::to_string(framePacket->x2) +
-			", y = " + std::to_string(framePacket->y2));
+		std::cout << "SC_MOVE_BALL_PACKET "<<
+			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
+			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
+
 		ball.x = framePacket->x1;
 		ball.y = framePacket->y1;
 		break;
 	}
 	case SC_DEATH: {
 		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(packet.get());
-		log_display("SC_DEATH_PACKET\nc_id = " + std::to_string(deathPacket->c1_id));
+		std::cout << "SC_DEATH_PACKET c_id = " << deathPacket->c1_id << std::endl;
 		break;
 	}
 	case SC_EDIT_MAP: {
 		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(packet.get());
-		log_display("SC_EDIT_MAP_PACKET\nblock = " + std::to_string(editMapPacket->block));
+		std::cout << "SC_EDIT_MAP_PACKET block = " << editMapPacket->block << std::endl;
 		break;
 	}
 	case SC_LOAD_MAP: {
 		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(packet.get());
-		log_display("SC_LOAD_MAP_PACKET");
+		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
 	default:
-		log_display("Unknown packet received: ID = " + std::to_string(packet->packetID));
+		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)packet->packetID << std::endl;
 		break;
 	}
 }
