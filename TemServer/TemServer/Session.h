@@ -16,7 +16,7 @@ inline bool IsEqual(float fA, float fB) {
 }
 
 struct Ball {
-	float x = -999, y = 10, vx, vy, ax, remx, remy;
+	float x = -999, y = 12.5, vx, vy, ax, remx, remy;
 
 	bool SameBall(Ball a, Ball b) {
 		return IsEqual(a.x, b.x) && IsEqual(a.y, b.y);
@@ -85,5 +85,6 @@ public:
 	void Send_login_info_packet(Session* client);
 	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet(Session* client);
+	void Send_logout_packet(Session* client);
 };
 

@@ -10,7 +10,7 @@ struct ThreadArgs {
 class ServerManager
 {
 public:
-	SOCKET s_sock, c_sock, listen_sock;
+	SOCKET s_sock, c_sock;
 	concurrency::concurrent_queue<std::shared_ptr<PACKET>> sendPacketQ;
 	CRITICAL_SECTION cs;
 	int retval;
