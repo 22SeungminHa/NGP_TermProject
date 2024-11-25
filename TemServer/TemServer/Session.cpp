@@ -112,10 +112,10 @@ void Session::Send_load_map_packet(Session* client)
 void Session::Initialize() {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = Start;
+	GamePlay = StagePlay;
 	starcnt = 0;
 	isSwitchOff = false;
-	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
+	Scheck = 0, score = 0;
 
 	// 맵툴 블럭 리스트
 	list[0].type = Star;

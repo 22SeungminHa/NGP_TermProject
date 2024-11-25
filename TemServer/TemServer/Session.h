@@ -30,8 +30,6 @@ public:
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;
 	vector <Block>		block[15];
-	vector <Block>		bullet;
-	vector <Block>		Readyblock[4];
 	vector <Block>		animation;
 	vector <CrashedBk>	crash;
 	RECT				window;
@@ -42,9 +40,6 @@ public:
 	bool				isSwitchOff;
 	int					Scheck;
 	int					score;
-	int					blockDown;
-	int					random;
-	int					PrintLc;
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);
