@@ -10,6 +10,8 @@ ServerManager::ServerManager()
         clients[i].id = i;
     }
 
+	MakeTimerThreads();
+
 	S_Bind_Listen();
 
     MakeSendThreads();
@@ -59,7 +61,6 @@ void ServerManager::S_Accept()
         }
 
         MakeThreads();
-		//MakeTimerThreads();
     }
 }
 
@@ -103,7 +104,14 @@ void ServerManager::MakeTimerThreads()
 
 void ServerManager::Do_timer()
 {
-	
+	while (true) {
+		if (clients[0].ball.x != -999) {
+			// 33.33ms 대기 (30프레임 / 1초 기준)
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000/*33*/)); // 33ms 대기
+
+			Send_frame_packet();
+		}
+	}
 }
 
 void ServerManager::Disconnect(int c_id)
@@ -119,7 +127,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         strncpy(p->name, clients[p->sessionID].name, p->size - 7);
 
         for (auto& c : clients) {
-            c.Send_login_info_packet();
+            c.Send_login_info_packet(&clients[p->sessionID]);
         }
 
         break;
@@ -477,10 +485,6 @@ void ServerManager::ProcessSendQueue()
             // 큐에서 꺼낸 패킷을 전송
             Do_Send(packet);
         }
-		
-		if (clients[0].ball.x != -999) {
-			Send_frame_packet();
-		}
 
         // 33.33ms 대기 (30프레임 / 1초 기준)
         std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
@@ -500,5 +504,6 @@ void ServerManager::Send_frame_packet()
 		packet->y2 = clients[1].ball.y;
 
 		clients[i].AddPacketToQueue(packet);
+		cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
 	}
 }

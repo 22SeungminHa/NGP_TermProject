@@ -71,9 +71,12 @@ void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
     std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << std::endl;
 }
 
-void Session::Send_login_info_packet()
+void Session::Send_login_info_packet(Session* client)
 {
 	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
+	p->c_id = client->id;
+
+	cout << "Send_login_info_packet ¿Ï·á     " << id << ">>" << client->id << endl;
 
 	AddPacketToQueue(p);
 }
