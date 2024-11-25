@@ -42,6 +42,7 @@ struct PACKET {
     char            packetID;
     char            sessionID;
 
+    PACKET() = default;
     PACKET(unsigned short s, char id, char sID)
         : size(s), packetID(id), sessionID(sID) {}
     ~PACKET() = default;

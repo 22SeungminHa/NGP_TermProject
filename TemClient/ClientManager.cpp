@@ -160,9 +160,10 @@ bool ClientManager::ReceiveServerData()
 
 			// 패킷 처리 가능 여부 확인
 			if (packet_size <= remain_data) {
-				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
+				char* receivedPacket = new char[packet_size];
+				memcpy(receivedPacket, p, packet_size);
 
-				shared_ptr<PACKET> packet = make_shared<PACKET>(*receivedPacket);
+				shared_ptr<PACKET> packet(reinterpret_cast<PACKET*>(receivedPacket));
 				
 				EnterCriticalSection(&packetQueueCS);
 				packetQueue.push(packet);
