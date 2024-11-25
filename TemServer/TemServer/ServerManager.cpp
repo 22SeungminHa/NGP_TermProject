@@ -59,7 +59,7 @@ void ServerManager::S_Accept()
         }
 
         MakeThreads();
-		MakeTimerThreads();
+		//MakeTimerThreads();
     }
 }
 
@@ -77,6 +77,8 @@ void ServerManager::MakeThreads()
     Session* session = &clients[id]; 
 	session->sock = c_sock;
 	cout << c_sock << endl;
+
+	clients[id].Initialize();
 
     // std::thread로 스레드 생성
     std::thread recvThread([session]() {
@@ -482,6 +484,11 @@ void ServerManager::ProcessSendQueue()
             // 큐에서 꺼낸 패킷을 전송
             Do_Send(packet);
         }
+		
+		if (clients[0].ball.x != -999) {
+			clients[0].ball.x++;
+			Send_frame_packet();
+		}
 
         // 33.33ms 대기 (30프레임 / 1초 기준)
         std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기

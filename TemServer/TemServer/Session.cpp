@@ -68,7 +68,7 @@ void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
 
     // 큐에 패킷을 추가
     serverManager->sendPacketQ.push(packet);
-    std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << packet->packetID << std::endl;
+    std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << std::endl;
 }
 
 void Session::Send_login_info_packet()
