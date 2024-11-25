@@ -33,8 +33,15 @@ void ServerManager::S_Bind_Listen()
         return;
 
     // 소켓 생성
-    listen_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_sock == INVALID_SOCKET) err_quit("socket()");
+    s_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (s_sock == INVALID_SOCKET) err_quit("socket()"); 
+	else {
+		int flag = 1; // 1: Nagle 알고리즘 비활성화
+		int result = setsockopt(s_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
+		if (result == SOCKET_ERROR) {
+			std::cerr << "setsockopt TCP_NODELAY 실패, 오류 코드: " << WSAGetLastError() << std::endl;
+		}
+	}
 
     // bind()
     struct sockaddr_in serveraddr;
@@ -42,11 +49,10 @@ void ServerManager::S_Bind_Listen()
     serveraddr.sin_family = AF_INET;
 	inet_pton(AF_INET, serverIP, &serveraddr.sin_addr);
     serveraddr.sin_port = htons(SERVERPORT);
-    retval = bind(listen_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+    retval = bind(s_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
     if (retval == SOCKET_ERROR) err_quit("bind()");
-
     // listen()
-    retval = listen(listen_sock, SOMAXCONN);
+    retval = listen(s_sock, SOMAXCONN);
     if (retval == SOCKET_ERROR) err_quit("listen()");
 }
 
@@ -55,7 +61,7 @@ void ServerManager::S_Accept()
     while (1) {
         // accept()
         addrlen = sizeof(clientaddr);
-        c_sock = accept(listen_sock, (struct sockaddr*)&clientaddr, &addrlen);
+        c_sock = accept(s_sock, (struct sockaddr*)&clientaddr, &addrlen);
         if (c_sock == INVALID_SOCKET) {
             err_display("accept()");
             return;
@@ -78,7 +84,6 @@ void ServerManager::MakeThreads()
     // Session 객체를 첫 번째로 할당
     Session* session = &clients[id]; 
 	session->sock = c_sock;
-	cout << c_sock << endl;
 
 	clients[id].Initialize();
 
@@ -122,6 +127,12 @@ void ServerManager::Do_timer()
 
 void ServerManager::Disconnect(int c_id)
 {
+	clients[c_id].ball.x = -999;
+	closesocket(clients[c_id].sock);
+	for (auto& c : clients) {
+		if (c.ball.x != -999)
+			c.Send_logout_packet(&clients[c_id]);
+	}
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
