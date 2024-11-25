@@ -13,9 +13,9 @@ constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
 static const int MAX_USER = 2; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
 
 constexpr short g           = 10;
-constexpr short t           = 0.19;
+constexpr float t           = 0.5;
 constexpr short side        = 60;
-constexpr short rd          = 12.5;
+constexpr float rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
 constexpr const char* serverIP = "127.0.0.1";

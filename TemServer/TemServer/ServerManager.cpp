@@ -111,12 +111,23 @@ void ServerManager::MakeTimerThreads()
 void ServerManager::Do_timer()
 {
 	while (true) {
-		Ball& ball = clients[0].ball;
+		Session& client = clients[0];
+		Ball& ball = client.ball;
+
 		if (ball.x != -999) {
-			ball.x += ball.vx * 0.03;
+			client.MoveBall();
+
+			if (ball.y + rd > 500) {
+				ball.y = 500 - rd;
+				ball.vy = -40;
+				ball.ax = 0;
+				if (client.isLeftPressed) ball.vx = ball.vx < 0 ? -21 : ball.vx;
+				else if (client.isRightPressed) ball.vx = ball.vx > 0 ? 21 : ball.vx;
+				else ball.vx = 0;
+			}
 		}
-		if (!ball.SameBall(clients[0].last_send_ball, ball)) {
-			ball.BallXYCopy(clients[0].last_send_ball, ball);
+		if (!ball.SameBall(client.last_send_ball, ball)) {
+			ball.BallXYCopy(client.last_send_ball, ball);
 			Send_frame_packet();
 		}
 
@@ -159,10 +170,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         {
         case KEY_TYPE::LEFT: {
 			if (p->keyState == KEY_STATE::DOWN) {
-				client.ball.vx = -20;
+				client.isLeftPressed = true;
 			}
 			else if (p->keyState == KEY_STATE::UP) {
-				client.ball.vx = 0;
+				client.isLeftPressed = false;
 			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
@@ -179,10 +190,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         }
         case KEY_TYPE::RIGHT: {
 			if (p->keyState == KEY_STATE::DOWN) {
-				client.ball.vx = 20;
+				client.isRightPressed = true;
 			}
 			else if (p->keyState == KEY_STATE::UP) {
-				client.ball.vx = 0;
+				client.isRightPressed = false;
 			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
