@@ -7,13 +7,21 @@ struct floatRECT {
 	float left, top, right, bottom;
 };
 
+#define EPSILON	1.0e-6f
+inline bool IsZero(float fValue) {
+	return((fabsf(fValue) < EPSILON));
+}
+inline bool IsEqual(float fA, float fB) {
+	return(IsZero(fA - fB));
+}
+
 struct Ball {
 	float x = -999, y = 10, vx, vy, ax, remx, remy;
 
 	bool SameBall(Ball a, Ball b) {
-		return (a.x == b.x && a.y == b.y);
+		return IsEqual(a.x, b.x) && IsEqual(a.y, b.y);
 	}
-	void BallXYCopy(Ball a, Ball in) {
+	void BallXYCopy(Ball& a, Ball& in) {
 		a.x = in.x;
 		a.y = in.y;
 	}

@@ -8,6 +8,7 @@ ServerManager::ServerManager()
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
         clients[i].id = i;
+        clients[i].last_send_ball.x = 0;
     }
 
 	MakeTimerThreads();
@@ -106,10 +107,11 @@ void ServerManager::Do_timer()
 {
 	while (true) {
 		Ball& ball = clients[0].ball;
-		if (ball.x != -999 && !ball.SameBall(clients[0].last_send_ball, ball)) {
+		if (ball.x != -999) {
 			ball.x += ball.vx * 0.03;
+		}
+		if (!ball.SameBall(clients[0].last_send_ball, ball)) {
 			ball.BallXYCopy(clients[0].last_send_ball, ball);
-
 			Send_frame_packet();
 		}
 
