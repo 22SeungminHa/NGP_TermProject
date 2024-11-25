@@ -133,7 +133,7 @@ bool ClientManager::ReceiveServerData()
 {
 	char buf[BUFSIZE + 1] = { 0 };
 
-	{
+	while(true) {
 		// 데이터 수신
 		int receivedBytes = recv(clientSocket, buf, sizeof(buf), 0);
 		if (receivedBytes <= 0) {
