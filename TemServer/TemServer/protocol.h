@@ -34,6 +34,7 @@ constexpr char SC_FRAME         = 1;
 constexpr char SC_DEATH         = 2;
 constexpr char SC_EDIT_MAP      = 3;
 constexpr char SC_LOAD_MAP      = 4;
+constexpr char SC_PLAYER_INFO   = 5;
 
 #pragma pack(push, 1)
 
@@ -97,5 +98,6 @@ struct SC_LOAD_MAP_PACKET : PACKET {
     char            map[M_WIDTH * M_HEIGHT];
     SC_LOAD_MAP_PACKET(char sID) : PACKET(sizeof(SC_LOAD_MAP_PACKET), SC_LOAD_MAP, sID) {}
 };
+
 
 #pragma pack(pop)

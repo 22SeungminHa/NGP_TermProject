@@ -5,10 +5,14 @@ ServerManager::ServerManager()
 {
     cl_num = 0;
 
+	float y = 10.f;
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
         clients[i].id = i;
+		clients[i].ball.y = y;
+		clients[i].last_send_ball.y = y;
         clients[i].last_send_ball.x = 0;
+		y += 100;
     }
 
 	MakeTimerThreads();
@@ -106,12 +110,19 @@ void ServerManager::MakeTimerThreads()
 void ServerManager::Do_timer()
 {
 	while (true) {
-		Ball& ball = clients[0].ball;
-		if (ball.x != -999) {
-			ball.x += ball.vx * 0.03;
+		bool isMoved{ false };
+
+		for (Session& client : clients) {
+			Ball& ball = client.ball;
+			if (ball.x != -999) {
+				ball.x += ball.vx * 0.03;
+			}
+			if (!ball.SameBall(client.last_send_ball, ball)) {
+				ball.BallXYCopy(client.last_send_ball, ball);
+				isMoved = true;
+			}
 		}
-		if (!ball.SameBall(clients[0].last_send_ball, ball)) {
-			ball.BallXYCopy(clients[0].last_send_ball, ball);
+		if (isMoved) {
 			Send_frame_packet();
 		}
 
@@ -130,12 +141,21 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
     {
     case CS_LOGIN: {
         CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+		cout<<
         strncpy(p->name, clients[p->sessionID].name, p->size - 7);
 
         for (auto& c : clients) {
             c.Send_login_info_packet(&clients[p->sessionID]);
         }
 
+		if (c_id > 0) {
+			for (auto& c : clients) {
+				if (c.id != c_id) {
+					clients[p->sessionID].Send_login_info_packet(&c);
+				}
+			}
+		}
+		
         break;
     }
     case CS_KEY_PRESS: {
@@ -518,6 +538,6 @@ void ServerManager::Send_frame_packet()
 		packet->y2 = clients[1].ball.y;
 
 		clients[i].AddPacketToQueue(packet);
-		cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
+		//cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
 	}
 }

@@ -12,6 +12,10 @@ bool ClientManager::Initialize(HWND _hwnd)
 	GetClientRect(hwnd, &window);
 
 	ball = { 30, 12.5, 0, 0, 0 };
+	ball.playerID = 999;
+	otherPlayer = { 30, 500, 0, 0, 0 };
+	otherPlayer.playerID = 999;
+
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = StagePlay;
 	starcnt = 0;
@@ -198,9 +202,15 @@ void ClientManager::UsingPacket(char* buffer)
 	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
 		auto loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
-		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)loginInfoPacket->sessionID << std::endl;
+		u_short newClientID = loginInfoPacket->c_id;
+		std::cout << "SC_LOGIN_INFO_PACKET c_id = " << (int)newClientID << std::endl;
 
-		ball.playerID = loginInfoPacket->sessionID;
+		if (ball.playerID == 999) {
+			ball.playerID = newClientID;
+		}
+		else if( ball.playerID != newClientID){
+			otherPlayer.playerID = newClientID;
+		}
 		break;
 	}
 	case SC_FRAME: {
@@ -209,8 +219,24 @@ void ClientManager::UsingPacket(char* buffer)
 			"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
 			"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
-		ball.x = framePacket->x1;
-		ball.y = framePacket->y1;
+		if (framePacket->c1_id == ball.playerID) {
+			ball.x = framePacket->x1;
+			ball.y = framePacket->y1;
+
+			if (otherPlayer.playerID != 999) {
+				otherPlayer.x = framePacket->x2;
+				otherPlayer.y = framePacket->y2;
+			}
+		}
+		else if(framePacket->c2_id == ball.playerID){
+			ball.x = framePacket->x2;
+			ball.y = framePacket->y2;
+
+			if (otherPlayer.playerID != 999) {
+				otherPlayer.x = framePacket->x1;
+				otherPlayer.y = framePacket->y1;
+			}
+		}
 		break;
 	}
 	case SC_DEATH: {

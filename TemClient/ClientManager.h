@@ -28,7 +28,7 @@ public:
 
 	Ball ball{};
 	POINT ballStartPos{};
-	std::vector<Ball> otherPlayers{};
+	Ball otherPlayer{};
 
 	floatRECT ballrc{};
 
