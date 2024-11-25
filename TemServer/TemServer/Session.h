@@ -65,6 +65,7 @@ public:
 	SOCKET	sock;
 	ServerManager* serverManager;
 	int		recv_remain = 0;
+	char	save_buf[BUFSIZE * 2] = { 0 };
 
 	DWORD Do_Recv(LPVOID arg);
 

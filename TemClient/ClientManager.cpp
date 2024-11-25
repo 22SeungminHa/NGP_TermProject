@@ -78,6 +78,7 @@ void ClientManager::LoginToGame()
 
 bool ClientManager::SendLoginPacket(int sock, const char* name)
 {
+
 	CS_LOGIN_PACKET loginPacket(0);
 	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
 

@@ -4,8 +4,6 @@
 DWORD Session::Do_Recv(LPVOID arg)
 {
 	char buf[BUFSIZE + 1] = { 0 };
-	char save_buf[BUFSIZE * 2] = { 0 };
-	int recv_remain = 0; // 남은 데이터 크기
 
 	while (true) {
 		// 데이터 수신
@@ -14,18 +12,19 @@ DWORD Session::Do_Recv(LPVOID arg)
 			err_display("recv()");
 			return 1;
 		}
+		cout << "receivedBytes : " << receivedBytes << endl;
 
 		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
-		char* p = save_buf; // 패킷 처리 시작 위치
+		char* p = buf; // 패킷 처리 시작 위치
 
 		// 패킷 처리 루프
 		while (remain_data > 0) {
-			WORD* byte = reinterpret_cast<WORD*>(p); // 패킷 크기 읽기
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // 패킷 크기 읽기
 			int packet_size = *byte;
 
 			// 패킷 크기 검증
-			if (packet_size > BUFSIZE || packet_size < sizeof(WORD)) {
-				std::cerr << "packet size: " << packet_size << std::endl;
+			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
+				std::cerr << "Invalid packet size: " << packet_size << std::endl;
 				recv_remain = 0;
 				remain_data = 0;
 				break;
@@ -47,6 +46,12 @@ DWORD Session::Do_Recv(LPVOID arg)
 		// 남은 데이터 보관
 		recv_remain = remain_data;
 		if (remain_data > 0) {
+			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
+			if (remain_data > sizeof(save_buf)) {
+				std::cerr << "Remaining data exceeds buffer size, data may be lost!" << std::endl;
+				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
+			}
+
 			memmove(save_buf, p, remain_data); // 남은 데이터를 save_buf로 이동
 		}
 	}
