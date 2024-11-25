@@ -13,9 +13,9 @@ constexpr int B_HEIGHT  = 15;    // block size, block�� ũ��
 static const int MAX_USER = 2; /*std::thread::hardware_concurrency() - 2*/ // MainThread�� send()�� ������ ����
 
 constexpr short g           = 10;
-constexpr short t           = 0.19;
+constexpr float t           = 0.3;
 constexpr short side        = 60;
-constexpr short rd          = 12.5;
+constexpr float rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
 constexpr const char* serverIP = "127.0.0.1";
@@ -34,7 +34,7 @@ constexpr char SC_FRAME         = 1;
 constexpr char SC_DEATH         = 2;
 constexpr char SC_EDIT_MAP      = 3;
 constexpr char SC_LOAD_MAP      = 4;
-constexpr char SC_PLAYER_INFO   = 5;
+constexpr char SC_LOGOUT        = 5;
 
 #pragma pack(push, 1)
 
@@ -74,6 +74,11 @@ struct SC_LOGIN_INFO_PACKET : PACKET {
     unsigned short  c_id;
     char            name[NAME_SIZE];
     SC_LOGIN_INFO_PACKET(char sID) : PACKET(sizeof(SC_LOGIN_INFO_PACKET), SC_LOGIN_INFO, sID) {}
+};
+
+struct SC_LOGOUT_PACKET : PACKET {
+    unsigned short  c_id;
+    SC_LOGOUT_PACKET(char sID) : PACKET(sizeof(SC_LOGOUT_PACKET), SC_LOGOUT, sID) {}
 };
 
 struct SC_FRAME_PACKET : PACKET {

@@ -12,7 +12,7 @@ ServerManager::ServerManager()
 		clients[i].ball.y = y;
 		clients[i].last_send_ball.y = y;
         clients[i].last_send_ball.x = 0;
-		y += 100;
+		    y += 100;
     }
 
 	MakeTimerThreads();
@@ -31,14 +31,14 @@ ServerManager::~ServerManager()
 
 void ServerManager::S_Bind_Listen()
 {
-    // À©¼Ó ÃÊ±âÈ­
+    // ìœˆì† ì´ˆê¸°í™”
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
         return;
 
-    // ¼ÒÄÏ »ı¼º
-    listen_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_sock == INVALID_SOCKET) err_quit("socket()");
+    // ì†Œì¼“ ìƒì„±
+    s_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (s_sock == INVALID_SOCKET) err_quit("socket()"); 
 
     // bind()
     struct sockaddr_in serveraddr;
@@ -46,11 +46,10 @@ void ServerManager::S_Bind_Listen()
     serveraddr.sin_family = AF_INET;
 	inet_pton(AF_INET, serverIP, &serveraddr.sin_addr);
     serveraddr.sin_port = htons(SERVERPORT);
-    retval = bind(listen_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+    retval = bind(s_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
     if (retval == SOCKET_ERROR) err_quit("bind()");
-
     // listen()
-    retval = listen(listen_sock, SOMAXCONN);
+    retval = listen(s_sock, SOMAXCONN);
     if (retval == SOCKET_ERROR) err_quit("listen()");
 }
 
@@ -59,11 +58,18 @@ void ServerManager::S_Accept()
     while (1) {
         // accept()
         addrlen = sizeof(clientaddr);
-        c_sock = accept(listen_sock, (struct sockaddr*)&clientaddr, &addrlen);
+        c_sock = accept(s_sock, (struct sockaddr*)&clientaddr, &addrlen);
         if (c_sock == INVALID_SOCKET) {
             err_display("accept()");
             return;
         }
+		else {
+			int flag = 1; // 1: Nagle ì•Œê³ ë¦¬ì¦˜ ë¹„í™œì„±í™”
+			int result = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
+			if (result == SOCKET_ERROR) {
+				std::cerr << "setsockopt TCP_NODELAY ì‹¤íŒ¨, ì˜¤ë¥˜ ì½”ë“œ: " << WSAGetLastError() << std::endl;
+			}
+		}
 
         MakeThreads();
     }
@@ -79,32 +85,31 @@ void ServerManager::MakeThreads()
 		}
 	}
 
-    // Session °´Ã¼¸¦ Ã¹ ¹øÂ°·Î ÇÒ´ç
+    // Session ê°ì²´ë¥¼ ì²« ë²ˆì§¸ë¡œ í• ë‹¹
     Session* session = &clients[id]; 
 	session->sock = c_sock;
-	cout << c_sock << endl;
 
 	clients[id].Initialize();
 
-    // std::thread·Î ½º·¹µå »ı¼º
+    // std::threadë¡œ ìŠ¤ë ˆë“œ ìƒì„±
     std::thread recvThread([session]() {
-        session->Do_Recv((LPVOID)session);  // SessionÀÇ Do_Recv È£Ãâ
+        session->Do_Recv((LPVOID)session);  // Sessionì˜ Do_Recv í˜¸ì¶œ
         });
 
-    // ½º·¹µå Á¾·á¸¦ °ü¸®ÇÏ±â À§ÇØ detach() ¶Ç´Â join()À» »ç¿ëÇÒ ¼ö ÀÖ½À´Ï´Ù.
-    recvThread.detach();  // ¹é±×¶ó¿îµå¿¡¼­ ½ÇÇàµÇµµ·Ï ½º·¹µå¸¦ ºĞ¸®
+    // ìŠ¤ë ˆë“œ ì¢…ë£Œë¥¼ ê´€ë¦¬í•˜ê¸° ìœ„í•´ detach() ë˜ëŠ” join()ì„ ì‚¬ìš©í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
+    recvThread.detach();  // ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì‹¤í–‰ë˜ë„ë¡ ìŠ¤ë ˆë“œë¥¼ ë¶„ë¦¬
 }
 
 void ServerManager::MakeSendThreads()
 {
     std::thread sendThread([this]() { ProcessSendQueue(); });
-    sendThread.detach();  // ½º·¹µå¸¦ ºĞ¸®ÇÏ¿© ¹é±×¶ó¿îµå¿¡¼­ ½ÇÇàµÇµµ·Ï ÇÔ
+    sendThread.detach();  // ìŠ¤ë ˆë“œë¥¼ ë¶„ë¦¬í•˜ì—¬ ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì‹¤í–‰ë˜ë„ë¡ í•¨
 }
 
 void ServerManager::MakeTimerThreads()
 {
 	std::thread timerThread([this]() { Do_timer(); });
-	timerThread.detach();  // ½º·¹µå¸¦ ºĞ¸®ÇÏ¿© ¹é±×¶ó¿îµå¿¡¼­ ½ÇÇàµÇµµ·Ï ÇÔ
+	timerThread.detach();  // ìŠ¤ë ˆë“œë¥¼ ë¶„ë¦¬í•˜ì—¬ ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì‹¤í–‰ë˜ë„ë¡ í•¨
 }
 
 void ServerManager::Do_timer()
@@ -126,13 +131,19 @@ void ServerManager::Do_timer()
 			Send_frame_packet();
 		}
 
-		// 33.33ms ´ë±â (30ÇÁ·¹ÀÓ / 1ÃÊ ±âÁØ)
-		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms ´ë±â
+		// 33.33ms ëŒ€ê¸° (30í”„ë ˆì„ / 1ì´ˆ ê¸°ì¤€)
+		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms ëŒ€ê¸°
 	}
 }
 
 void ServerManager::Disconnect(int c_id)
 {
+	clients[c_id].ball.x = -999;
+	closesocket(clients[c_id].sock);
+	for (auto& c : clients) {
+		if (c.ball.x != -999)
+			c.Send_logout_packet(&clients[c_id]);
+	}
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
@@ -141,7 +152,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
     {
     case CS_LOGIN: {
         CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		cout << "·Î±×ÀÎÆĞÅ¶ ¹ŞÀ½" << endl;
+		cout << "ë¡œê·¸ì¸íŒ¨í‚· ë°›ìŒ" << endl;
 
 		int id{};
 		for (id = 0; id < clients.size(); id++ ) {
@@ -176,10 +187,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         {
         case KEY_TYPE::LEFT: {
 			if (p->keyState == KEY_STATE::DOWN) {
-				client.ball.vx = -20;
+				client.isLeftPressed = true;
 			}
 			else if (p->keyState == KEY_STATE::UP) {
-				client.ball.vx = 0;
+				client.isLeftPressed = false;
 			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
@@ -196,10 +207,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         }
         case KEY_TYPE::RIGHT: {
 			if (p->keyState == KEY_STATE::DOWN) {
-				client.ball.vx = 20;
+				client.isRightPressed = true;
 			}
 			else if (p->keyState == KEY_STATE::UP) {
-				client.ball.vx = 0;
+				client.isRightPressed = false;
 			}
 			/*if (client.ball.vy == 5) {
 				client.Scheck = telpo;
@@ -263,11 +274,11 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 		}
 
 		if (client.GamePlay == Start) {
-			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // ½ºÅ×ÀÌÁö ¹öÆ°
+			if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // ìŠ¤í…Œì´ì§€ ë²„íŠ¼
 				client.Scheck = click;
 				client.GamePlay = StageSelect;
 			}
-			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // ¸ÊÅø ¹öÆ°
+			else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // ë§µíˆ´ ë²„íŠ¼
 				client.Scheck = click;
 				client.GamePlay = CustomMode;
 				client.ballStartPos = { -1, -1 };
@@ -278,8 +289,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 		}
 		else if (client.GamePlay == StageSelect) {
 			if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				client.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage1.txt" };
+				client.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage1.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -297,8 +308,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				in.close();
 			}
 			else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				client.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage2.txt" };
+				client.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage2.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -316,8 +327,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				in.close();
 			}
 			else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-				client.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage3.txt" };
+				client.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage3.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -339,8 +350,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = Start;
 			}
 			else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
-				client.Scheck = click; // ÀÌÁ¦ ¿©±â¿¡ Å¬¸¯ÇÏ¸é 1 2 3À¸·Î ÇØ°¡Áö°í ½ºÅ×ÀÌÁö °í¸£¸é ÆÄÀÏ ºÒ·¯¿Í¼­ º¤ÅÍ¹è¿­¿¡ ³Ö¾îÁÖ´Â ÇÔ¼ö Â¥¼­ ³ÖÀ¸¸é µÉ µí
-				ifstream in{ "¹Ù¿î½ºº¼ ¸Ê/Stage4.txt" };
+				client.Scheck = click; // ì´ì œ ì—¬ê¸°ì— í´ë¦­í•˜ë©´ 1 2 3ìœ¼ë¡œ í•´ê°€ì§€ê³  ìŠ¤í…Œì´ì§€ ê³ ë¥´ë©´ íŒŒì¼ ë¶ˆëŸ¬ì™€ì„œ ë²¡í„°ë°°ì—´ì— ë„£ì–´ì£¼ëŠ” í•¨ìˆ˜ ì§œì„œ ë„£ìœ¼ë©´ ë  ë“¯
+				ifstream in{ "ë°”ìš´ìŠ¤ë³¼ ë§µ/Stage4.txt" };
 
 				for (int y = 0; y < 15; ++y) {
 					for (int x = 0; x < 25; ++x) {
@@ -359,24 +370,24 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 			}
 		}
 		else if (client.GamePlay == StageStop) {
-			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // ¸ŞÀÎÈ­¸é ¹öÆ° À§ Ä¿¼­ 
+			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // ë©”ì¸í™”ë©´ ë²„íŠ¼ ìœ„ ì»¤ì„œ 
 				client.Scheck = click;
 				client.GamePlay = Start;
 			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // ½ºÅ×ÀÌÁö ¹öÆ° À§ Ä¿¼­ 
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // ìŠ¤í…Œì´ì§€ ë²„íŠ¼ ìœ„ ì»¤ì„œ 
 				client.Scheck = click;
 				client.GamePlay = StageSelect;
 			}
-			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // Àç½ÃÀÛ ¹öÆ° À§ Ä¿¼­
+			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // ì¬ì‹œì‘ ë²„íŠ¼ ìœ„ ì»¤ì„œ
 				client.Scheck = click;
 				client.MakeVector();
 				client.GamePlay = StageDeath;
-				client.ball = { (float)ballStartPos.x, (float)ballStartPos.y, 0, 0, 0 }; // Àç½ÃÀÛ Àü¿¡°É·Î ÇÏ¸é death·Î ¹Ù²î°í ¾Ö´Ï¸ŞÀÌ¼Ç ³¡³ª°í ³Ñ¾î°¡¾ßµÅ¼­ °Á ¹Ù·Î ¸®½ºÆù½ÃÅ´
+				client.ball = { (float)ballStartPos.x, (float)ballStartPos.y, 0, 0, 0 }; // ì¬ì‹œì‘ ì „ì—ê±¸ë¡œ í•˜ë©´ deathë¡œ ë°”ë€Œê³  ì• ë‹ˆë©”ì´ì…˜ ëë‚˜ê³  ë„˜ì–´ê°€ì•¼ë¼ì„œ ê± ë°”ë¡œ ë¦¬ìŠ¤í°ì‹œí‚´
 			}
 		}
 		else if (client.GamePlay == CustomMode) {
 			drag = true;
-			//ºí·° ¼±ÅÃ
+			//ë¸”ëŸ­ ì„ íƒ
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
 				client.Scheck = click;
 				for (int i = 0; i < 14; i++) {
@@ -391,13 +402,13 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 						selection = i + 14;
 				}
 			}
-			// ÇÃ·¹ÀÌ ¹öÆ°
+			// í”Œë ˆì´ ë²„íŠ¼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				client.Scheck = click;
 				if (ballStartPos.x == -1 || ballStartPos.y == -1) {
 					TCHAR a[100];
-					wsprintf(a, L"°ø À§Ä¡¸¦ ¼±Á¤ÇØÁÖ¼¼¿ä.");
-					MessageBox(hwnd, a, L"¾Ë¸²", MB_OK);
+					wsprintf(a, L"ê³µ ìœ„ì¹˜ë¥¼ ì„ ì •í•´ì£¼ì„¸ìš”.");
+					MessageBox(hwnd, a, L"ì•Œë¦¼", MB_OK);
 					drag = false;
 					break;
 				}
@@ -405,21 +416,21 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = CustomPlay;
 				client.MakeVector();
 			}
-			// Áö¿ì°³ ¹öÆ°
+			// ì§€ìš°ê°œ ë²„íŠ¼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				client.Scheck = click;
 				selection = -1;
 			}
-			// ¸®¼Â ¹öÆ°
+			// ë¦¬ì…‹ ë²„íŠ¼
 			else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				client.Scheck = click;
 				memset(client.Map, 0, sizeof(client.Map));
 				ballStartPos = { -1, -1 };
 			}
-			// ºÒ·¯¿À±â ¹öÆ°
+			// ë¶ˆëŸ¬ì˜¤ê¸° ë²„íŠ¼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				client.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- ±¸Á¶Ã¼ ÃÊ±âÈ­
+				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 				OFN.lStructSize = sizeof(OPENFILENAME);
 				OFN.hwndOwner = hwnd;
 				OFN.lpstrFilter = filter;
@@ -427,10 +438,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				OFN.nMaxFile = 256;
 				OFN.lpstrInitialDir = L".";
 
-				if (GetOpenFileNameW(&OFN) != 0) { //--- ÆÄÀÏ ÇÔ¼ö È£Ãâ
+				if (GetOpenFileNameW(&OFN) != 0) { //--- íŒŒì¼ í•¨ìˆ˜ í˜¸ì¶œ
 					TCHAR a[100];
-					wsprintf(a, L"%s ÆÄÀÏÀ» ¿©½Ã°Ú½À´Ï±î ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"¿­±â ¼±ÅÃ", MB_OK);
+					wsprintf(a, L"%s íŒŒì¼ì„ ì—¬ì‹œê² ìŠµë‹ˆê¹Œ ?", OFN.lpstrFile);
+					MessageBox(hwnd, a, L"ì—´ê¸° ì„ íƒ", MB_OK);
 
 					ifstream in{ OFN.lpstrFile };
 
@@ -448,10 +459,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				}
 				drag = false;
 			}
-			// ÀúÀå ¹öÆ°
+			// ì €ì¥ ë²„íŠ¼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				client.Scheck = click;
-				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- ±¸Á¶Ã¼ ÃÊ±âÈ­
+				memset(&OFN, 0, sizeof(OPENFILENAME)); //--- êµ¬ì¡°ì²´ ì´ˆê¸°í™”
 				OFN.lStructSize = sizeof(OPENFILENAME);
 				OFN.hwndOwner = hwnd;
 				OFN.lpstrFilter = filter;
@@ -459,24 +470,24 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				OFN.nMaxFile = 256;
 				OFN.lpstrInitialDir = L".";
 
-				if (GetSaveFileNameW(&OFN) != 0) { //--- ÆÄÀÏ ÇÔ¼ö È£Ãâ
+				if (GetSaveFileNameW(&OFN) != 0) { //--- íŒŒì¼ í•¨ìˆ˜ í˜¸ì¶œ
 					TCHAR a[100];
-					wsprintf(a, L"%s À§Ä¡¿¡ ÆÄÀÏÀ» ÀúÀåÇÏ½Ã°Ú½À´Ï±î ?", OFN.lpstrFile);
-					MessageBox(hwnd, a, L"ÀúÀåÇÏ±â ¼±ÅÃ", MB_OK);
+					wsprintf(a, L"%s ìœ„ì¹˜ì— íŒŒì¼ì„ ì €ì¥í•˜ì‹œê² ìŠµë‹ˆê¹Œ ?", OFN.lpstrFile);
+					MessageBox(hwnd, a, L"ì €ì¥í•˜ê¸° ì„ íƒ", MB_OK);
 					TCHAR b[100];
 					wsprintf(b, L"%s.txt", OFN.lpstrFile);
 
 					ofstream out{ b };
 
 
-					// ¸ÊÅø¹è¿­ ÀúÀå
+					// ë§µíˆ´ë°°ì—´ ì €ì¥
 					for (int y = 0; y < 15; ++y) {
 						for (int x = 0; x < 25; ++x) {
 							out << client.Map[y][x] << " ";
 						}
 						out << endl;
 					}
-					// °ø ½ÃÀÛÀ§Ä¡, Àü±â »óÅÂ ÀúÀå
+					// ê³µ ì‹œì‘ìœ„ì¹˜, ì „ê¸° ìƒíƒœ ì €ì¥
 					out << ballStartPos.x << " " << ballStartPos.y << " " << client.isSwitchOff << endl;
 
 					out.close();
@@ -509,7 +520,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
     Session& session = clients[sessionID];
 
-    // Àü¼ÛÇÒ µ¥ÀÌÅÍ
+    // ì „ì†¡í•  ë°ì´í„°
     int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
     if (retval == SOCKET_ERROR) {
@@ -522,12 +533,12 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
 void ServerManager::ProcessSendQueue() 
 {
-    while (true) {  // ¹«ÇÑ ·çÇÁ (ÆĞÅ¶ÀÌ ÀÖÀ» ¶§ °è¼Ó Ã³¸®)
+    while (true) {  // ë¬´í•œ ë£¨í”„ (íŒ¨í‚·ì´ ìˆì„ ë•Œ ê³„ì† ì²˜ë¦¬)
         std::shared_ptr<PACKET> packet;
 
-        // Å¥¿¡¼­ ÆĞÅ¶À» °¡Á®¿È
+        // íì—ì„œ íŒ¨í‚·ì„ ê°€ì ¸ì˜´
         if (sendPacketQ.try_pop(packet)) {
-            // Å¥¿¡¼­ ²¨³½ ÆĞÅ¶À» Àü¼Û
+            // íì—ì„œ êº¼ë‚¸ íŒ¨í‚·ì„ ì „ì†¡
             Do_Send(packet);
         }
     }
@@ -547,6 +558,6 @@ void ServerManager::Send_frame_packet()
 		packet->y2 = clients[1].ball.y;
 
 		clients[i].AddPacketToQueue(packet);
-		//cout << "Send_frame_packet ¿Ï·á     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
+		//cout << "Send_frame_packet ì™„ë£Œ     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
 	}
 }
