@@ -181,6 +181,7 @@ void Update()
 #pragma region key event
 	INPUT.Update();
 
+	EnterCriticalSection(&(INPUT.keyEventCS));
 	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyPress(KEY_TYPE::RIGHT)) {
 		keyEventQueue.push(KEY_TYPE::RIGHT);
 	}
@@ -190,14 +191,16 @@ void Update()
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
 		keyEventQueue.push(KEY_TYPE::ESCAPE);
 	}
+	LeaveCriticalSection(&(INPUT.keyEventCS));
+
+	EnterCriticalSection(&(INPUT.mouseEventCS));
 	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
 		mouseEventQueue.push(KEY_TYPE::LBUTTON);
 	}
 	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
 		mouseEventQueue.push(KEY_TYPE::RBUTTON);
 	}
-
-	LeaveCriticalSection(&INPUT.keyEventCS);
+	LeaveCriticalSection(&(INPUT.mouseEventCS));
 #pragma endregion
 
 	// 공 관련 효과음 재생
@@ -493,19 +496,19 @@ void Render()
 
 void SendKeyPackets()
 {
+	EnterCriticalSection(&(INPUT.keyEventCS));
 	while (!keyEventQueue.empty()) {
-		EnterCriticalSection(&(INPUT.keyEventCS));
 		game.SendKeyPacket(0, keyEventQueue.front());
 		keyEventQueue.pop();
-		LeaveCriticalSection(&(INPUT.keyEventCS));
 	}
+	LeaveCriticalSection(&(INPUT.keyEventCS));
 
+	EnterCriticalSection(&(INPUT.mouseEventCS));
 	while (!mouseEventQueue.empty()) {
-		EnterCriticalSection(&(INPUT.mouseEventCS));
 		game.SendMousePacket(mouseEventQueue.front(), INPUT.GetMousePosition());
 		mouseEventQueue.pop();
-		LeaveCriticalSection(&(INPUT.mouseEventCS));
 	}
+	LeaveCriticalSection(&(INPUT.mouseEventCS));
 }
 
 DWORD __stdcall ClientSend(LPVOID arg)
@@ -520,10 +523,7 @@ DWORD __stdcall ClientSend(LPVOID arg)
 
 DWORD __stdcall ClientReceive(LPVOID arg)
 {
-	while (true)
-	{
-		game.ReceiveServerData();
-	}
+	game.ReceiveServerData();
 
 	return 0;
 }

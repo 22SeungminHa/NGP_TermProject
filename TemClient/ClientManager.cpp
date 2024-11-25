@@ -129,24 +129,57 @@ bool ClientManager::ReceivePlayerID()
 
 bool ClientManager::ReceiveServerData()
 {
-	char buffer[BUFSIZE + 1];
-	int retval = recv(clientSocket, buffer, sizeof(buffer), 0);
+	char buf[BUFSIZE + 1] = { 0 };
 
-	if (retval == SOCKET_ERROR) {
-		err_display("recv()");
-		return false;
+	{
+		// 데이터 수신
+		int receivedBytes = recv(clientSocket, buf, sizeof(buf), 0);
+		if (receivedBytes <= 0) {
+			err_display("recv()");
+			return 1;
+		}
+		cout << "receivedBytes : " << receivedBytes << endl;
+
+		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
+		char* p = buf; // 패킷 처리 시작 위치
+
+		// 패킷 처리 루프
+		while (remain_data > 0) {
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // 패킷 크기 읽기
+			int packet_size = *byte;
+
+			// 패킷 크기 검증
+			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
+				std::cerr << "Invalid packet size: " << packet_size << std::endl;
+				recv_remain = 0;
+				remain_data = 0;
+				break;
+			}
+
+			// 패킷 처리 가능 여부 확인
+			if (packet_size <= remain_data) {
+				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
+				UsingPacket(reinterpret_cast<char*>(receivedPacket));
+
+				p += packet_size;       // 다음 패킷으로 이동
+				remain_data -= packet_size;
+			}
+			else {
+				break; // 패킷 데이터가 부족함
+			}
+		}
+
+		recv_remain = remain_data;
+		if (remain_data > 0) {
+			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
+			if (remain_data > sizeof(save_buf)) {
+				std::cerr << "Remaining data exceeds buffer size, data may be lost!" << std::endl;
+				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
+			}
+
+			memmove(save_buf, p, remain_data); // 남은 데이터를 save_buf로 이동
+		}
 	}
-	else if (retval == 0) {
-		return false;
-	}
-
-	PACKET* pPacket = reinterpret_cast<PACKET*>(buffer);
-
-	if (retval < pPacket->size) {
-		return false;
-	}
-
-	UsingPacket(buffer);
 
 	return true;
 }
@@ -158,8 +191,8 @@ void ClientManager::UsingPacket(char* buffer)
 	switch (pPacket->packetID) {
 	case SC_LOGIN_INFO: {
 		SC_LOGIN_INFO_PACKET* loginInfoPacket = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(buffer);
-		ball.playerID = loginInfoPacket->c_id;
-		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->c_id));
+		ball.playerID = loginInfoPacket->sessionID;
+		log_display("SC_LOGIN_INFO_PACKET\nc_id = " + std::to_string(loginInfoPacket->sessionID));
 		break;
 	}
 	case SC_FRAME: {
@@ -170,6 +203,8 @@ void ClientManager::UsingPacket(char* buffer)
 			"\nc2_id = " + std::to_string(framePacket->c2_id) +
 			", x = " + std::to_string(framePacket->x2) +
 			", y = " + std::to_string(framePacket->y2));
+		ball.x = framePacket->x1;
+		ball.y = framePacket->y1;
 		break;
 	}
 	case SC_DEATH: {
@@ -308,10 +343,5 @@ void ClientManager::err_display(int errcode)
 
 void ClientManager::log_display(const std::string& msg)
 {
-	MessageBoxA(
-		NULL, 
-		msg.c_str(),
-		"Log Message",
-		MB_OK | MB_ICONINFORMATION
-	);
+	cout << msg << endl;
 }

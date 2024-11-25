@@ -52,6 +52,9 @@ public:
 	int PrintLc{};
 
 	int retval{};
+	int	recv_remain{};
+	char save_buf[BUFSIZE * 2]{};
+
 	SOCKET clientSocket{};
 	
 
