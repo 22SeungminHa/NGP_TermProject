@@ -497,19 +497,16 @@ void ServerManager::ProcessSendQueue()
 
 void ServerManager::Send_frame_packet()
 {
-    auto p = std::make_shared<SC_FRAME_PACKET>(clients[0].id);
+	for (size_t i = 0; i < clients.size(); ++i) {
+		auto packet = std::make_shared<SC_FRAME_PACKET>(clients[i].id);
 
-    p->c1_id = clients[0].id;
-    p->x1 = clients[0].ball.x;
-    p->y1 = clients[0].ball.y;
-    p->c2_id = clients[1].id;
-    p->x2 = clients[1].ball.x;
-    p->y2 = clients[1].ball.y;
+		packet->c1_id = clients[0].id;
+		packet->x1 = clients[0].ball.x;
+		packet->y1 = clients[0].ball.y;
+		packet->c2_id = clients[1].id;
+		packet->x2 = clients[1].ball.x;
+		packet->y2 = clients[1].ball.y;
 
-    clients[0].AddPacketToQueue(p);
-
-    p->sessionID = clients[1].id;
-    clients[1].AddPacketToQueue(p);
-
-
+		clients[i].AddPacketToQueue(packet);
+	}
 }
