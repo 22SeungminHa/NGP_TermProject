@@ -66,7 +66,10 @@ void ServerManager::MakeThreads()
 {
     int id;
     for (auto& c : clients) {
-        if (c.ball.x == -999) id = c.id;
+		if (c.ball.x == -999) {
+			id = c.id;
+			break;
+		}
     }
 
     // Session 객체를 첫 번째로 할당
@@ -480,4 +483,6 @@ void ServerManager::Send_frame_packet()
 
     p->sessionID = clients[1].id;
     clients[1].AddPacketToQueue(p);
+
+
 }

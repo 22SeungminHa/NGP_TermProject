@@ -7,6 +7,7 @@ void CInputManager::Initialize(HWND hwnd)
 	mStates.fill(KEY_STATE::NONE);
 
 	InitializeCriticalSection(&keyEventCS);
+	InitializeCriticalSection(&mouseEventCS);
 }
 
 void CInputManager::Update()
@@ -23,7 +24,6 @@ void CInputManager::Update()
 		return;
 	}
 
-	EnterCriticalSection(&keyEventCS);
 	for (UINT16 key = 0; key < KEY_TYPE_COUNT; key++)
 	{
 		KEY_STATE& state = mStates[key];
@@ -47,5 +47,7 @@ void CInputManager::Update()
 		}
 	}
 
+	EnterCriticalSection(&mouseEventCS);
 	GetCursorPos(&mMousePos);
+	LeaveCriticalSection(&mouseEventCS);
 }
