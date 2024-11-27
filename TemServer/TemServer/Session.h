@@ -65,6 +65,7 @@ public:
 	int MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc);
 	int isCrashed(const floatRECT* ballrc, const floatRECT* blockrc);
 	Block* Search(const int type);
+	bool CrashBottom();
 
 	void CrashBasicRight(const Block* block);
 	void CrashBasicLeft(const Block* block);
