@@ -18,7 +18,6 @@ bool ClientManager::Initialize(HWND _hwnd)
 	otherPlayer.playerID = 7;
 	otherPlayer.isDead = false;
 
-	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
 
 	starcnt = 0;

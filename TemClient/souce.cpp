@@ -14,6 +14,8 @@
 
 //전역 변수
 ClientManager game;
+HANDLE hThreadForSend;
+HANDLE hThreadForReceive;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
@@ -154,6 +156,8 @@ void LoadResources()
 
 		imgBlockList.Load(TEXT("바운스볼 PNG/맵툴_블럭 선택 목록.png"));
 		imgOutline.Load(TEXT("바운스볼 PNG/맵툴_블럭 선택 테두리.png"));
+
+		imgWaiting.Load(TEXT("바운스볼 PNG/waiting.png"));
 	}
 	// 사운드 로드
 	{
@@ -184,7 +188,7 @@ void Update()
 	switch (game.GamePlay)
 	{
 	case Start:
-	case StageSelect: 
+	case StageSelect:
 	case StagePlay:
 	case StageStop:
 	case StageClear:
