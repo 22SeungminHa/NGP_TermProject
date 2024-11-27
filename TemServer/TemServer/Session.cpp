@@ -126,7 +126,7 @@ void Session::Send_load_map_packet(Session* client)
 void Session::Initialize() {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = StagePlay;
+	GamePlay = StageDeath;
 	starcnt = 0;
 	isSwitchOff = false;
 	Scheck = 0, score = 0;
@@ -279,10 +279,14 @@ void Session::Crash(int dir, int i, int y) {
 			Scheck = music;
 			return;
 		}
-		default: {
-			if (block[y][i].type == ClimbBK && (block[y][i].subtype == 2 || block[y][i].subtype == 3)) {}
-			else
+		case ClimbBK: {
+			if (!(block[y][i].subtype == 2 || block[y][i].subtype == 3)) {
 				CrashBasicTop(&block[y][i]);
+			}
+			return;
+		}
+		default: {
+			CrashBasicTop(&block[y][i]);
 			return;
 		}
 		}
@@ -463,55 +467,39 @@ void Session::MoveBall() {
 void Session::MakeVector() {
 	ClearVector();
 	Block temp;
-	int groupcnt = 1; // 이동블럭 그룹
-	bool Continuous = false;
 	starcnt = 0;
 
-	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
-		for (int i = 0; i < 15; i++) {
-			for (int j = 0; j < 25; j++) {
-				if (Map[i][j]) { // 블럭일 경우
-					// 별
-					if (Map[i][j] == 1)
-						starcnt++;
+	for (int i = 0; i < 15; i++) {
+		for (int j = 0; j < 25; j++) {
+			if (Map[i][j]) { // 블럭일 경우
+				// 별
+				if (Map[i][j] == 1)
+					starcnt++;
 
-					temp.x = Map[i][j] - 1 == 17 ? j * side : j;
-					temp.y = Map[i][j] - 1 == 17 ? i * side : i;
-					temp.type = list[Map[i][j] - 1].type;
-					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // 전기 관련 블럭
-						temp.subtype = isSwitchOff;
+				temp.x = j;
+				temp.y = i;
+				temp.type = list[Map[i][j] - 1].type;
+				if (Map[i][j] - 1 == 10) // 전기 관련 블럭
+					temp.subtype = isSwitchOff;
+				else
+					temp.subtype = list[Map[i][j] - 1].subtype;
+				temp.ani = list[Map[i][j] - 1].ani;
+
+				// 끈끈이 그룹화
+				if (Map[i][j] == 12) {
+					// 맵 가장 위이거나, 맵 가장 아래가 아니고 블럭 위가 끈끈이가 아니고 아래가 끈끈이면 1번
+					if (i == 0 || i < 14 && Map[i - 1][j] != 12 && Map[i + 1][j] == 12)
+						temp.subtype = 1;
+					// 맵 가장 위나 아래가 아니고 블럭 위와 아래가 끈끈이면 2번
+					else if (i > 0 && i < 14 && Map[i - 1][j] == 12 && Map[i + 1][j] == 12)
+						temp.subtype = 2;
+					// 맵 가장 아래이거나, 맵 가장 위가 아니고 블럭 위가 끈끈이고 아래가 끈끈이가 아니면 2번
+					else if (i == 14 || i > 0 && Map[i - 1][j] == 12 && Map[i + 1][j] != 12)
+						temp.subtype = 3;
 					else
-						temp.subtype = list[Map[i][j] - 1].subtype;
-					if (Continuous) {
-						if (Map[i][j] - 1 == 17 && Map[i][j - 1] - 1 == 17) temp.ani = groupcnt;
-						else {
-							Continuous = false;
-							groupcnt++;
-						}
-					}
-					if (Map[i][j] - 1 == 17) {
-						temp.ani = groupcnt;
-						Continuous = true;
-					}
-					if (Map[i][j] - 1 != 17)
-						temp.ani = list[Map[i][j] - 1].ani;
-
-					// 끈끈이 그룹화
-					if (Map[i][j] == 20) {
-						// 맵 가장 위이거나, 맵 가장 아래가 아니고 블럭 위가 끈끈이가 아니고 아래가 끈끈이면 1번
-						if (i == 0 || i < 14 && Map[i - 1][j] != 20 && Map[i + i][j] == 20)
-							temp.subtype = 1;
-						// 맵 가장 위나 아래가 아니고 블럭 위와 아래가 끈끈이면 2번
-						else if (i > 0 && i < 14 && Map[i - 1][j] == 20 && Map[i + 1][j] == 20)
-							temp.subtype = 2;
-						// 맵 가장 아래이거나, 맵 가장 위가 아니고 블럭 위가 끈끈이고 아래가 끈끈이가 아니면 2번
-						else if (i == 14 || i > 0 && Map[i - 1][j] == 20 && Map[i + 1][j] != 20)
-							temp.subtype = 3;
-						else
-							temp.subtype = 4;
-					}
-					block[i].emplace_back(temp);
+						temp.subtype = 4;
 				}
+				block[i].emplace_back(temp);
 			}
 		}
 	}
@@ -521,4 +509,17 @@ void Session::ClearVector() { // 걍 다 초기화하게함
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
 	}
+}
+
+bool Session::CrashBottom() {
+	if (ball.y + rd >= 939) {
+		animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, CustomDeath, rand() % 4, 0 });
+		Scheck = balldeath;
+		if (GamePlay == StagePlay)
+			GamePlay = StageDeath;
+		else if (GamePlay == CustomPlay)
+			GamePlay = CustomDeath;
+		return true;
+	}
+	return false;
 }
