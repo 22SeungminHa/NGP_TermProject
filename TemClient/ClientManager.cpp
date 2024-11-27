@@ -250,6 +250,8 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_LOAD_MAP: {
 		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
+		memcpy(Map, loadMapPacket->map, M_WIDTH * M_HEIGHT);
+		MakeVector();
 		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
@@ -267,7 +269,7 @@ void ClientManager::MakeVector() {
 	bool Continuous = false;
 	starcnt = 0;
 
-	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
+	if (GamePlay == StagePlay || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
 				if (Map[i][j]) { // ������ ���

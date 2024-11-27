@@ -249,6 +249,13 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
         case KEY_TYPE::RBUTTON: {
             break;
         }
+		case KEY_TYPE::L: {
+			for (auto& client : clients) {
+				client.MapLoad(1);
+				client.Send_load_map_packet(&client);
+			}
+			break;
+		}
         default:
             break;
         }

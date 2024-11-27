@@ -51,7 +51,8 @@ public:
 	RECT				window;
 	floatRECT			ballrc;
 	Block				list[43];
-	std::array<std::array<int, 25>, 15>		Map;
+
+	std::array<std::array<char, 25>, 15>		Map;
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
