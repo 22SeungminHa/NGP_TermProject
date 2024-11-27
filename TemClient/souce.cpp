@@ -36,7 +36,7 @@ std::queue<pair<KEY_TYPE, KEY_STATE>> keyEventQueue{};
 std::queue<KEY_TYPE> mouseEventQueue{};
 
 #pragma region Images
-CImage imgBall, imgBasicBlock, imgFuctionBlock, imgSwitchBk, imgElectricBk,
+CImage imgBall, imgBlock, imgSwitchBk, imgElectricBk,
 imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
 imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
 imgBlockList, imgOutline, imgWaiting,
@@ -130,9 +130,8 @@ void LoadResources()
 	//이미지 로드
 	{
 		imgBall.Load(TEXT("바운스볼 PNG/공.png"));
-		imgWaiting.Load(TEXT("바운스볼 PNG/waiting.png"));
-		imgBasicBlock.Load(TEXT("바운스볼 PNG/기본블럭.png"));
-		imgFuctionBlock.Load(TEXT("바운스볼 PNG/기능블럭.png"));
+
+		imgBlock.Load(TEXT("바운스볼 PNG/블럭.png"));
 		imgSwitchBk.Load(TEXT("바운스볼 PNG/전기스위치블럭.png"));
 		imgElectricBk.Load(TEXT("바운스볼 PNG/전기블럭.png"));
 
@@ -384,24 +383,12 @@ void Render()
 		//맵
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
-				if (game.Map[i][j]) {
-					if (game.list[game.Map[i][j] - 1].type < BasicBk) { // 기능블럭 
-						imgFuctionBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].type * side, 0, side, side);
-					}
-					else {
-						switch (game.list[game.Map[i][j] - 1].type) {
-						case BasicBk: // 기본블럭
-							imgBasicBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.list[game.Map[i][j] - 1].subtype * side, 0, side, side);
-							break;
-						case SwitchBk:
-							imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
-							break;
-						case ElectricBk:
-							imgElectricBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
-							break;
-						}
-					}
-				}
+				if (game.Map[i][j] == 9 || game.Map[i][j] == 10) // 스위치
+					imgSwitchBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
+				else if (game.Map[i][j] == 11) // 전기블럭
+					imgElectricBk.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, game.isSwitchOff * side, 0, side, side);
+				else if (game.Map[i][j]) // 기타 모두
+					imgBlock.Draw(mdc, 21 + j * 48, 21 + i * 48, 48, 48, (game.Map[i][j] - 1) * side, 0, side, side);
 			}
 		}
 
@@ -412,22 +399,12 @@ void Render()
 
 		//선택된 것
 		if (selection > 0) { // 블럭
-			if (game.list[selection - 1].type < BasicBk) { // 기능블럭 
-				imgFuctionBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].type * side, 0, side, side);
-			}
-			else {
-				switch (game.list[selection - 1].type) {
-				case BasicBk: // 기본블럭
-					imgBasicBlock.Draw(mdc, 1315, 307, 80, 80, game.list[selection - 1].subtype * side, 0, side, side);
-					break;
-				case SwitchBk:
-					imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
-					break;
-				case ElectricBk:
-					imgElectricBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
-					break;
-				}
-			}
+			if (selection == 9 || selection == 10) // 스위치
+				imgSwitchBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
+			else if (selection == 11) // 전기블럭
+				imgElectricBk.Draw(mdc, 1315, 307, 80, 80, game.isSwitchOff * side, 0, side, side);
+			else // 기타 모두
+				imgBlock.Draw(mdc, 1315, 307, 80, 80, (selection - 1) * side, 0, side, side);
 		}
 		else if (selection == 0) // 공
 			imgBall.Draw(mdc, 1315 + 15, 307 + 15, 50, 50, 0, 0, rd * 2, rd * 2);
@@ -443,24 +420,14 @@ void Render()
 		imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 		//블럭 출력
-		for (int y = 0; y < 15; ++y) {
-			for (int i = 0; i < game.block[y].size(); ++i) {
-				if (game.block[y][i].type < BasicBk) { // 기능블럭 
-					imgFuctionBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].type * side, 0, side, side);
-				}
-				else {
-					switch (game.block[y][i].type) {
-					case BasicBk: // 기본블럭
-						imgBasicBlock.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.block[y][i].subtype * side, 0, side, side);
-						break;
-					case SwitchBk:
-						imgSwitchBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-						break;
-					case ElectricBk:
-						imgElectricBk.Draw(mdc, game.block[y][i].x * side, game.block[y][i].y * side, side, side, game.isSwitchOff * side, 0, side, side);
-						break;
-					}
-				}
+		for (int i = 0; i < 15; ++i) {
+			for (int j = 0; j < 25; ++j) {
+				if (game.Map[i][j] == 9 || game.Map[i][j] == 10) // 스위치
+					imgSwitchBk.Draw(mdc, j * side, i * side, side, side, game.isSwitchOff * side, 0, side, side);
+				else if (game.Map[i][j] == 11) // 전기블럭
+					imgElectricBk.Draw(mdc, j* side, i* side, side, side, game.isSwitchOff* side, 0, side, side);
+				else if (game.Map[i][j]) // 기타 모두
+					imgBlock.Draw(mdc, j * side, i * side, side, side, (game.Map[i][j] - 1) * side, 0, side, side);
 			}
 		}
 		if (!game.ball.isDead && game.ball.playerID != 7) {

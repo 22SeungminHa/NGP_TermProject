@@ -20,9 +20,10 @@ bool ClientManager::Initialize(HWND _hwnd)
 
 	isLeftPressed = false, isRightPressed = false;
 	GamePlay = Start;
+
 	starcnt = 0;
 	isSwitchOff = false;
-	Scheck = 0, score = 0, blockDown = 0, random = 0, PrintLc = 3;
+	Scheck = 0;
 
 	// ���� ���� ����Ʈ
 	list[0].type = Star;
@@ -263,7 +264,6 @@ void ClientManager::UsingPacket(char* buffer)
 	case SC_LOAD_MAP: {
 		SC_LOAD_MAP_PACKET* loadMapPacket = reinterpret_cast<SC_LOAD_MAP_PACKET*>(buffer);
 		memcpy(Map, loadMapPacket->map, M_WIDTH * M_HEIGHT);
-		MakeVector();
 		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
@@ -288,72 +288,6 @@ void ClientManager::UsingPacket(char* buffer)
 	default:
 		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)pPacket->packetID << std::endl;
 		break;
-	}
-}
-
-// �� �迭���� ���ͷ� ��ȯ (�� ��ǥ, ����ġ ���´� ���� �ޱ�)
-void ClientManager::MakeVector() {
-	ClearVector();
-	Block temp;
-	int groupcnt = 1; // �̵����� �׷�
-	bool Continuous = false;
-	starcnt = 0;
-
-	if (GamePlay == StagePlay || GamePlay == CustomDeath || GamePlay == CustomPlay) {
-		for (int i = 0; i < 15; i++) {
-			for (int j = 0; j < 25; j++) {
-				if (Map[i][j]) { // ������ ���
-					// ��
-					if (Map[i][j] == 1)
-						starcnt++;
-
-					temp.x = Map[i][j] - 1 == 17 ? j * side : j;
-					temp.y = Map[i][j] - 1 == 17 ? i * side : i;
-					temp.type = list[Map[i][j] - 1].type;
-					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // ���� ���� ����
-						temp.subtype = isSwitchOff;
-					else
-						temp.subtype = list[Map[i][j] - 1].subtype;
-					if (Continuous) {
-						if (Map[i][j] - 1 == 17 && Map[i][j - 1] - 1 == 17) temp.ani = groupcnt;
-						else {
-							Continuous = false;
-							groupcnt++;
-						}
-					}
-					if (Map[i][j] - 1 == 17) {
-						temp.ani = groupcnt;
-						Continuous = true;
-					}
-					if (Map[i][j] - 1 != 17)
-						temp.ani = list[Map[i][j] - 1].ani;
-
-					// ������ �׷�ȭ
-					if (Map[i][j] == 20) {
-						// �� ���� ���̰ų�, �� ���� �Ʒ��� �ƴϰ� ���� ���� �����̰� �ƴϰ� �Ʒ��� �����̸� 1��
-						if (i == 0 || i < 14 && Map[i - 1][j] != 20 && Map[i + i][j] == 20)
-							temp.subtype = 1;
-						// �� ���� ���� �Ʒ��� �ƴϰ� ���� ���� �Ʒ��� �����̸� 2��
-						else if (i > 0 && i < 14 && Map[i - 1][j] == 20 && Map[i + 1][j] == 20)
-							temp.subtype = 2;
-						// �� ���� �Ʒ��̰ų�, �� ���� ���� �ƴϰ� ���� ���� �����̰� �Ʒ��� �����̰� �ƴϸ� 2��
-						else if (i == 14 || i > 0 && Map[i - 1][j] == 20 && Map[i + 1][j] != 20)
-							temp.subtype = 3;
-						else
-							temp.subtype = 4;
-					}
-					block[i].emplace_back(temp);
-				}
-			}
-		}
-	}
-}
-
-
-void ClientManager::ClearVector() { // �� �� �ʱ�ȭ�ϰ���
-	animation.clear();
-	for (int i = 0; i < 15; i++) {
-		block[i].clear();
 	}
 }
 

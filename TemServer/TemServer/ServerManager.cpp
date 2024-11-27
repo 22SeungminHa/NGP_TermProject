@@ -4,9 +4,10 @@
 
 ServerManager::ServerManager()
 {
-    cl_num = 0;
+	cl_num = 0;
 
 	float y = 10.f;
+
     for (unsigned int i = 0; i < clients.size(); ++i) {
         clients[i].serverManager = this;
         clients[i].id = i;
@@ -16,11 +17,12 @@ ServerManager::ServerManager()
 		y += 100;
     }
 
+
 	MakeTimerThreads();
 
 	S_Bind_Listen();
 
-    MakeSendThreads();
+	MakeSendThreads();
 
 	S_Accept();
 }
@@ -32,38 +34,38 @@ ServerManager::~ServerManager()
 
 void ServerManager::S_Bind_Listen()
 {
-    // 윈속 초기화
-    WSADATA wsa;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        return;
+	// 윈속 초기화
+	WSADATA wsa;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+		return;
 
-    // 소켓 생성
-    s_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (s_sock == INVALID_SOCKET) err_quit("socket()"); 
+	// 소켓 생성
+	s_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (s_sock == INVALID_SOCKET) err_quit("socket()");
 
-    // bind()
-    struct sockaddr_in serveraddr;
-    memset(&serveraddr, 0, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
+	// bind()
+	struct sockaddr_in serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
 	inet_pton(AF_INET, serverIP, &serveraddr.sin_addr);
-    serveraddr.sin_port = htons(SERVERPORT);
-    retval = bind(s_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-    if (retval == SOCKET_ERROR) err_quit("bind()");
-    // listen()
-    retval = listen(s_sock, SOMAXCONN);
-    if (retval == SOCKET_ERROR) err_quit("listen()");
+	serveraddr.sin_port = htons(SERVERPORT);
+	retval = bind(s_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+	if (retval == SOCKET_ERROR) err_quit("bind()");
+	// listen()
+	retval = listen(s_sock, SOMAXCONN);
+	if (retval == SOCKET_ERROR) err_quit("listen()");
 }
 
 void ServerManager::S_Accept()
 {
-    while (1) {
-        // accept()
-        addrlen = sizeof(clientaddr);
-        c_sock = accept(s_sock, (struct sockaddr*)&clientaddr, &addrlen);
-        if (c_sock == INVALID_SOCKET) {
-            err_display("accept()");
+	while (1) {
+		// accept()
+		addrlen = sizeof(clientaddr);
+		c_sock = accept(s_sock, (struct sockaddr*)&clientaddr, &addrlen);
+		if (c_sock == INVALID_SOCKET) {
+			err_display("accept()");
 			continue;
-        }
+		}
 		else {
 			int flag = 1; // 1: Nagle 알고리즘 비활성화
 			int result = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
@@ -73,37 +75,37 @@ void ServerManager::S_Accept()
 			}
 		}
 
-        MakeThreads();
-    }
+		MakeThreads();
+	}
 }
 
 void ServerManager::MakeThreads()
 {
-    int id;
-    for (auto& c : clients) {
+	int id;
+	for (auto& c : clients) {
 		if (c.ball.x == -999) {
 			id = c.id;
 			break;
 		}
-    }
+	}
 
-    // Session 객체를 첫 번째로 할당
-    Session* session = &clients[id]; 
+	// Session 객체를 첫 번째로 할당
+	Session* session = &clients[id];
 	session->sock = c_sock;
 
-    // std::thread로 스레드 생성
-    std::thread recvThread([session]() {
-        session->Do_Recv((LPVOID)session);  // Session의 Do_Recv 호출
-        });
+	// std::thread로 스레드 생성
+	std::thread recvThread([session]() {
+		session->Do_Recv((LPVOID)session);  // Session의 Do_Recv 호출
+		});
 
-    // 스레드 종료를 관리하기 위해 detach() 또는 join()을 사용할 수 있습니다.
-    recvThread.detach();  // 백그라운드에서 실행되도록 스레드를 분리
+	// 스레드 종료를 관리하기 위해 detach() 또는 join()을 사용할 수 있습니다.
+	recvThread.detach();  // 백그라운드에서 실행되도록 스레드를 분리
 }
 
 void ServerManager::MakeSendThreads()
 {
-    std::thread sendThread([this]() { ProcessSendQueue(); });
-    sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
+	std::thread sendThread([this]() { ProcessSendQueue(); });
+	sendThread.detach();  // 스레드를 분리하여 백그라운드에서 실행되도록 함
 }
 
 void ServerManager::MakeTimerThreads()
@@ -122,15 +124,10 @@ void ServerManager::Do_timer()
 			Ball& ball = client.ball;
 			if (ball.x != -999) {
 				client.MoveBall();
+				client.ballrc = { (float)ball.x - rd, (float)ball.y - rd, (float)ball.x + rd, (float)ball.y + rd };
 
-				if (ball.y + rd > 500) {
-					ball.y = 500 - rd;
-					ball.vy = -40;
-					ball.ax = 0;
-					if (client.isLeftPressed) ball.vx = ball.vx < 0 ? -21 : ball.vx;
-					else if (client.isRightPressed) ball.vx = ball.vx > 0 ? 21 : ball.vx;
-					else ball.vx = 0;
-				}
+				if (!client.CrashBottom())
+					client.CrashExamin();
 			}
 			if (!ball.SameBall(client.last_send_ball, ball)) {
 				ball.BallXYCopy(client.last_send_ball, ball);
@@ -157,14 +154,15 @@ void ServerManager::Disconnect(int c_id)
 }
 
 void ServerManager::ProcessPacket(int c_id, char* packet)
-{   
-    switch (packet[2])
-    {
-    case CS_LOGIN: {
-        CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+{
+	switch (packet[2])
+	{
+	case CS_LOGIN: {
+		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 
 		if (p->sessionID == 7) {
 			Session cl;
+
 			for (auto& c : clients) {
 				if (c.ball.x == -999) {
 					c.ball.x = 30;
@@ -190,58 +188,55 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 		
         break;
     }
-    case CS_KEY_PRESS: {
-        CS_KEY_PACKET* p = reinterpret_cast<CS_KEY_PACKET*>(packet);
+	case CS_KEY_PRESS: {
+		CS_KEY_PACKET* p = reinterpret_cast<CS_KEY_PACKET*>(packet);
 
-        u_int sessionID = p->sessionID;
-        Session& client = clients[sessionID];
-            
-        switch (p->keyType)
-        {
-        case KEY_TYPE::LEFT: {
-			if (client.GamePlay == StagePlay) {
-				if (p->keyState == KEY_STATE::DOWN) {
-					client.isLeftPressed = true;
+		u_int sessionID = p->sessionID;
+		Session& client = clients[sessionID];
+
+		switch (p->keyType)
+		{
+		case KEY_TYPE::LEFT: {
+			if (p->keyState == KEY_STATE::DOWN) {
+				if (client.isLeftPressed == false) {
+					if (IsEqual(client.ball.vy, 5)) {
+						client.ball.vy = -40;
+						client.ball.vx = -21;
+					}
+					else if (IsEqual(client.ball.vy, 5.1)) {
+						client.ball.vx = 21;
+						client.ball.vy = -40;
+					}
 				}
-				else if (p->keyState == KEY_STATE::UP) {
-					client.isLeftPressed = false;
+				client.isLeftPressed = true;
+			}
+			else if (p->keyState == KEY_STATE::UP) {
+				client.isLeftPressed = false;
+			}
+
+			break;
+		}
+		case KEY_TYPE::RIGHT: {
+			if (p->keyState == KEY_STATE::DOWN) {
+				if (client.isRightPressed == false) {
+					if (IsEqual(client.ball.vy, 5)) {
+						client.ball.vx = -21;
+						client.ball.vy = -40;
+					}
+					else if (IsEqual(client.ball.vy, 5.1)) {
+						client.ball.vy = -40;
+						client.ball.vx = 21;
+					}
 				}
+				client.isRightPressed = true;
 			}
-			/*if (client.ball.vy == 5) {
-				client.Scheck = telpo;
-				client.ball.vy = -40;
-				client.ball.vx = -21;
+			else if (p->keyState == KEY_STATE::UP) {
+				client.isRightPressed = false;
+
 			}
-			else if (client.ball.vy == 5.1) {
-				client.Scheck = telpo;
-				client.ball.vx = 21;
-				client.ball.vy = -40;
-			}*/
-			
-            break;
-        }
-        case KEY_TYPE::RIGHT: {
-			if (client.GamePlay == StagePlay) {
-				if (p->keyState == KEY_STATE::DOWN) {
-					client.isRightPressed = true;
-				}
-				else if (p->keyState == KEY_STATE::UP) {
-					client.isRightPressed = false;
-				}
-			}
-			/*if (client.ball.vy == 5) {
-				client.Scheck = telpo;
-				client.ball.vx = -21;
-				client.ball.vy = -40;
-			}
-			else if (client.ball.vy == 5.1) {
-				client.Scheck = telpo;
-				client.ball.vy = -40;
-				client.ball.vx = 21;
-			}*/
-            break;
-        }
-        case KEY_TYPE::ESCAPE: {
+			break;
+		}
+		case KEY_TYPE::ESCAPE: {
 			if (client.GamePlay == StagePlay)
 				client.GamePlay = StageStop;
 			else if (client.GamePlay == StageStop)
@@ -353,11 +348,13 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 					client.Send_sound_state_packet(&client);
 				}
 			}
+      
 			break;
 		}
 		default:
 			break;
 		}
+
 		break;
     }
     default:
@@ -365,40 +362,40 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
     }
 }
 
-void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet) 
+void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 {
-    if (!packet) return;
+	if (!packet) return;
 
-    unsigned int sessionID = packet->sessionID;
-    if (sessionID >= clients.size()) {
-       // std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
-        return;
-    }
+	unsigned int sessionID = packet->sessionID;
+	if (sessionID >= clients.size()) {
+		// std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
+		return;
+	}
 
-    Session& session = clients[sessionID];
+	Session& session = clients[sessionID];
 
-    // 전송할 데이터
-    int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
+	// 전송할 데이터
+	int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
-    if (retval == SOCKET_ERROR) {
-        //std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
-    }
+	if (retval == SOCKET_ERROR) {
+		//std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+	}
 	else {
 		//std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 }
 
-void ServerManager::ProcessSendQueue() 
+void ServerManager::ProcessSendQueue()
 {
-    while (true) {  // 무한 루프 (패킷이 있을 때 계속 처리)
-        std::shared_ptr<PACKET> packet;
+	while (true) {  // 무한 루프 (패킷이 있을 때 계속 처리)
+		std::shared_ptr<PACKET> packet;
 
-        // 큐에서 패킷을 가져옴
-        if (sendPacketQ.try_pop(packet)) {
-            // 큐에서 꺼낸 패킷을 전송
-            Do_Send(packet);
-        }
-    }
+		// 큐에서 패킷을 가져옴
+		if (sendPacketQ.try_pop(packet)) {
+			// 큐에서 꺼낸 패킷을 전송
+			Do_Send(packet);
+		}
+	}
 }
 
 void ServerManager::Send_frame_packet()
@@ -477,9 +474,12 @@ void ServerManager::MapLoad(int mapNumber)
 		if (client.ball.x == -999) continue;
 		client.Map = map;
 		client.isSwitchOff = isSwitchOff;
-		client.GamePlay = StageDeath;
+
 		client.ball.x = ballStartPos[cnt].x * side + side / 2;
 		client.ball.y = ballStartPos[cnt].y * side + side / 2;
-		if(cnt < ballStartPos.size() - 1) cnt++;
+		if (cnt < ballStartPos.size() - 1) cnt++;
+		client.GamePlay = StageDeath;
+		client.MakeVector();
+		client.GamePlay = StagePlay;
 	}
 }

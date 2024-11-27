@@ -31,15 +31,9 @@ public:
 	POINT ballStartPos{};
 	Ball otherPlayer{};
 
-	floatRECT ballrc{};
-
-	bool isLeftPressed{};
-	bool isRightPressed{};
 	bool isSwitchOff{};
 
-	std::vector <Block> block[15]{};
 	std::vector <Block> animation{};
-	std::vector <CrashedBk> crash{};
 
 	Block list[24]{};
 	char Map[15][25]{};
@@ -47,10 +41,6 @@ public:
 	int GamePlay{};
 	int starcnt{};
 	int Scheck{};
-	int score{};
-	int blockDown{};
-	int random{};
-	int PrintLc{};
 
 	int retval{};
 	int	recv_remain{};
@@ -86,9 +76,6 @@ public:
 
 	void ProcessPackets();
 	void UsingPacket(char* buffer);
-
-	void ClearVector();
-	void MakeVector();
 
 private:
 	void err_quit(const char* msg);
