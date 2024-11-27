@@ -1,3 +1,4 @@
+#include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
 #include <fstream>

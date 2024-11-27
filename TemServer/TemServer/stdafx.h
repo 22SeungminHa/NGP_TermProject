@@ -14,6 +14,7 @@
 #include <concurrent_queue.h>
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
+#include<string>
 #include <windows.h>  
 
 #include "protocol.h"

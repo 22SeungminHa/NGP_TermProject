@@ -110,7 +110,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 		}
 		else
 		{
-			TIMER.Tick(30.f);
+			TIMER.Tick(120.f);
 			Update();
 			Render();
 		}
