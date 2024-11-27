@@ -35,6 +35,8 @@ constexpr char SC_DEATH         = 2;
 constexpr char SC_EDIT_MAP      = 3;
 constexpr char SC_LOAD_MAP      = 4;
 constexpr char SC_LOGOUT        = 5;
+constexpr char SC_GAME_STATE    = 6;
+constexpr char SC_SOUND_STATE   = 7;
 
 #pragma pack(push, 1)
 
@@ -107,7 +109,12 @@ struct SC_LOAD_MAP_PACKET : PACKET {
 
 struct SC_GAME_STATE_PACKET : PACKET {
     int            gameState;
-    SC_GAME_STATE_PACKET(char sID) : PACKET(sizeof(SC_GAME_STATE_PACKET), SC_LOAD_MAP, sID) {}
+    SC_GAME_STATE_PACKET(char sID) : PACKET(sizeof(SC_GAME_STATE_PACKET), SC_GAME_STATE, sID) {}
+};
+
+struct SC_SOUND_STATE_PACKET : PACKET {
+    int            soundState;
+    SC_SOUND_STATE_PACKET(char sID) : PACKET(sizeof(SC_SOUND_STATE_PACKET), SC_SOUND_STATE, sID) {}
 };
 
 #pragma pack(pop)

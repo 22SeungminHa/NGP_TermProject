@@ -78,7 +78,7 @@ void Session::Send_login_info_packet(Session* client)
 	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
 	p->c_id = client->id;
 
-	cout << "Send_login_info_packet 완료     " << id << ">>" << client->id << endl;
+	cout << "Send_login_info_packet complete" << id << "->" << client->id << endl;
 
 	AddPacketToQueue(p);
 }
@@ -88,6 +88,24 @@ void Session::Send_logout_packet(Session* client)
 	auto p = std::make_shared<SC_LOGOUT_PACKET>(id);
 
 	p->c_id = client->id;
+
+	AddPacketToQueue(p);
+}
+
+void Session::Send_game_state_packet(Session* client)
+{
+	auto p = std::make_shared<SC_GAME_STATE_PACKET>(id);
+
+	p->gameState = client->GamePlay;
+
+	AddPacketToQueue(p);
+}
+
+void Session::Send_sound_state_packet(Session* client)
+{
+	auto p = std::make_shared<SC_SOUND_STATE_PACKET>(id);
+
+	p->soundState = client->Scheck;
 
 	AddPacketToQueue(p);
 }
@@ -121,10 +139,12 @@ void Session::Send_load_map_packet(Session* client)
 void Session::Initialize() {
 	ball = { 30, 12.5, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
-	GamePlay = StagePlay;
+	GamePlay = Start;
 	starcnt = 0;
 	isSwitchOff = false;
 	Scheck = 0, score = 0;
+
+	stage = -1;
 
 	// 맵툴 블럭 리스트
 	list[0].type = Star;
