@@ -197,6 +197,9 @@ void Update()
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
 		keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
 	}
+	if (INPUT.IsKeyDown(KEY_TYPE::L)) {
+		keyEventQueue.push({ KEY_TYPE::L, KEY_STATE::DOWN });
+	}
 	LeaveCriticalSection(&(INPUT.keyEventCS));
 
 	EnterCriticalSection(&(INPUT.mouseEventCS));

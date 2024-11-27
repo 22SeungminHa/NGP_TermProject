@@ -107,12 +107,7 @@ void Session::Send_load_map_packet(Session* client)
 	// SC_LOGIN_INFO_PACKET 객체 생성
 	auto p = std::make_shared<SC_LOAD_MAP_PACKET>(id);
 
-	int cnt = 0;
-	for (int y = 0; y < 15; ++y) {
-		for (int x = 0; x < 25; ++x) {
-			p->map[cnt++] = Map[y][x];
-		}
-	}
+	memcpy(p->map, Map, M_WIDTH * M_HEIGHT);
 
 	// 패킷을 큐에 추가
 	AddPacketToQueue(p);
@@ -153,7 +148,7 @@ void Session::Initialize() {
 
 void Session::MapLoad(int mapNumber)
 {
-	std::string fileName = "바운스볼 맵/Stage" + std::to_string(mapNumber) + ".txt";
+	std::string fileName = "Map/Stage" + std::to_string(mapNumber) + ".txt";
 	ifstream in{ fileName };
 
 	if (!in.is_open()) {
@@ -161,9 +156,11 @@ void Session::MapLoad(int mapNumber)
 		return;
 	}
 
+	int data{};
 	for (int y = 0; y < 15; ++y) {
 		for (int x = 0; x < 25; ++x) {
-			in >> Map[y][x];
+			in >> data;
+			Map[y][x] = (int)data;
 		}
 	}
 

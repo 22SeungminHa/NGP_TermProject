@@ -51,7 +51,7 @@ public:
 	RECT				window;
 	floatRECT			ballrc;
 	Block				list[43];
-	int					Map[15][25];
+	char				Map[15][25]{};
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;

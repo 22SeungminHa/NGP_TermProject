@@ -41,7 +41,7 @@ public:
 	std::vector <CrashedBk> crash{};
 
 	Block list[24]{};
-	int Map[15][25]{};
+	char Map[15][25]{};
 
 	int GamePlay{};
 	int starcnt{};
