@@ -18,12 +18,14 @@ enum Game {
 	StagePlay,
 	StageStop,
 	StageClear,
+	StageWaiting,
 	StageDeath,
 
 	CustomMode,
 	CustomPlay,
 	CustomDeath
 };
+
 enum SoundCheck {
 	X, ballcrach, telpo, eatstar, balldeath, click, gameclear, music
 };

@@ -57,6 +57,8 @@ public:
 	int					Scheck;
 	int					score;
 
+	int stage;
+
 	void Initialize();
 
 	void CrashExamin();
@@ -90,5 +92,7 @@ public:
 	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet(Session* client);
 	void Send_logout_packet(Session* client);
+	void Send_game_state_packet(Session* client);
+	void Send_sound_state_packet(Session* client);
 };
 

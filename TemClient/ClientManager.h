@@ -7,6 +7,7 @@ struct floatRECT {
 
 struct Ball {
 	float x = 30, y = 10, vx, vy, ax, remx, remy;
+	bool isDead{};
 	u_short playerID{};
 };
 
@@ -59,6 +60,11 @@ public:
 	
 	CRITICAL_SECTION packetQueueCS{};
 	std::queue<std::shared_ptr<PACKET>> packetQueue{};
+
+	HANDLE hThreadForSend;
+	HANDLE hThreadForReceive;
+
+	bool isConnected{};
 
 public:
 	ClientManager() {}
