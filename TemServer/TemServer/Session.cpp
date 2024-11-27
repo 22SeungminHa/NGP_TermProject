@@ -10,6 +10,7 @@ DWORD Session::Do_Recv(LPVOID arg)
 		int receivedBytes = recv(sock, buf, sizeof(buf), 0);
 		if (receivedBytes <= 0) {
 			err_display("recv()");
+			serverManager->Disconnect(id);
 			return 1;
 		}
 		cout << "receivedBytes : " << receivedBytes << endl;

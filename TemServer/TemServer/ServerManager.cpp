@@ -61,13 +61,14 @@ void ServerManager::S_Accept()
         c_sock = accept(s_sock, (struct sockaddr*)&clientaddr, &addrlen);
         if (c_sock == INVALID_SOCKET) {
             err_display("accept()");
-            return;
+			continue;
         }
 		else {
 			int flag = 1; // 1: Nagle 알고리즘 비활성화
 			int result = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 			if (result == SOCKET_ERROR) {
 				std::cerr << "setsockopt TCP_NODELAY 실패, 오류 코드: " << WSAGetLastError() << std::endl;
+				continue;
 			}
 		}
 
@@ -138,8 +139,7 @@ void ServerManager::Do_timer()
 			Send_frame_packet();
 		}
 
-		// 33.33ms 대기 (30프레임 / 1초 기준)
-		std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 33ms 대기
+		std::this_thread::sleep_for(std::chrono::milliseconds(30)); // 3ms 대기
 	}
 }
 
@@ -164,6 +164,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 			Session cl;
 			for (auto& c : clients) {
 				if (c.ball.x == -999) {
+					c.ball.x = 30;
 					cl.id = c.id;
 					clients[cl.id].Initialize();
 					strncpy(p->name, clients[cl.id].name, p->size - 7);
@@ -175,8 +176,6 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				c.Send_login_info_packet(&cl);
 			}
 		}
-
-
 		
         break;
     }
@@ -185,7 +184,6 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
         u_int sessionID = p->sessionID;
         Session& client = clients[sessionID];
-		cout << p->sessionID << endl;
             
         switch (p->keyType)
         {
