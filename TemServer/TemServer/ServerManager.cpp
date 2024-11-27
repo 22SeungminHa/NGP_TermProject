@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ServerManager.h"
+#include <fstream>
 
 ServerManager::ServerManager()
 {
@@ -555,8 +556,8 @@ void ServerManager::ProcessSendQueue()
 
 void ServerManager::Send_frame_packet()
 {
-	for (size_t i = 0; i < clients.size(); ++i) {
-		auto packet = std::make_shared<SC_FRAME_PACKET>(clients[i].id);
+	for (auto& c : clients) {
+		auto packet = std::make_shared<SC_FRAME_PACKET>(c.id);
 
 		packet->c1_id = clients[0].id;
 		packet->x1 = clients[0].ball.x;
@@ -565,7 +566,42 @@ void ServerManager::Send_frame_packet()
 		packet->x2 = clients[1].ball.x;
 		packet->y2 = clients[1].ball.y;
 
-		clients[i].AddPacketToQueue(packet);
+		c.AddPacketToQueue(packet);
 		//cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
+	}
+}
+
+void ServerManager::MapLoad(int mapNumber)
+{
+	std::string fileName = "Map/" + std::to_string(mapNumber) + ".txt";
+	ifstream in{ fileName };
+
+	if (!in.is_open()) {
+		std::cerr << "Error: Cannot open file " << fileName << std::endl;
+		return;
+	}
+
+	array<array<int, 25>, 15> map{};
+	array<POINT, MAX_USER> ballStartPos{};
+	bool isSwitchOff;
+
+	for (auto& row : map) {
+		for (auto& cell : row) {
+			in >> cell;
+		}
+	}
+	for (auto& pos : ballStartPos) {
+		in >> pos.x;
+		in >> pos.y;
+	}
+	in >> isSwitchOff;
+
+	in.close();
+
+	for (int i = 0; i < MAX_USER; ++i) {
+		clients[i].Map = map;
+		clients[i].isSwitchOff = isSwitchOff;
+		clients[i].GamePlay = StageDeath;
+		clients[i].ballStartPos = { ballStartPos[i].x * side + side / 2, ballStartPos[i].y * side + side / 2 };
 	}
 }

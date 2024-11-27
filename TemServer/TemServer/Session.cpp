@@ -1,14 +1,13 @@
 #include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
-#include <fstream>
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
 	char buf[BUFSIZE + 1] = { 0 };
 
 	while (true) {
-		// µ¥ÀÌÅÍ ¼ö½Å
+		// ë°ì´í„° ìˆ˜ì‹ 
 		int receivedBytes = recv(sock, buf, sizeof(buf), 0);
 		if (receivedBytes <= 0) {
 			err_display("recv()");
@@ -17,15 +16,15 @@ DWORD Session::Do_Recv(LPVOID arg)
 		}
 		cout << "receivedBytes : " << receivedBytes << endl;
 
-		int remain_data = receivedBytes + recv_remain; // ÃÑ µ¥ÀÌÅÍ Å©±â
-		char* p = buf; // ÆĞÅ¶ Ã³¸® ½ÃÀÛ À§Ä¡
+		int remain_data = receivedBytes + recv_remain; // ì´ ë°ì´í„° í¬ê¸°
+		char* p = buf; // íŒ¨í‚· ì²˜ë¦¬ ì‹œì‘ ìœ„ì¹˜
 
-		// ÆĞÅ¶ Ã³¸® ·çÇÁ
+		// íŒ¨í‚· ì²˜ë¦¬ ë£¨í”„
 		while (remain_data > 0) {
-			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // ÆĞÅ¶ Å©±â ÀĞ±â
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // íŒ¨í‚· í¬ê¸° ì½ê¸°
 			int packet_size = *byte;
 
-			// ÆĞÅ¶ Å©±â °ËÁõ
+			// íŒ¨í‚· í¬ê¸° ê²€ì¦
 			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
 				std::cerr << "[Do_Recv()] Invalid packet size: " << packet_size << std::endl;
 				recv_remain = 0;
@@ -33,29 +32,29 @@ DWORD Session::Do_Recv(LPVOID arg)
 				break;
 			}
 
-			// ÆĞÅ¶ Ã³¸® °¡´É ¿©ºÎ È®ÀÎ
+			// íŒ¨í‚· ì²˜ë¦¬ ê°€ëŠ¥ ì—¬ë¶€ í™•ì¸
 			if (packet_size <= remain_data) {
 				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
 				serverManager->ProcessPacket(id, reinterpret_cast<char*>(receivedPacket));
 
-				p += packet_size;       // ´ÙÀ½ ÆĞÅ¶À¸·Î ÀÌµ¿
+				p += packet_size;       // ë‹¤ìŒ íŒ¨í‚·ìœ¼ë¡œ ì´ë™
 				remain_data -= packet_size;
 			}
 			else {
-				break; // ÆĞÅ¶ µ¥ÀÌÅÍ°¡ ºÎÁ·ÇÔ
+				break; // íŒ¨í‚· ë°ì´í„°ê°€ ë¶€ì¡±í•¨
 			}
 		}
 
-		// ³²Àº µ¥ÀÌÅÍ º¸°ü
+		// ë‚¨ì€ ë°ì´í„° ë³´ê´€
 		recv_remain = remain_data;
 		if (remain_data > 0) {
-			// ¹öÆÛ Å©±â¸¦ ÃÊ°úÇÏ´Â µ¥ÀÌÅÍ¸¦ ÀúÀåÇÏ·Á¸é °æ°í Ãâ·Â
+			// ë²„í¼ í¬ê¸°ë¥¼ ì´ˆê³¼í•˜ëŠ” ë°ì´í„°ë¥¼ ì €ì¥í•˜ë ¤ë©´ ê²½ê³  ì¶œë ¥
 			if (remain_data > sizeof(save_buf)) {
 				std::cerr << "[Do_Recv()] Remaining data exceeds buffer size, data may be lost!" << std::endl;
-				remain_data = sizeof(save_buf); // µ¥ÀÌÅÍ Å©±â¸¦ ¹öÆÛ Å©±â·Î Á¦ÇÑ
+				remain_data = sizeof(save_buf); // ë°ì´í„° í¬ê¸°ë¥¼ ë²„í¼ í¬ê¸°ë¡œ ì œí•œ
 			}
 
-			memmove(save_buf, p, remain_data); // ³²Àº µ¥ÀÌÅÍ¸¦ save_buf·Î ÀÌµ¿
+			memmove(save_buf, p, remain_data); // ë‚¨ì€ ë°ì´í„°ë¥¼ save_bufë¡œ ì´ë™
 		}
 	}
 
@@ -69,7 +68,7 @@ void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
         return;
     }
 
-    // Å¥¿¡ ÆĞÅ¶À» Ãß°¡
+    // íì— íŒ¨í‚·ì„ ì¶”ê°€
     serverManager->sendPacketQ.push(packet);
     //std::cout << "Packet" << (int)packet->packetID << " added to the send queue." << std::endl;
 }
@@ -79,7 +78,7 @@ void Session::Send_login_info_packet(Session* client)
 	auto p = std::make_shared<SC_LOGIN_INFO_PACKET>(id);
 	p->c_id = client->id;
 
-	cout << "Send_login_info_packet ¿Ï·á     " << id << ">>" << client->id << endl;
+	cout << "Send_login_info_packet ì™„ë£Œ     " << id << ">>" << client->id << endl;
 
 	AddPacketToQueue(p);
 }
@@ -104,12 +103,12 @@ void Session::Send_edit_map_packet(Session* client)
 
 void Session::Send_load_map_packet(Session* client)
 {
-	// SC_LOGIN_INFO_PACKET °´Ã¼ »ı¼º
+	// SC_LOGIN_INFO_PACKET ê°ì²´ ìƒì„±
 	auto p = std::make_shared<SC_LOAD_MAP_PACKET>(id);
 
 	memcpy(p->map, Map, M_WIDTH * M_HEIGHT);
 
-	// ÆĞÅ¶À» Å¥¿¡ Ãß°¡
+	// íŒ¨í‚·ì„ íì— ì¶”ê°€
 	AddPacketToQueue(p);
 }
     
@@ -127,7 +126,7 @@ void Session::Initialize() {
 	isSwitchOff = false;
 	Scheck = 0, score = 0;
 
-	// ¸ÊÅø ºí·° ¸®½ºÆ®
+	// ë§µíˆ´ ë¸”ëŸ­ ë¦¬ìŠ¤íŠ¸
 	list[0].type = Star;
 	list[1].type = JumpBk;
 	list[2].type = RStraightBk;
@@ -146,47 +145,19 @@ void Session::Initialize() {
 	}
 }
 
-void Session::MapLoad(int mapNumber)
-{
-	std::string fileName = "Map/Stage" + std::to_string(mapNumber) + ".txt";
-	ifstream in{ fileName };
-
-	if (!in.is_open()) {
-		std::cerr << "Error: Cannot open file " << fileName << std::endl;
-		return;
-	}
-
-	int data{};
-	for (int y = 0; y < 15; ++y) {
-		for (int x = 0; x < 25; ++x) {
-			in >> data;
-			Map[y][x] = (int)data;
-		}
-	}
-
-	in >> ballStartPos.x;
-	in >> ballStartPos.y;
-	in >> isSwitchOff;
-	ballStartPos.x = ballStartPos.x * side + 30;
-	ballStartPos.y = ballStartPos.y * side + 30;
-
-	GamePlay = StageDeath;
-	in.close();
-}
-
 void Session::CrashExamin() {
 	floatRECT blockrc;
 	int crashStart, crashEnd, crashDir;
 	bool doQ2block = true;
 
-	// ¿À¸¥ÂÊ º®
+	// ì˜¤ë¥¸ìª½ ë²½
 	if (ball.x + rd >= 1516) {
 		ball.x = 1516 - rd;
 		ball.vx = -ball.vx / 2;
 		ball.ax = -7;
 		return;
 	}
-	// ¿ŞÂÊº®
+	// ì™¼ìª½ë²½
 	if (ball.x - rd <= 0) {
 		ball.x = rd;
 		ball.vx = -ball.vx / 2;
@@ -199,11 +170,11 @@ void Session::CrashExamin() {
 	crashEnd = (int)(ballrc.bottom / 60);
 	for (int y = crashStart; y <= crashEnd; y++) {
 		for (int i = 0; i < block[y].size(); i++) {
-			//Ãæµ¹Ã¼Å© ¾ÈÇØµµ µÇ´Â ºí·°ÀÏ °æ¿ì ³Ñ¾î°¨
+			//ì¶©ëŒì²´í¬ ì•ˆí•´ë„ ë˜ëŠ” ë¸”ëŸ­ì¼ ê²½ìš° ë„˜ì–´ê°
 			if ((block[y][i].type == ElectricBk && isSwitchOff) || block[y][i].type == RectWHBk || block[y][i].type == CircleWHBk)
 				continue;
 
-			//Ãæµ¹Ã¼Å©
+			//ì¶©ëŒì²´í¬
 			blockrc = { (float)block[y][i].x * side, (float)block[y][i].y * side, (float)((block[y][i].x + 1) * side), (float)((block[y][i].y + 1) * side) };
 			if (isCrashed(&ballrc, &blockrc) != 4) {
 				crashDir = MyIntersectRect(&ballrc, &blockrc);
@@ -234,11 +205,11 @@ void Session::Crash(int dir, int i, int y) {
 	Block* temp;
 	floatRECT blockrc;
 
-	// ¾îµğ¿¡ ´êµç »ó°ü ¾ø´Â ºí·°
+	// ì–´ë””ì— ë‹¿ë“  ìƒê´€ ì—†ëŠ” ë¸”ëŸ­
 	switch (block[y][i].type) {
 	case CircleBHBk:
 	case RectBHBk: {
-		temp = Search(block[y][i].type + 2); // °¢°¢ RectWHBk, CircleWHBk °Ë»ö
+		temp = Search(block[y][i].type + 2); // ê°ê° RectWHBk, CircleWHBk ê²€ìƒ‰
 		if (temp) {
 			Scheck = telpo;
 			ball.x = temp->x * side + side / 2;
@@ -271,9 +242,9 @@ void Session::Crash(int dir, int i, int y) {
 	}
 	}
 
-	// ¹æÇâ¿¡ µû¶ó ´Ş¶óÁö´Â ºí·°ÀÏ °æ¿ì
+	// ë°©í–¥ì— ë”°ë¼ ë‹¬ë¼ì§€ëŠ” ë¸”ëŸ­ì¼ ê²½ìš°
 	switch (dir) {
-	case dirUp: { // ºí·° À§ÂÊ¿¡ Ãæµ¹ÇßÀ» °æ¿ì
+	case dirUp: { // ë¸”ëŸ­ ìœ„ìª½ì— ì¶©ëŒí–ˆì„ ê²½ìš°
 		switch (block[y][i].type) {
 		case JumpBk: {
 			Scheck = telpo;
@@ -312,17 +283,17 @@ void Session::Crash(int dir, int i, int y) {
 		}
 		break;
 	}
-	case dirRight: { // ºí·° ¿À¸¥ÂÊ¿¡ Ãæµ¹ÇßÀ» °æ¿ì
+	case dirRight: { // ë¸”ëŸ­ ì˜¤ë¥¸ìª½ì— ì¶©ëŒí–ˆì„ ê²½ìš°
 		if (block[y][i].type == ClimbBK) {
 			ball.x = block[y][i].x * side + side + rd;
 			ball.vx = ball.ax = 0;
-			ball.vy = 5.1; // ¿À¸¥ÂÊ Ãæµ¹
+			ball.vy = 5.1; // ì˜¤ë¥¸ìª½ ì¶©ëŒ
 		}
 		else
 			CrashBasicRight(&block[y][i]);
 		return;
 	}
-	case dirLeft: { // ºí·° ¿ŞÂÊ¿¡ Ãæµ¹ÇßÀ» °æ¿ì
+	case dirLeft: { // ë¸”ëŸ­ ì™¼ìª½ì— ì¶©ëŒí–ˆì„ ê²½ìš°
 		if (block[y][i].type == ClimbBK) {
 			ball.x = block[y][i].x * side - rd;
 			ball.vx = ball.ax = 0;
@@ -332,13 +303,13 @@ void Session::Crash(int dir, int i, int y) {
 			CrashBasicLeft(&block[y][i]);
 		return;
 	}
-	case dirDown: { // ºí·° ¾Æ·¡ÂÊ¿¡ Ãæµ¹ÇßÀ» °æ¿ì
+	case dirDown: { // ë¸”ëŸ­ ì•„ë˜ìª½ì— ì¶©ëŒí–ˆì„ ê²½ìš°
 		if (block[y][i].type == ClimbBK && (block[y][i].subtype == 2 || block[y][i].subtype == 1)) {}
 		else
 			CrashBasicBottom(&block[y][i]);
 		return;
 	}
-	default: // Ãæµ¹ÇÏÁö ¾Ê¾ÒÀ» °æ¿ì
+	default: // ì¶©ëŒí•˜ì§€ ì•Šì•˜ì„ ê²½ìš°
 		return;
 	}
 }
@@ -360,7 +331,7 @@ int Session::BlockQuality(const Block* block) {
 int Session::MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc) {
 	floatRECT tempballrc;
 
-	//vy¿¡ ÀÇÇØ Ãæµ¹Çß´ÂÁö
+	//vyì— ì˜í•´ ì¶©ëŒí–ˆëŠ”ì§€
 	tempballrc = { (float)ballrc->left, (float)ballrc->top - ball.remy * t, (float)ballrc->right, (float)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vy > 0)
@@ -368,7 +339,7 @@ int Session::MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc) 
 		else
 			return dirDown;
 	}
-	// vx¿¡ ÀÇÇØ Ãæµ¹Çß´ÂÁö
+	// vxì— ì˜í•´ ì¶©ëŒí–ˆëŠ”ì§€
 	tempballrc = { (float)ballrc->left - ball.remx * t, (float)ballrc->top, (float)ballrc->right - ball.remx * t, (float)ballrc->bottom - ball.remy * t };
 	if (isCrashed(&tempballrc, blockrc) == 4) {
 		if (ball.vx < 0)
@@ -384,26 +355,26 @@ int Session::isCrashed(const floatRECT* ballrc, const floatRECT* blockrc) {
 	float dbright = min(ballrc->right, blockrc->right);
 	float dbbottom = min(ballrc->bottom, blockrc->bottom);
 
-	if (dbleft <= dbright && dbtop <= dbbottom) { // Ãæµ¹ÇÑ °æ¿ì
-		if (dbright - dbleft < dbbottom - dbtop) { // ÁÂ¿ì¿¡¼­ Ãæµ¹ÇÑ °æ¿ì
-			if (abs(ball.x - blockrc->right) <= abs(ball.x - blockrc->left)) // °øÀÌ ¿À¸¥ÂÊ¿¡ ÀÖÀ» °æ¿ì
+	if (dbleft <= dbright && dbtop <= dbbottom) { // ì¶©ëŒí•œ ê²½ìš°
+		if (dbright - dbleft < dbbottom - dbtop) { // ì¢Œìš°ì—ì„œ ì¶©ëŒí•œ ê²½ìš°
+			if (abs(ball.x - blockrc->right) <= abs(ball.x - blockrc->left)) // ê³µì´ ì˜¤ë¥¸ìª½ì— ìˆì„ ê²½ìš°
 				return dirRight;
-			else // °øÀÌ ¿ŞÂÊ¿¡ ÀÖÀ» °æ¿ì
+			else // ê³µì´ ì™¼ìª½ì— ìˆì„ ê²½ìš°
 				return dirLeft;
 		}
-		else { // »óÇÏ¿¡¼­ Ãæµ¹ÇÑ °æ¿ì
-			if (abs(ball.y - blockrc->top) <= abs(ball.y - blockrc->bottom)) // °øÀÌ À§ÂÊ¿¡ ÀÖÀ» °æ¿ì
+		else { // ìƒí•˜ì—ì„œ ì¶©ëŒí•œ ê²½ìš°
+			if (abs(ball.y - blockrc->top) <= abs(ball.y - blockrc->bottom)) // ê³µì´ ìœ„ìª½ì— ìˆì„ ê²½ìš°
 				return dirUp;
-			else // °øÀÌ ¾Æ·¡ÂÊ¿¡ ÀÖÀ» °æ¿ì
+			else // ê³µì´ ì•„ë˜ìª½ì— ìˆì„ ê²½ìš°
 				return dirDown;
 		}
 	}
-	else { // Ãæµ¹ÇÏÁö ¾ÊÀº °æ¿ì
+	else { // ì¶©ëŒí•˜ì§€ ì•Šì€ ê²½ìš°
 		return 4;
 	}
 }
 
-//°Ë»ö
+//ê²€ìƒ‰
 Block* Session::Search(const int type) {
 	for (int y = 0; y < 15; y++) {
 		for (int i = 0; i < block[y].size(); i++) {
@@ -413,7 +384,7 @@ Block* Session::Search(const int type) {
 	return 0;
 }
 
-// ±âº»ºí·° À§¿¡ Ãæµ¹ÇÑ °æ¿ì
+// ê¸°ë³¸ë¸”ëŸ­ ìœ„ì— ì¶©ëŒí•œ ê²½ìš°
 void Session::CrashBasicTop(const Block* block) {
 	if (block->type != MusicBk && block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
@@ -425,13 +396,13 @@ void Session::CrashBasicTop(const Block* block) {
 	else if (isRightPressed) ball.vx = ball.vx > 0 ? 21 : ball.vx;
 	else ball.vx = 0;
 }
-//±âº»ºí·° ¾Æ·¡¿¡ Ãæµ¹ÇÑ °æ¿ì
+//ê¸°ë³¸ë¸”ëŸ­ ì•„ë˜ì— ì¶©ëŒí•œ ê²½ìš°
 void Session::CrashBasicBottom(const Block* block) {
 	Scheck = ballcrach;
 	ball.y = block->y * side + side + rd;
 	ball.vy = -ball.vy;
 }
-//±âº»ºí·° ¿ŞÂÊ¿¡ Ãæµ¹ÇÑ °æ¿ì
+//ê¸°ë³¸ë¸”ëŸ­ ì™¼ìª½ì— ì¶©ëŒí•œ ê²½ìš°
 void Session::CrashBasicLeft(const Block* block) {
 	if (block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
@@ -440,7 +411,7 @@ void Session::CrashBasicLeft(const Block* block) {
 	ball.vx = -ball.vx / 2;
 	ball.ax = -7;
 }
-//±âº»ºí·° ¿À¸¥ÂÊ¿¡ Ãæµ¹ÇÑ °æ¿ì
+//ê¸°ë³¸ë¸”ëŸ­ ì˜¤ë¥¸ìª½ì— ì¶©ëŒí•œ ê²½ìš°
 void Session::CrashBasicRight(const Block* block) {
 	if (block->type != JumpBk && block->type != SwitchBk) {
 		Scheck = ballcrach;
@@ -450,23 +421,23 @@ void Session::CrashBasicRight(const Block* block) {
 	ball.ax = 7;
 }
 
-//°ø ÀÌµ¿
+//ê³µ ì´ë™
 void Session::MoveBall() {
-	// ´­·ÁÀÖ´ÂÁö È®ÀÎ
+	// ëˆŒë ¤ìˆëŠ”ì§€ í™•ì¸
 	if (ball.vy != 5.1 && ball.vy != 5 && GamePlay != StageClear) {
-		if (isLeftPressed && isRightPressed == false) { // ¿ŞÂÊ¸¸ ´­·ÈÀ» °æ¿ì
-			if (abs(ball.vx) == 60) // Á÷ÁøÇÏ°í ÀÖ¾úÀ» °æ¿ì
+		if (isLeftPressed && isRightPressed == false) { // ì™¼ìª½ë§Œ ëˆŒë ¸ì„ ê²½ìš°
+			if (abs(ball.vx) == 60) // ì§ì§„í•˜ê³  ìˆì—ˆì„ ê²½ìš°
 				ball.vx = 0;
-			if (abs(ball.vx) != 50) // ´ë½¬ÇÏ°íÀÖÁö ¾ÊÀ» ¶§ ±âº»
+			if (abs(ball.vx) != 50) // ëŒ€ì‰¬í•˜ê³ ìˆì§€ ì•Šì„ ë•Œ ê¸°ë³¸
 				ball.ax = -7;
 		}
-		else if (isRightPressed && isLeftPressed == false) { // ¿À¸¥ÂÊ¸¸ ´­·ÈÀ» °æ¿ì
-			if (abs(ball.vx) == 60) // Á÷ÁøÇÏ°í ÀÖ¾úÀ» °æ¿ì
+		else if (isRightPressed && isLeftPressed == false) { // ì˜¤ë¥¸ìª½ë§Œ ëˆŒë ¸ì„ ê²½ìš°
+			if (abs(ball.vx) == 60) // ì§ì§„í•˜ê³  ìˆì—ˆì„ ê²½ìš°
 				ball.vx = 0;
 			if (abs(ball.vx) != 50)
 				ball.ax = 7;
 		}
-		else if (ball.vx && isLeftPressed == false && isRightPressed == false && abs(ball.vx) != 60) // µÑ´Ù ¾È´­·ÈÀ» °æ¿ì
+		else if (ball.vx && isLeftPressed == false && isRightPressed == false && abs(ball.vx) != 60) // ë‘˜ë‹¤ ì•ˆëˆŒë ¸ì„ ê²½ìš°
 			ball.ax = -ball.vx / 4.3;
 	}
 
@@ -476,33 +447,33 @@ void Session::MoveBall() {
 	ball.remy = ball.vy;
 	ball.vx += ball.ax * t;
 	if (abs(ball.vx) != 60) ball.vy += g * t;
-	//°¡¼Óµµ Á¶Àı
+	//ê°€ì†ë„ ì¡°ì ˆ
 	if ((ball.ax == 7 && ball.vx >= 21 || ball.ax == -7 && ball.vx <= -21) && abs(ball.vx) != 50) {
 		ball.ax = 0;
 		ball.vx = ball.vx > 0 ? 21 : -21;
 	}
 }
 
-// ¸Ê ¹è¿­¿¡¼­ º¤ÅÍ·Î º¯È¯ (°ø ÁÂÇ¥, ½ºÀ§Ä¡ »óÅÂ´Â µû·Î ¹Ş±â)
+// ë§µ ë°°ì—´ì—ì„œ ë²¡í„°ë¡œ ë³€í™˜ (ê³µ ì¢Œí‘œ, ìŠ¤ìœ„ì¹˜ ìƒíƒœëŠ” ë”°ë¡œ ë°›ê¸°)
 void Session::MakeVector() {
 	ClearVector();
 	Block temp;
-	int groupcnt = 1; // ÀÌµ¿ºí·° ±×·ì
+	int groupcnt = 1; // ì´ë™ë¸”ëŸ­ ê·¸ë£¹
 	bool Continuous = false;
 	starcnt = 0;
 
 	if (GamePlay == StageDeath || GamePlay == CustomDeath || GamePlay == CustomPlay) {
 		for (int i = 0; i < 15; i++) {
 			for (int j = 0; j < 25; j++) {
-				if (Map[i][j]) { // ºí·°ÀÏ °æ¿ì
-					// º°
+				if (Map[i][j]) { // ë¸”ëŸ­ì¼ ê²½ìš°
+					// ë³„
 					if (Map[i][j] == 1)
 						starcnt++;
 
 					temp.x = Map[i][j] - 1 == 17 ? j * side : j;
 					temp.y = Map[i][j] - 1 == 17 ? i * side : i;
 					temp.type = list[Map[i][j] - 1].type;
-					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // Àü±â °ü·Ã ºí·°
+					if (Map[i][j] - 1 == 13 || Map[i][j] - 1 == 14 || Map[i][j] - 1 == 15) // ì „ê¸° ê´€ë ¨ ë¸”ëŸ­
 						temp.subtype = isSwitchOff;
 					else
 						temp.subtype = list[Map[i][j] - 1].subtype;
@@ -520,15 +491,15 @@ void Session::MakeVector() {
 					if (Map[i][j] - 1 != 17)
 						temp.ani = list[Map[i][j] - 1].ani;
 
-					// ²ö²öÀÌ ±×·ìÈ­
+					// ëˆëˆì´ ê·¸ë£¹í™”
 					if (Map[i][j] == 20) {
-						// ¸Ê °¡Àå À§ÀÌ°Å³ª, ¸Ê °¡Àå ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°¡ ¾Æ´Ï°í ¾Æ·¡°¡ ²ö²öÀÌ¸é 1¹ø
+						// ë§µ ê°€ì¥ ìœ„ì´ê±°ë‚˜, ë§µ ê°€ì¥ ì•„ë˜ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ê°€ ëˆëˆì´ê°€ ì•„ë‹ˆê³  ì•„ë˜ê°€ ëˆëˆì´ë©´ 1ë²ˆ
 						if (i == 0 || i < 14 && Map[i - 1][j] != 20 && Map[i + i][j] == 20)
 							temp.subtype = 1;
-						// ¸Ê °¡Àå À§³ª ¾Æ·¡°¡ ¾Æ´Ï°í ºí·° À§¿Í ¾Æ·¡°¡ ²ö²öÀÌ¸é 2¹ø
+						// ë§µ ê°€ì¥ ìœ„ë‚˜ ì•„ë˜ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ì™€ ì•„ë˜ê°€ ëˆëˆì´ë©´ 2ë²ˆ
 						else if (i > 0 && i < 14 && Map[i - 1][j] == 20 && Map[i + 1][j] == 20)
 							temp.subtype = 2;
-						// ¸Ê °¡Àå ¾Æ·¡ÀÌ°Å³ª, ¸Ê °¡Àå À§°¡ ¾Æ´Ï°í ºí·° À§°¡ ²ö²öÀÌ°í ¾Æ·¡°¡ ²ö²öÀÌ°¡ ¾Æ´Ï¸é 2¹ø
+						// ë§µ ê°€ì¥ ì•„ë˜ì´ê±°ë‚˜, ë§µ ê°€ì¥ ìœ„ê°€ ì•„ë‹ˆê³  ë¸”ëŸ­ ìœ„ê°€ ëˆëˆì´ê³  ì•„ë˜ê°€ ëˆëˆì´ê°€ ì•„ë‹ˆë©´ 2ë²ˆ
 						else if (i == 14 || i > 0 && Map[i - 1][j] == 20 && Map[i + 1][j] != 20)
 							temp.subtype = 3;
 						else
@@ -540,7 +511,7 @@ void Session::MakeVector() {
 		}
 	}
 }
-void Session::ClearVector() { // °Á ´Ù ÃÊ±âÈ­ÇÏ°ÔÇÔ
+void Session::ClearVector() { // ê± ë‹¤ ì´ˆê¸°í™”í•˜ê²Œí•¨
 	animation.clear();
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
