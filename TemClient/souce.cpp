@@ -157,7 +157,7 @@ void LoadResources()
 		imgBlockList.Load(TEXT("바운스볼 PNG/맵툴_블럭 선택 목록.png"));
 		imgOutline.Load(TEXT("바운스볼 PNG/맵툴_블럭 선택 테두리.png"));
 
-		imgWaiting.Load(TEXT("바운스볼 PNG/waiting.png"));
+		imgWaiting.Load(TEXT("바운스볼 PNG/로비화면.png"));
 	}
 	// 사운드 로드
 	{
@@ -416,7 +416,7 @@ void Render()
 			imgEraseButton.Draw(mdc, 1315, 307, 78, 78, 0, 0, 78, 78);
 	}
 	else if (game.GamePlay == StageWaiting) {
-		imgWaiting.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, imgWaiting.GetWidth(), imgWaiting.GetHeight());
+		imgWaiting.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 	}
 
 	// 게임 플레이 화면
@@ -438,7 +438,7 @@ void Render()
 			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
 		}
 		if (!game.otherPlayer.isDead && game.otherPlayer.playerID != 7) {
-			imgBall.Draw(mdc, game.otherPlayer.x - rd, game.otherPlayer.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
+			imgBall.Draw(mdc, game.otherPlayer.x - rd, game.otherPlayer.y - rd, rd * 2, rd * 2, 100, 0, 25, 25);
 		}
 
 		// 파티클 출력
