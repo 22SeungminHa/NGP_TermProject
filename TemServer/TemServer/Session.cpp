@@ -106,7 +106,7 @@ void Session::Send_load_map_packet(Session* client)
 	// SC_LOGIN_INFO_PACKET 객체 생성
 	auto p = std::make_shared<SC_LOAD_MAP_PACKET>(id);
 
-	memcpy(p->map, Map, M_WIDTH * M_HEIGHT);
+	memcpy(p->map, Map.data(), M_WIDTH * M_HEIGHT);
 
 	// 패킷을 큐에 추가
 	AddPacketToQueue(p);

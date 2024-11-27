@@ -81,7 +81,6 @@ public:
 	void ProcessPackets();
 	void UsingPacket(char* buffer);
 
-	void LoadMap(char* map);
 	void ClearVector();
 	void MakeVector();
 

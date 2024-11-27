@@ -250,8 +250,8 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
             break;
         }
 		case KEY_TYPE::L: {
+			MapLoad(1);
 			for (auto& client : clients) {
-				client.MapLoad(1);
 				client.Send_load_map_packet(&client);
 			}
 			break;
@@ -573,7 +573,7 @@ void ServerManager::Send_frame_packet()
 
 void ServerManager::MapLoad(int mapNumber)
 {
-	std::string fileName = "Map/" + std::to_string(mapNumber) + ".txt";
+	std::string fileName = "Map/Stage" + std::to_string(mapNumber) + ".txt";
 	ifstream in{ fileName };
 
 	if (!in.is_open()) {
@@ -581,15 +581,18 @@ void ServerManager::MapLoad(int mapNumber)
 		return;
 	}
 
-	array<array<int, 25>, 15> map{};
+	array<array<char, 25>, 15> map{};
 	array<POINT, MAX_USER> ballStartPos{};
 	bool isSwitchOff;
 
+	int data{};
 	for (auto& row : map) {
 		for (auto& cell : row) {
-			in >> cell;
+			in >> data;
+			cell = (int)data;
 		}
 	}
+	
 	for (auto& pos : ballStartPos) {
 		in >> pos.x;
 		in >> pos.y;
@@ -598,10 +601,14 @@ void ServerManager::MapLoad(int mapNumber)
 
 	in.close();
 
-	for (int i = 0; i < MAX_USER; ++i) {
-		clients[i].Map = map;
-		clients[i].isSwitchOff = isSwitchOff;
-		clients[i].GamePlay = StageDeath;
-		clients[i].ballStartPos = { ballStartPos[i].x * side + side / 2, ballStartPos[i].y * side + side / 2 };
+	int cnt{};
+	for (auto& client : clients) {
+		if (client.ball.x == -999) continue;
+		client.Map = map;
+		client.isSwitchOff = isSwitchOff;
+		client.GamePlay = StageDeath;
+		client.ball.x = ballStartPos[cnt].x * side + side / 2;
+		client.ball.y = ballStartPos[cnt].y * side + side / 2;
+		if(cnt < ballStartPos.size() - 1) cnt++;
 	}
 }
