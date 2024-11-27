@@ -71,6 +71,7 @@ public:
 	void ClearVector();
 	void MakeVector();
 	void Initialize();
+	void MapLoad(int mapNumber);
 
 	int		id;
 	SOCKET	sock;
