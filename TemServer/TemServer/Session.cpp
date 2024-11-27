@@ -1,7 +1,6 @@
 #include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
-#include <fstream>
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
@@ -149,32 +148,6 @@ void Session::Initialize() {
 	for (int i = 0; i < 14; i++) {
 		list[i + 13] = { 0, 0, BasicBk, i, 0 };
 	}
-}
-
-void Session::MapLoad(int mapNumber)
-{
-	std::string fileName = "Map/" + std::to_string(mapNumber) + ".txt";
-	ifstream in{ fileName };
-
-	if (!in.is_open()) {
-		std::cerr << "Error: Cannot open file " << fileName << std::endl;
-		return;
-	}
-
-	for (int y = 0; y < 15; ++y) {
-		for (int x = 0; x < 25; ++x) {
-			in >> Map[y][x];
-		}
-	}
-
-	in >> ballStartPos.x;
-	in >> ballStartPos.y;
-	in >> isSwitchOff;
-	ballStartPos.x = ballStartPos.x * side + 30;
-	ballStartPos.y = ballStartPos.y * side + 30;
-
-	GamePlay = StageDeath;
-	in.close();
 }
 
 void Session::CrashExamin() {

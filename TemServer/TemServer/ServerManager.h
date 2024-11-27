@@ -37,4 +37,6 @@ public:
 	void ProcessSendQueue();
 
 	void Send_frame_packet();
+
+	void MapLoad(int mapNumber);
 };

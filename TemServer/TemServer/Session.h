@@ -51,11 +51,13 @@ public:
 	RECT				window;
 	floatRECT			ballrc;
 	Block				list[43];
-	int					Map[15][25];
+	std::array<std::array<int, 25>, 15>		Map;
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
 	int					score;
+
+	void Initialize();
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);
@@ -63,15 +65,16 @@ public:
 	int MyIntersectRect(const floatRECT* ballrc, const floatRECT* blockrc);
 	int isCrashed(const floatRECT* ballrc, const floatRECT* blockrc);
 	Block* Search(const int type);
+
 	void CrashBasicRight(const Block* block);
 	void CrashBasicLeft(const Block* block);
 	void CrashBasicBottom(const Block* block);
 	void CrashBasicTop(const Block* block);
+
 	void MoveBall();
+
 	void ClearVector();
 	void MakeVector();
-	void Initialize();
-	void MapLoad(int mapNumber);
 
 	int		id;
 	SOCKET	sock;
