@@ -214,9 +214,6 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
-		//std::cout << "SC_MOVE_BALL_PACKET "<<
-		//	"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
-		//	"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
 		if (framePacket->c1_id == ball.playerID) {
 			ball.x = framePacket->x1;
@@ -319,9 +316,6 @@ void ClientManager::MakeVector() {
 	}
 }
 
-void ClientManager::LoadMap(char* map)
-{
-}
 
 void ClientManager::ClearVector() { // �� �� �ʱ�ȭ�ϰ���
 	animation.clear();
