@@ -153,7 +153,7 @@ void Session::Initialize() {
 
 void Session::MapLoad(int mapNumber)
 {
-	std::string fileName = "Map/" + std::to_string(mapNumber) + ".txt";
+	std::string fileName = "¹Ù¿î½ºº¼ ¸Ê/Stage" + std::to_string(mapNumber) + ".txt";
 	ifstream in{ fileName };
 
 	if (!in.is_open()) {
