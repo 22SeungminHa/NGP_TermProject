@@ -14,8 +14,6 @@
 
 //전역 변수
 ClientManager game;
-HANDLE hThreadForSend;
-HANDLE hThreadForReceive;
 
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
@@ -41,7 +39,7 @@ std::queue<KEY_TYPE> mouseEventQueue{};
 CImage imgBall, imgBlock, imgSwitchBk, imgElectricBk,
 imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
 imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
-imgBlockList, imgOutline,
+imgBlockList, imgOutline, imgWaiting,
 imgStarAni, imgDeadAni;
 #pragma endregion
 
@@ -52,8 +50,8 @@ void Render();
 
 void SendKeyPackets();
 
-DWORD WINAPI ClientSend(LPVOID arg);
-DWORD WINAPI ClientReceive(LPVOID arg);
+DWORD WINAPI gameSend(LPVOID arg);
+DWORD WINAPI gameReceive(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
@@ -83,19 +81,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	if (!game.Initialize(hwnd)) {
 		return 1;
 	}
+
 	TIMER.Initilaize();
 	INPUT.Initialize(hwnd);
 	LoadResources();
 
-	if (!game.ConnectWithServer()) {
+	if (game.ConnectWithServer()) {
+		game.LoginToGame();
+
+		//네트워크용 쓰레드 생성
+		game.hThreadForSend = CreateThread(NULL, 0, gameSend, NULL, 0, NULL);
+		game.hThreadForReceive = CreateThread(NULL, 0, gameReceive, NULL, 0, NULL);
+	}
+	else {
+		cerr << "Failed to connect to Server." << endl;
 		return 1;
 	}
-
-	game.LoginToGame();
-
-	//네트워크용 쓰레드 생성
-	hThreadForSend = CreateThread(NULL, 0, ClientSend, NULL, 0, NULL);
-	hThreadForReceive = CreateThread(NULL, 0, ClientReceive, NULL, 0, NULL);
 
 	//키 이벤트 전송 이벤트
 	TIMER.Reset();
@@ -119,9 +120,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	/*HANDLE threads[] = { hThreadForSend, hThreadForReceive };
 	WaitForMultipleObjects(2, threads, TRUE, INFINITE);*/
 
-	CloseHandle(hThreadForSend);
-	CloseHandle(hThreadForReceive);
-
 	game.Destroy();
 
 	return Message.wParam;
@@ -132,6 +130,7 @@ void LoadResources()
 	//이미지 로드
 	{
 		imgBall.Load(TEXT("바운스볼 PNG/공.png"));
+
 		imgBlock.Load(TEXT("바운스볼 PNG/블럭.png"));
 		imgSwitchBk.Load(TEXT("바운스볼 PNG/전기스위치블럭.png"));
 		imgElectricBk.Load(TEXT("바운스볼 PNG/전기블럭.png"));
@@ -180,32 +179,52 @@ void Update()
 #pragma region key event
 	INPUT.Update();
 
-	EnterCriticalSection(&(INPUT.keyEventCS));
-	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
-		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
-	}
-	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
-		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
-	}
-	if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
-		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
-	}
-	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
-		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
-	}
-	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
-		keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
-	}
-	LeaveCriticalSection(&(INPUT.keyEventCS));
+	POINT MouseLC = INPUT.GetMousePosition();
 
-	EnterCriticalSection(&(INPUT.mouseEventCS));
-	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
-		mouseEventQueue.push(KEY_TYPE::LBUTTON);
+	switch (game.GamePlay)
+	{
+	case Start:
+	case StageSelect: 
+	case StagePlay:
+	case StageStop:
+	case StageClear:
+	case StageWaiting:
+	case StageDeath:
+	{
+		EnterCriticalSection(&(INPUT.keyEventCS));
+		if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
+			keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
+		}
+		else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
+			keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
+		}
+		if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
+			keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
+		}
+		else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
+			keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
+		}
+		if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
+			keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
+		}
+		if (INPUT.IsKeyDown(KEY_TYPE::L)) {
+			keyEventQueue.push({ KEY_TYPE::L, KEY_STATE::DOWN });
+		}
+		LeaveCriticalSection(&(INPUT.keyEventCS));
+
+		EnterCriticalSection(&(INPUT.mouseEventCS));
+		if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
+			mouseEventQueue.push(KEY_TYPE::LBUTTON);
+		}
+		if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
+			mouseEventQueue.push(KEY_TYPE::RBUTTON);
+		}
+		LeaveCriticalSection(&(INPUT.mouseEventCS));
+		break;
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
-		mouseEventQueue.push(KEY_TYPE::RBUTTON);
+	default:
+		break;
 	}
-	LeaveCriticalSection(&(INPUT.mouseEventCS));
 #pragma endregion
 
 	// 공 관련 효과음 재생
@@ -392,6 +411,9 @@ void Render()
 		else // 지우개
 			imgEraseButton.Draw(mdc, 1315, 307, 78, 78, 0, 0, 78, 78);
 	}
+	else if (game.GamePlay == StageWaiting) {
+		imgWaiting.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, imgWaiting.GetWidth(), imgWaiting.GetHeight());
+	}
 
 	// 게임 플레이 화면
 	else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
@@ -408,13 +430,11 @@ void Render()
 					imgBlock.Draw(mdc, j * side, i * side, side, side, (game.Map[i][j] - 1) * side, 0, side, side);
 			}
 		}
-
-		//공 출력
-		if (game.GamePlay != StageDeath && game.GamePlay != CustomDeath) { // 죽으면 출력 안하게
-			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25); // 활성화공
-			if (game.otherPlayer.playerID != 999) {
-				imgBall.Draw(mdc, game.otherPlayer.x - rd, game.otherPlayer.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
-			}
+		if (!game.ball.isDead && game.ball.playerID != 7) {
+			imgBall.Draw(mdc, game.ball.x - rd, game.ball.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
+		}
+		if (!game.otherPlayer.isDead && game.otherPlayer.playerID != 7) {
+			imgBall.Draw(mdc, game.otherPlayer.x - rd, game.otherPlayer.y - rd, rd * 2, rd * 2, 0, 0, 25, 25);
 		}
 
 		// 파티클 출력
@@ -488,9 +508,9 @@ void SendKeyPackets()
 	LeaveCriticalSection(&(INPUT.mouseEventCS));
 }
 
-DWORD __stdcall ClientSend(LPVOID arg)
+DWORD __stdcall gameSend(LPVOID arg)
 {
-	while (true)
+	while (game.isConnected)
 	{
 		SendKeyPackets();
 	}
@@ -498,7 +518,7 @@ DWORD __stdcall ClientSend(LPVOID arg)
 	return 0;
 }
 
-DWORD __stdcall ClientReceive(LPVOID arg)
+DWORD __stdcall gameReceive(LPVOID arg)
 {
 	game.ReceiveServerData();
 

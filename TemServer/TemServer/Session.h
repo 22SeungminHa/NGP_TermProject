@@ -41,7 +41,6 @@ class Session
 {
 public:
 	Ball				ball, last_send_ball;
-	POINT				ballStartPos{};
 	char				name[NAME_SIZE];
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;
@@ -51,11 +50,14 @@ public:
 	RECT				window;
 	floatRECT			ballrc;
 	Block				list[43];
-	std::array<std::array<int, 25>, 15>		Map;
+
+	std::array<std::array<char, 25>, 15>		Map;
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
 	int					score;
+
+	int stage;
 
 	void Initialize();
 
@@ -91,5 +93,7 @@ public:
 	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet(Session* client);
 	void Send_logout_packet(Session* client);
+	void Send_game_state_packet(Session* client);
+	void Send_sound_state_packet(Session* client);
 };
 

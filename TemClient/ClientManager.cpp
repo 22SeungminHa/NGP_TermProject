@@ -13,10 +13,14 @@ bool ClientManager::Initialize(HWND _hwnd)
 
 	ball = { 30, 12.5, 0, 0, 0 };
 	ball.playerID = 7;
+	ball.isDead = false;
 	otherPlayer = { 30, 500, 0, 0, 0 };
 	otherPlayer.playerID = 7;
+	otherPlayer.isDead = false;
 
-	GamePlay = StagePlay;
+	isLeftPressed = false, isRightPressed = false;
+	GamePlay = Start;
+
 	starcnt = 0;
 	isSwitchOff = false;
 	Scheck = 0;
@@ -43,24 +47,30 @@ bool ClientManager::Initialize(HWND _hwnd)
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		return false;
 
+	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (clientSocket == INVALID_SOCKET) {
+		err_quit("socket()");
+		return false;
+	}
+
 	InitializeCriticalSection(&packetQueueCS);
+
+	isConnected = false;
 
 	return true;
 }
 
 void ClientManager::Destroy()
 {
+	if(hThreadForSend) CloseHandle(hThreadForSend);
+	if(hThreadForReceive) CloseHandle(hThreadForReceive);
+	
 	WSACleanup();
 }
 
 bool ClientManager::ConnectWithServer()
 {
-	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-	if (clientSocket == INVALID_SOCKET) {
-		err_quit("socket()");
-	}
-
 	struct sockaddr_in serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
@@ -69,11 +79,13 @@ bool ClientManager::ConnectWithServer()
 
 	retval = connect(clientSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 
+	isConnected = true;
+
 	if (retval == SOCKET_ERROR) {
 		err_quit("connect()");
-		return false;
+		isConnected = false;
 	}
-	return true;
+	return isConnected;
 }
 
 void ClientManager::LoginToGame()
@@ -86,6 +98,8 @@ bool ClientManager::SendLoginPacket(int sock, const char* name)
 	CS_LOGIN_PACKET loginPacket(ball.playerID);
 	retval = send(clientSocket, (char*)&loginPacket, sizeof(CS_LOGIN_PACKET), 0);
 	cout << ball.playerID << endl;
+
+	
 	if (retval == SOCKET_ERROR) {
 		err_display("send()");
 		return false;
@@ -136,7 +150,7 @@ bool ClientManager::ReceiveServerData()
 {
 	char buf[BUFSIZE + 1] = { 0 };
 
-	while(true) {
+	while(isConnected) {
 		// 데이터 수신
 		int receivedBytes = recv(clientSocket, buf, sizeof(buf), 0);
 		if (receivedBytes <= 0) {
@@ -213,15 +227,12 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_FRAME: {
 		SC_FRAME_PACKET* framePacket = reinterpret_cast<SC_FRAME_PACKET*>(buffer);
-		//std::cout << "SC_MOVE_BALL_PACKET "<<
-		//	"c1_id = " << framePacket->c1_id << ", x = " << framePacket->x1 << ", y = " << framePacket->y1 << std::endl <<
-		//	"c2_id = " << framePacket->c2_id << ", x = " << framePacket->x2 << ", y = " << framePacket->y2 << std::endl;
 
 		if (framePacket->c1_id == ball.playerID) {
 			ball.x = framePacket->x1;
 			ball.y = framePacket->y1;
 
-			if (otherPlayer.playerID != 999) {
+			if (otherPlayer.playerID != 7) {
 				otherPlayer.x = framePacket->x2;
 				otherPlayer.y = framePacket->y2;
 			}
@@ -230,7 +241,7 @@ void ClientManager::UsingPacket(char* buffer)
 			ball.x = framePacket->x2;
 			ball.y = framePacket->y2;
 
-			if (otherPlayer.playerID != 999) {
+			if (otherPlayer.playerID != 7) {
 				otherPlayer.x = framePacket->x1;
 				otherPlayer.y = framePacket->y1;
 			}
@@ -240,6 +251,9 @@ void ClientManager::UsingPacket(char* buffer)
 	case SC_DEATH: {
 		SC_DEATH_PACKET* deathPacket = reinterpret_cast<SC_DEATH_PACKET*>(buffer);
 		std::cout << "SC_DEATH_PACKET c_id = " << deathPacket->c1_id << std::endl;
+		if (deathPacket->c1_id == ball.playerID) ball.isDead = true;
+		else if (deathPacket->c1_id == otherPlayer.playerID) otherPlayer.isDead = true;
+
 		break;
 	}
 	case SC_EDIT_MAP: {
@@ -253,14 +267,28 @@ void ClientManager::UsingPacket(char* buffer)
 		std::cout << "SC_LOAD_MAP_PACKET" << std::endl;
 		break;
 	}
+	case SC_GAME_STATE: {
+		SC_GAME_STATE_PACKET* gameStatePacket = reinterpret_cast<SC_GAME_STATE_PACKET*>(buffer);
+
+		GamePlay = gameStatePacket->gameState;
+		break;
+	}
+	case SC_SOUND_STATE: {
+		SC_SOUND_STATE_PACKET* soundStatePacket = reinterpret_cast<SC_SOUND_STATE_PACKET*>(buffer);
+
+		Scheck = soundStatePacket->soundState;
+		break;
+	}
+	case SC_LOGOUT: {
+		SC_LOGOUT_PACKET* logoutPacket = reinterpret_cast<SC_LOGOUT_PACKET*>(buffer);
+
+		if (logoutPacket->c_id == otherPlayer.playerID) otherPlayer.playerID = 7;
+		break;
+	}
 	default:
 		std::cout << "[UsingPacket()] Unknown packet received: ID = " << (int)pPacket->packetID << std::endl;
 		break;
 	}
-}
-
-void ClientManager::LoadMap(char* map)
-{
 }
 
 void ClientManager::err_quit(const char* msg)

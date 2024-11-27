@@ -18,12 +18,14 @@ enum Game {
 	StagePlay,
 	StageStop,
 	StageClear,
+	StageWaiting,
 	StageDeath,
 
 	CustomMode,
 	CustomPlay,
 	CustomDeath
 };
+
 enum SoundCheck {
 	X, ballcrach, telpo, eatstar, balldeath, click, gameclear, music
 };
@@ -34,6 +36,7 @@ enum class KEY_TYPE
 	RIGHT = VK_RIGHT,
 	ESCAPE = VK_ESCAPE,
 	SPACE = VK_SPACE,
+	L     = 'L',
 
 	LBUTTON = VK_LBUTTON,
 	RBUTTON = VK_RBUTTON

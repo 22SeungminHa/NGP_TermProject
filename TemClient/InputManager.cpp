@@ -49,5 +49,6 @@ void CInputManager::Update()
 
 	EnterCriticalSection(&mouseEventCS);
 	GetCursorPos(&mMousePos);
+	ScreenToClient(hwnd, &mMousePos);
 	LeaveCriticalSection(&mouseEventCS);
 }

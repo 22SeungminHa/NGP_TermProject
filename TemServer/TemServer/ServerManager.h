@@ -19,6 +19,9 @@ public:
 	HANDLE hThread;
 
 	array<Session, MAX_USER> clients;
+	array<POINT, MAX_USER> ballStartPos{};
+
+	bool isWaiting[4]{false};
 	int cl_num;
 
 	ServerManager();
@@ -38,5 +41,6 @@ public:
 
 	void Send_frame_packet();
 
+	void EnterTheStage(Session& client, int stageNum);
 	void MapLoad(int mapNumber);
 };

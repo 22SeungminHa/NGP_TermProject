@@ -7,14 +7,16 @@ ServerManager::ServerManager()
 	cl_num = 0;
 
 	float y = 10.f;
-	for (unsigned int i = 0; i < clients.size(); ++i) {
-		clients[i].serverManager = this;
-		clients[i].id = i;
-		clients[i].ball.y = y;
+
+    for (unsigned int i = 0; i < clients.size(); ++i) {
+        clients[i].serverManager = this;
+        clients[i].id = i;
+	    clients[i].ball.y = y;
 		clients[i].last_send_ball.y = y;
-		clients[i].last_send_ball.x = 0;
+        clients[i].last_send_ball.x = 0;
 		y += 100;
-	}
+    }
+
 
 	MakeTimerThreads();
 
@@ -118,6 +120,7 @@ void ServerManager::Do_timer()
 		bool isMoved{ false };
 
 		for (Session& client : clients) {
+			if (client.GamePlay != StagePlay) continue;
 			Ball& ball = client.ball;
 			if (ball.x != -999) {
 				client.MoveBall();
@@ -143,6 +146,7 @@ void ServerManager::Disconnect(int c_id)
 {
 	clients[c_id].ball.x = -999;
 	closesocket(clients[c_id].sock);
+
 	for (auto& c : clients) {
 		if (c.ball.x != -999)
 			c.Send_logout_packet(&clients[c_id]);
@@ -170,15 +174,20 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 			}
 
 			for (auto& c : clients) {
+				if (c.ball.x == -999) continue;
 				c.Send_login_info_packet(&cl);
 			}
 
-			MapLoad(4);
-			clients[cl.id].Send_load_map_packet(&clients[cl.id]);
+			if (cl.id > 0) {
+				for (auto& c : clients) {
+					if (c.ball.x == -999 || cl.id == c.id) continue;
+					clients[cl.id].Send_login_info_packet(&c);
+				}
+			}
 		}
-
-		break;
-	}
+		
+        break;
+    }
 	case CS_KEY_PRESS: {
 		CS_KEY_PACKET* p = reinterpret_cast<CS_KEY_PACKET*>(packet);
 
@@ -223,6 +232,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 			}
 			else if (p->keyState == KEY_STATE::UP) {
 				client.isRightPressed = false;
+
 			}
 			break;
 		}
@@ -237,305 +247,119 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = CustomMode;
 			else if (client.GamePlay == StageClear)
 				client.GamePlay = StageSelect;
-			break;
-		}
-		case KEY_TYPE::SPACE: {
+			else if (client.GamePlay == StageWaiting) {
+				client.GamePlay = StageSelect;
+				isWaiting[client.stage] = false;
+				client.stage = -1;
+			}
+			client.Send_game_state_packet(&client);
+            break;
+        }
+        case KEY_TYPE::SPACE: {
+            break;
+        }
+        case KEY_TYPE::LBUTTON: {
+            break;
+        }
+        case KEY_TYPE::RBUTTON: {
+            break;
+        }
+        default:
+            break;
+        }
+
+
+        break;
+    }
+    case CS_MOUSE_POS: {
+		CS_MOUSE_PACKET* p = reinterpret_cast<CS_MOUSE_PACKET*>(packet);
+
+		u_int sessionID = p->sessionID;
+		Session& client = clients[sessionID];
+		POINT MouseLC = p->mousePos;
+
+		switch (p->keyType)
+		{
+		case KEY_TYPE::RBUTTON: {
+
 			break;
 		}
 		case KEY_TYPE::LBUTTON: {
-			break;
-		}
-		case KEY_TYPE::RBUTTON: {
+			if (client.GamePlay == Start) {
+				if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) {
+					client.Scheck = click;
+					client.GamePlay = StageSelect;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+			}
+			else if (client.GamePlay == StageSelect) {
+				if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
+					EnterTheStage(client, 0);
+				}
+				else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
+					EnterTheStage(client, 1);
+				}
+				else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
+					EnterTheStage(client, 2);
+				}
+				else if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128) {
+					client.Scheck = click;
+					client.GamePlay = Start;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
+					EnterTheStage(client, 3);
+				}
+			}
+			else if (client.GamePlay == StageStop) {
+				if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // 메인화면 버튼 위 커서 
+					client.Scheck = click;
+					client.GamePlay = Start;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // 스테이지 버튼 위 커서 
+					client.Scheck = click;
+					client.GamePlay = StageSelect;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
+					client.Scheck = click;
+					client.MakeVector();
+					client.GamePlay = StageDeath;
+					client.ball = { (float)ballStartPos[client.id].x, (float)ballStartPos[client.id].y, 0, 0, 0}; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+			}
+			else if (client.GamePlay == StageClear) {
+				if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155) {
+					client.Scheck = click;
+					client.GamePlay = StageSelect;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+			}
+      
 			break;
 		}
 		default:
 			break;
 		}
 
-
 		break;
-	}
-					 /*case CS_MOUSE_POS: {
-						 CS_MOUSE_PACKET* p = reinterpret_cast<CS_MOUSE_PACKET*>(packet);
-
-						 u_int sessionID = p->sessionID;
-						 Session& client = clients[sessionID];
-						 POINT MouseLC = p->mousePos;
-
-						 switch (p->keyType)
-						 {
-						 case KEY_TYPE::RBUTTON: {
-							 break;
-						 }
-						 case KEY_TYPE::SPACE: {
-							 break;
-						 }
-						 case KEY_TYPE::LBUTTON: {
-							 break;
-						 }
-						 case KEY_TYPE::RBUTTON: {
-							 break;
-						 }
-						 default:
-							 break;
-						 }
-
-
-						 break;
-					 }
-						 /*case CS_MOUSE_POS: {
-							 CS_MOUSE_PACKET* p = reinterpret_cast<CS_MOUSE_PACKET*>(packet);
-
-							 u_int sessionID = p->sessionID;
-							 Session& client = clients[sessionID];
-							 POINT MouseLC = p->mousePos;
-
-							 switch (p->keyType)
-							 {
-							 case KEY_TYPE::RBUTTON: {
-								 break;
-							 }
-							 case KEY_TYPE::LBUTTON: {
-
-								 break;
-							 }
-							 default:
-								 break;
-							 }
-
-							 if (client.GamePlay == Start) {
-								 if (MouseLC.x <= 410 && MouseLC.y >= 593 && MouseLC.y <= 693) { // 스테이지 버튼
-									 client.Scheck = click;
-									 client.GamePlay = StageSelect;
-								 }
-								 else if (MouseLC.x <= 410 && MouseLC.y >= 717 && MouseLC.y <= 817) { // 맵툴 버튼
-									 client.Scheck = click;
-									 client.GamePlay = CustomMode;
-									 client.ballStartPos = { -1, -1 };
-									 client.isSwitchOff = 0;
-									 memset(client.Map, 0, sizeof(client.Map));
-									 selection = 0;
-								 }
-							 }
-							 else if (client.GamePlay == StageSelect) {
-								 if (MouseLC.x >= 93 && MouseLC.x <= 442 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-									 client.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-									 ifstream in{ "바운스볼 맵/Stage1.txt" };
-
-									 for (int y = 0; y < 15; ++y) {
-										 for (int x = 0; x < 25; ++x) {
-											 in >> client.Map[y][x];
-										 }
-									 }
-
-									 in >> ballStartPos.x;
-									 in >> ballStartPos.y;
-									 in >> client.isSwitchOff;
-									 ballStartPos.x = ballStartPos.x * side + 30;
-									 ballStartPos.y = ballStartPos.y * side + 30;
-
-									 client.GamePlay = StageDeath;
-									 in.close();
-								 }
-								 else if (MouseLC.x >= 574 && MouseLC.x <= 923 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-									 client.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-									 ifstream in{ "바운스볼 맵/Stage2.txt" };
-
-									 for (int y = 0; y < 15; ++y) {
-										 for (int x = 0; x < 25; ++x) {
-											 in >> client.Map[y][x];
-										 }
-									 }
-
-									 in >> ballStartPos.x;
-									 in >> ballStartPos.y;
-									 in >> client.isSwitchOff;
-									 ballStartPos.x = ballStartPos.x * side + 30;
-									 ballStartPos.y = ballStartPos.y * side + 30;
-
-									 client.GamePlay = StageDeath;
-									 in.close();
-								 }
-								 else if (MouseLC.x >= 1060 && MouseLC.x <= 1408 && MouseLC.y >= 365 && MouseLC.y <= 715) {
-									 client.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-									 ifstream in{ "바운스볼 맵/Stage3.txt" };
-
-									 for (int y = 0; y < 15; ++y) {
-										 for (int x = 0; x < 25; ++x) {
-											 in >> client.Map[y][x];
-										 }
-									 }
-
-									 in >> ballStartPos.x;
-									 in >> ballStartPos.y;
-									 in >> client.isSwitchOff;
-									 ballStartPos.x = ballStartPos.x * side + 30;
-									 ballStartPos.y = ballStartPos.y * side + 30;
-
-									 client.GamePlay = StageDeath;
-									 in.close();
-								 }
-								 else if (MouseLC.x >= 1368 && MouseLC.x <= 1448 && MouseLC.y >= 48 && MouseLC.y <= 128) {
-									 client.Scheck = click;
-									 client.GamePlay = Start;
-								 }
-								 else if (MouseLC.x >= 1490 && MouseLC.x <= 1500 && MouseLC.y >= 850 && MouseLC.y <= 900) {
-									 client.Scheck = click; // 이제 여기에 클릭하면 1 2 3으로 해가지고 스테이지 고르면 파일 불러와서 벡터배열에 넣어주는 함수 짜서 넣으면 될 듯
-									 ifstream in{ "바운스볼 맵/Stage4.txt" };
-
-									 for (int y = 0; y < 15; ++y) {
-										 for (int x = 0; x < 25; ++x) {
-											 in >> client.Map[y][x];
-										 }
-									 }
-
-									 in >> ballStartPos.x;
-									 in >> ballStartPos.y;
-									 in >> client.isSwitchOff;
-									 ballStartPos.x = ballStartPos.x * side + 30;
-									 ballStartPos.y = ballStartPos.y * side + 30;
-
-									 client.GamePlay = StageDeath;
-									 in.close();
-								 }
-							 }
-							 else if (client.GamePlay == StageStop) {
-								 if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // 메인화면 버튼 위 커서
-									 client.Scheck = click;
-									 client.GamePlay = Start;
-								 }
-								 else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // 스테이지 버튼 위 커서
-									 client.Scheck = click;
-									 client.GamePlay = StageSelect;
-								 }
-								 else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
-									 client.Scheck = click;
-									 client.MakeVector();
-									 client.GamePlay = StageDeath;
-									 client.ball = { (float)ballStartPos.x, (float)ballStartPos.y, 0, 0, 0 }; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
-								 }
-							 }
-							 else if (client.GamePlay == CustomMode) {
-								 drag = true;
-								 //블럭 선택
-								 if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
-									 client.Scheck = click;
-									 for (int i = 0; i < 14; i++) {
-										 if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-											 selection = i;
-									 }
-								 }
-								 else if (MouseLC.y >= 756 + 60 + 7 && MouseLC.y <= 756 + 60 + 7 + 60) {
-									 client.Scheck = click;
-									 for (int i = 0; i < 14; i++) {
-										 if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-											 selection = i + 14;
-									 }
-								 }
-								 // 플레이 버튼
-								 else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
-									 client.Scheck = click;
-									 if (ballStartPos.x == -1 || ballStartPos.y == -1) {
-										 TCHAR a[100];
-										 wsprintf(a, L"공 위치를 선정해주세요.");
-										 MessageBox(hwnd, a, L"알림", MB_OK);
-										 drag = false;
-										 break;
-									 }
-									 client.ball = { (float)ballStartPos.x * side + 30, (float)ballStartPos.y * side + 30, 0, 0, 0 };
-									 client.GamePlay = CustomPlay;
-									 client.MakeVector();
-								 }
-								 // 지우개 버튼
-								 else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-									 client.Scheck = click;
-									 selection = -1;
-								 }
-								 // 리셋 버튼
-								 else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-									 client.Scheck = click;
-									 memset(client.Map, 0, sizeof(client.Map));
-									 ballStartPos = { -1, -1 };
-								 }
-								 // 불러오기 버튼
-								 else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-									 client.Scheck = click;
-									 memset(&OFN, 0, sizeof(OPENFILENAME)); //--- 구조체 초기화
-									 OFN.lStructSize = sizeof(OPENFILENAME);
-									 OFN.hwndOwner = hwnd;
-									 OFN.lpstrFilter = filter;
-									 OFN.lpstrFile = lpstrFile;
-									 OFN.nMaxFile = 256;
-									 OFN.lpstrInitialDir = L".";
-
-									 if (GetOpenFileNameW(&OFN) != 0) { //--- 파일 함수 호출
-										 TCHAR a[100];
-										 wsprintf(a, L"%s 파일을 여시겠습니까 ?", OFN.lpstrFile);
-										 MessageBox(hwnd, a, L"열기 선택", MB_OK);
-
-										 ifstream in{ OFN.lpstrFile };
-
-										 for (int y = 0; y < 15; ++y) {
-											 for (int x = 0; x < 25; ++x) {
-												 in >> client.Map[y][x];
-											 }
-										 }
-
-										 in >> ballStartPos.x;
-										 in >> ballStartPos.y;
-										 in >> client.isSwitchOff;
-
-										 in.close();
-									 }
-									 drag = false;
-								 }
-								 // 저장 버튼
-								 else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
-									 client.Scheck = click;
-									 memset(&OFN, 0, sizeof(OPENFILENAME)); //--- 구조체 초기화
-									 OFN.lStructSize = sizeof(OPENFILENAME);
-									 OFN.hwndOwner = hwnd;
-									 OFN.lpstrFilter = filter;
-									 OFN.lpstrFile = lpstrFile;
-									 OFN.nMaxFile = 256;
-									 OFN.lpstrInitialDir = L".";
-
-									 if (GetSaveFileNameW(&OFN) != 0) { //--- 파일 함수 호출
-										 TCHAR a[100];
-										 wsprintf(a, L"%s 위치에 파일을 저장하시겠습니까 ?", OFN.lpstrFile);
-										 MessageBox(hwnd, a, L"저장하기 선택", MB_OK);
-										 TCHAR b[100];
-										 wsprintf(b, L"%s.txt", OFN.lpstrFile);
-
-										 ofstream out{ b };
-
-
-										 // 맵툴배열 저장
-										 for (int y = 0; y < 15; ++y) {
-											 for (int x = 0; x < 25; ++x) {
-												 out << client.Map[y][x] << " ";
-											 }
-											 out << endl;
-										 }
-										 // 공 시작위치, 전기 상태 저장
-										 out << ballStartPos.x << " " << ballStartPos.y << " " << client.isSwitchOff << endl;
-
-										 out.close();
-									 }
-									 drag = false;
-								 }
-							 }
-							 else if (client.GamePlay == StageClear) {
-								 if (MouseLC.x >= 587 && MouseLC.x <= 587 + 674 && MouseLC.y >= 530 && MouseLC.y <= 530 + 155) {
-									 client.Scheck = click;
-									 client.GamePlay = StageSelect;
-								 }
-							 }
-							 break;
-						 }*/
-	default:
-		break;
-	}
+    }
+    default:
+        break;
+    }
 }
 
 void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
@@ -591,9 +415,34 @@ void ServerManager::Send_frame_packet()
 	}
 }
 
+void ServerManager::EnterTheStage(Session& client, int stageNum)
+{
+	if (!isWaiting[stageNum] && client.stage == -1) {
+		client.GamePlay = StageWaiting;
+		client.Send_game_state_packet(&client);
+		isWaiting[stageNum] = true;
+		client.stage = stageNum;
+	}
+	else {
+		MapLoad(stageNum + 1);
+		for (auto& c : clients) {
+			if (c.stage == stageNum) {
+				c.GamePlay = StagePlay;
+				c.Send_game_state_packet(&c);
+				c.Send_load_map_packet(&c);
+				c.stage = -1;
+			}
+			client.GamePlay = StagePlay;
+			client.Send_game_state_packet(&client);
+			client.Send_load_map_packet(&client);
+		}
+		isWaiting[stageNum] = false;
+	}
+}
+
 void ServerManager::MapLoad(int mapNumber)
 {
-	std::string fileName = "Map/" + std::to_string(mapNumber) + ".txt";
+	std::string fileName = "Map/Stage" + std::to_string(mapNumber) + ".txt";
 	ifstream in{ fileName };
 
 	if (!in.is_open()) {
@@ -601,15 +450,17 @@ void ServerManager::MapLoad(int mapNumber)
 		return;
 	}
 
-	array<array<int, 25>, 15> map{};
-	array<POINT, MAX_USER> ballStartPos{};
+	array<array<char, 25>, 15> map{};
 	bool isSwitchOff;
 
+	int data{};
 	for (auto& row : map) {
 		for (auto& cell : row) {
-			in >> cell;
+			in >> data;
+			cell = (int)data;
 		}
 	}
+	
 	for (auto& pos : ballStartPos) {
 		in >> pos.x;
 		in >> pos.y;
@@ -623,6 +474,7 @@ void ServerManager::MapLoad(int mapNumber)
 		if (client.ball.x == -999) continue;
 		client.Map = map;
 		client.isSwitchOff = isSwitchOff;
+
 		client.ball.x = ballStartPos[cnt].x * side + side / 2;
 		client.ball.y = ballStartPos[cnt].y * side + side / 2;
 		if (cnt < ballStartPos.size() - 1) cnt++;
