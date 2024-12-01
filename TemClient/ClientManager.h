@@ -64,7 +64,7 @@ public:
 	bool Initialize(HWND _hwnd);
 	void Destroy();
 
-	bool ConnectWithServer();
+	bool ConnectWithServer(char*);
 	void LoginToGame();
 
 	bool SendLoginPacket(int sock, const char* name);

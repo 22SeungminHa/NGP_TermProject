@@ -68,7 +68,7 @@ void ClientManager::Destroy()
 	WSACleanup();
 }
 
-bool ClientManager::ConnectWithServer()
+bool ClientManager::ConnectWithServer(char* serverIP)
 {
 	struct sockaddr_in serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));

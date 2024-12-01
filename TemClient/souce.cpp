@@ -88,7 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	INPUT.Initialize(hwnd);
 	LoadResources();
 
-	if (game.ConnectWithServer()) {
+	if (game.ConnectWithServer(lpszCmdParam)) {
 		game.LoginToGame();
 
 		//네트워크용 쓰레드 생성
