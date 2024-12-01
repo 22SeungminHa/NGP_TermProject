@@ -416,6 +416,19 @@ void ServerManager::Send_frame_packet()
 	}
 }
 
+void ServerManager::Send_death_packet(int deathID)
+{
+	for (auto& c : clients) {
+		auto packet = std::make_shared<SC_DEATH_PACKET>(c.id);
+
+		packet->c1_id = deathID;
+
+		c.AddPacketToQueue(packet);
+		//cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
+	}
+
+}
+
 void ServerManager::EnterTheStage(Session& client, int stageNum)
 {
 	if (!isWaiting[stageNum] && client.stage == -1) {
