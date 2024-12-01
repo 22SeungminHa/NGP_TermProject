@@ -47,10 +47,11 @@ void ServerManager::S_Bind_Listen()
 	struct sockaddr_in serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
-	inet_pton(AF_INET, serverIP, &serveraddr.sin_addr);
+	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serveraddr.sin_port = htons(SERVERPORT);
 	retval = bind(s_sock, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 	if (retval == SOCKET_ERROR) err_quit("bind()");
+
 	// listen()
 	retval = listen(s_sock, SOMAXCONN);
 	if (retval == SOCKET_ERROR) err_quit("listen()");
