@@ -73,6 +73,8 @@ struct CS_MOUSE_PACKET : PACKET {
 
 struct CS_SAVE_CUSTOM_MAP_PACKET : PACKET {
     char            map[M_WIDTH * M_HEIGHT];
+    unsigned short  x, y;
+    char mapName[NAME_SIZE]{ 0 };
 
     CS_SAVE_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_SAVE_CUSTOM_MAP_PACKET), CS_SAVE_CUSTOM_MAP, sID) {}
 };

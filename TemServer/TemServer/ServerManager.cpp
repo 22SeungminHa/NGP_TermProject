@@ -358,6 +358,22 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
 		break;
     }
+	case CS_SAVE_CUSTOM_MAP: {
+		CS_SAVE_CUSTOM_MAP_PACKET* p = reinterpret_cast<CS_SAVE_CUSTOM_MAP_PACKET*>(packet);
+
+		int i = 0;
+		for (int y = 0; y < M_HEIGHT; ++y) {
+			for (int x = 0; x < M_WIDTH; ++x) {
+				clients[p->sessionID].Map[y][x] = p->map[i++];
+			}
+		}
+
+		ballStartPos[p->sessionID].x = p->x;
+		ballStartPos[p->sessionID].y = p->y;
+
+		clients[p->sessionID].CustomMapSave(p->mapName);
+		break;
+	}
     default:
         break;
     }
