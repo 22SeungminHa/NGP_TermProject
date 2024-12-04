@@ -2,6 +2,7 @@
 #include "Session.h"
 #include "ServerManager.h"
 #include <fstream>
+#include <filesystem>
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
@@ -142,6 +143,10 @@ void Session::Send_load_map_packet(Session* client)
 bool Session::CustomMapSave(char* mapName)
 {
 	string a = mapName;
+	a = "CustomMap/" + a + ".txt";
+	if (!std::filesystem::exists("CustomMap"))
+		std::filesystem::create_directory("CustomMap");
+
 	ofstream out;
 	out.open(a);
 	if (!out.is_open()) {
