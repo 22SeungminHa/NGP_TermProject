@@ -27,6 +27,7 @@ constexpr char CS_LOGIN             = 0;
 constexpr char CS_KEY_PRESS         = 1;
 constexpr char CS_MOUSE_POS         = 2;
 constexpr char CS_SAVE_CUSTOM_MAP   = 3;
+constexpr char CS_LOAD_CUSTOM_MAP   = 4;
 
 // Server -> Client Packet ID --------------------
 
@@ -77,6 +78,12 @@ struct CS_SAVE_CUSTOM_MAP_PACKET : PACKET {
     char mapName[NAME_SIZE]{ 0 };
 
     CS_SAVE_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_SAVE_CUSTOM_MAP_PACKET), CS_SAVE_CUSTOM_MAP, sID) {}
+};
+
+struct CS_LOAD_CUSTOM_MAP_PACKET : PACKET {
+    char mapName[NAME_SIZE]{ 0 };
+
+    CS_LOAD_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_LOAD_CUSTOM_MAP_PACKET), CS_LOAD_CUSTOM_MAP, sID) {}
 };
 
 // Server -> Client Packet -----------------------
