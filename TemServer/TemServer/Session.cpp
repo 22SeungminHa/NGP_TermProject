@@ -1,6 +1,7 @@
 #include"stdafx.h"
 #include "Session.h"
 #include "ServerManager.h"
+#include <fstream>
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
@@ -59,6 +60,10 @@ DWORD Session::Do_Recv(LPVOID arg)
 	}
 
 	return 0;
+}
+
+void Session::CustomMapSave()
+{
 }
 
 void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)
@@ -130,7 +135,33 @@ void Session::Send_load_map_packet(Session* client)
 	AddPacketToQueue(p);
 }
     
+// ----------------------------------------------------
+// ----------------------------------------------------
+// ----------------------------------------------------
 
+bool Session::CustomMapSave(char* mapName)
+{
+	string a = mapName;
+	ofstream out;
+	out.open(a);
+	if (!out.is_open()) {
+		cerr << "Error: Failed to open file " << a << endl;
+		return false;
+	}
+
+	// 맵툴배열 저장
+	for (int y = 0; y < 15; ++y) {
+		for (int x = 0; x < 25; ++x) {
+			out << Map[y][x] << " ";
+		}
+		out << endl;
+	}
+	// 공 시작위치, 전기 상태 저장
+	out << serverManager->ballStartPos[id].x << " " << serverManager->ballStartPos[id].y << " " << isSwitchOff << endl;
+
+	out.close();
+	return true;
+}
 
 // ----------------------------------------------------
 // ----------------------------------------------------

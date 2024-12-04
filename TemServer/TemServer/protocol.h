@@ -23,20 +23,21 @@ constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
 
-constexpr char CS_LOGIN         = 0;
-constexpr char CS_KEY_PRESS     = 1;
-constexpr char CS_MOUSE_POS     = 2;
+constexpr char CS_LOGIN             = 0;
+constexpr char CS_KEY_PRESS         = 1;
+constexpr char CS_MOUSE_POS         = 2;
+constexpr char CS_SAVE_CUSTOM_MAP   = 3;
 
 // Server -> Client Packet ID --------------------
 
-constexpr char SC_LOGIN_INFO    = 0;
-constexpr char SC_FRAME         = 1;
-constexpr char SC_DEATH         = 2;
-constexpr char SC_EDIT_MAP      = 3;
-constexpr char SC_LOAD_MAP      = 4;
-constexpr char SC_LOGOUT        = 5;
-constexpr char SC_GAME_STATE    = 6;
-constexpr char SC_SOUND_STATE   = 7;
+constexpr char SC_LOGIN_INFO        = 0;
+constexpr char SC_FRAME             = 1;
+constexpr char SC_DEATH             = 2;
+constexpr char SC_EDIT_MAP          = 3;
+constexpr char SC_LOAD_MAP          = 4;
+constexpr char SC_LOGOUT            = 5;
+constexpr char SC_GAME_STATE        = 6;
+constexpr char SC_SOUND_STATE       = 7;
 
 #pragma pack(push, 1)
 
@@ -70,6 +71,12 @@ struct CS_MOUSE_PACKET : PACKET {
     CS_MOUSE_PACKET(char sID) : PACKET(sizeof(CS_MOUSE_PACKET), CS_MOUSE_POS, sID) {}
 };
 
+struct CS_SAVE_CUSTOM_MAP_PACKET : PACKET {
+    char            map[M_WIDTH * M_HEIGHT];
+
+    CS_SAVE_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_SAVE_CUSTOM_MAP_PACKET), CS_SAVE_CUSTOM_MAP, sID) {}
+};
+
 // Server -> Client Packet -----------------------
 
 struct SC_LOGIN_INFO_PACKET : PACKET {
@@ -93,6 +100,7 @@ struct SC_FRAME_PACKET : PACKET {
 
 struct SC_DEATH_PACKET : PACKET {
     unsigned short  c1_id;
+
     SC_DEATH_PACKET(char sID) : PACKET(sizeof(SC_DEATH_PACKET), SC_DEATH, sID) {}
 };
 

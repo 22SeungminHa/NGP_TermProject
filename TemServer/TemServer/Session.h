@@ -79,6 +79,8 @@ public:
 	void ClearVector();
 	void MakeVector();
 
+	void CustomMapSave();
+
 	int		id;
 	SOCKET	sock;
 	ServerManager* serverManager;
@@ -95,5 +97,7 @@ public:
 	void Send_logout_packet(Session* client);
 	void Send_game_state_packet(Session* client);
 	void Send_sound_state_packet(Session* client);
+
+	bool CustomMapSave(char*);
 };
 
