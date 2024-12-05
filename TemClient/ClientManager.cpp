@@ -33,13 +33,13 @@ bool ClientManager::Initialize(HWND _hwnd)
 	list[5].type = RectWHBk;
 	list[6].type = CircleBHBk;
 	list[7].type = CircleWHBk;
-	list[8] = { 0, 0, SwitchBk, 0, 0 };
-	list[9] = { 0, 0, SwitchBk, 1, 0 };
-	list[10] = { 0, 0, ElectricBk, 0, 0 };
+	list[8] = { 0, 0, SwitchBk, 0 };
+	list[9] = { 0, 0, SwitchBk, 1 };
+	list[10] = { 0, 0, ElectricBk, 0 };
 	list[11].type = ClimbBK;
 	list[12].type = MusicBk;
 	for (int i = 0; i < 11; i++) {
-		list[i + 13] = { 0, 0, BasicBk, i, 0 };
+		list[i + 13] = { 0, 0, BasicBk, i };
 	}
 
 	WSADATA wsa;
@@ -257,7 +257,24 @@ void ClientManager::UsingPacket(char* buffer)
 	}
 	case SC_EDIT_MAP: {
 		SC_EDIT_MAP_PACKET* editMapPacket = reinterpret_cast<SC_EDIT_MAP_PACKET*>(buffer);
-		std::cout << "SC_EDIT_MAP_PACKET block = " << editMapPacket->block << std::endl;
+		Block block{};
+		memcpy(&block, editMapPacket->block, sizeof(Block));
+		std::cout << "SC_EDIT_MAP_PACKET block = " << "(" << block.x << ", " << block.y << "), " << block.type << ", " << block.subtype << std::endl;
+		switch (block.type) {
+		case Star: {
+			Map[block.y][block.x] = 0;
+			animation.emplace_back(Particles{ (block.x - 1) * side, (block.y - 1) * side, Star, rand() % 4, 0 });
+			break;
+		}
+		case SwitchBk: {
+			isSwitchOff = block.subtype;
+			break;
+		}
+		default: {
+			std::cout << "블럭 타입이 이상한데요?" << std::endl;
+			break;
+		}
+		}
 		break;
 	}
 	case SC_LOAD_MAP: {

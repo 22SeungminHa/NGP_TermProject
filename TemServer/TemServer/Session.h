@@ -27,10 +27,6 @@ struct Ball {
 	}
 };
 
-struct Block {
-	int x, y, type, subtype, ani = 0;
-};
-
 struct CrashedBk {
 	int dir, i, j;
 	float x, y;
@@ -45,7 +41,6 @@ public:
 	bool				isLeftPressed, isRightPressed;
 	int					GamePlay;
 	vector <Block>		block[15];
-	vector <Block>		animation;
 	vector <CrashedBk>	crash;
 	RECT				window;
 	floatRECT			ballrc;
@@ -55,7 +50,6 @@ public:
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
-	int					score;
 
 	int stage;
 

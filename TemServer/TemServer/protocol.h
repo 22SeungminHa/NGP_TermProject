@@ -18,7 +18,11 @@ constexpr short side        = 60;
 constexpr float rd          = 12.5;
 constexpr short SVMAPCNT    = 24;
 
-// constexpr const char* serverIP = "127.0.0.1";
+struct Block {
+    int x, y, type, subtype = 0;
+};
+
+constexpr const char* serverIP = "127.0.0.1";
 constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
@@ -122,7 +126,7 @@ struct SC_DEATH_PACKET : PACKET {
 };
 
 struct SC_EDIT_MAP_PACKET : PACKET {
-    char            block;
+    char            block[sizeof(Block)];
     SC_EDIT_MAP_PACKET(char sID) : PACKET(sizeof(SC_EDIT_MAP_PACKET), SC_EDIT_MAP, sID) {}
 };
 
