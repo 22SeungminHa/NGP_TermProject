@@ -445,6 +445,46 @@ void ServerManager::Send_death_packet(int deathID)
 
 }
 
+void ServerManager::Send_edit_map_packet(Block* block, int i, int y)
+{
+	for (auto& c : clients) {
+		auto packet = std::make_shared<SC_EDIT_MAP_PACKET>(c.id);
+		memcpy(packet->block, block, sizeof(Block));
+		c.AddPacketToQueue(packet);
+
+		switch (block->type) {
+		case Star: {
+			for (int j = 0; j < c.crash.size(); j++) {
+				if (y == c.crash[j].j && i < c.crash[j].i)
+					c.crash[j].i -= 1;
+			}
+			c.starcnt--;
+			if (c.starcnt == 0) {
+				if (c.GamePlay == StagePlay || c.GamePlay == StageDeath) {// 별 먹고 죽었을 때도 클리어되게,,, 동시에 일어나도 WM_TIMER가먼저 돌아가서 아마 death가 먼저 될거라 괜찮을거같긴한데 버그나면뭐,, 아쉬운거임
+					c.Scheck = gameclear;
+					c.GamePlay = StageClear;
+					c.Send_game_state_packet(&c);
+				}
+				else if (c.GamePlay == CustomPlay || c.GamePlay == CustomDeath) {
+					c.GamePlay = CustomMode;
+					c.Send_game_state_packet(&c);
+				}
+			}
+			break;
+		}
+		case SwitchBk: {
+			c.isSwitchOff = block->subtype;
+			break;
+		}
+		}
+	}
+	if (block->type == Star) {
+		for (auto& c : clients) {
+			c.block[y].erase(c.block[y].begin() + i);
+		}
+	}
+}
+
 void ServerManager::EnterTheStage(Session& client, int stageNum)
 {
 	if (!isWaiting[stageNum] && client.stage == -1) {
@@ -459,12 +499,12 @@ void ServerManager::EnterTheStage(Session& client, int stageNum)
 			if (c.stage == stageNum) {
 				c.GamePlay = StagePlay;
 				c.Send_game_state_packet(&c);
-				c.Send_load_map_packet(&c);
+				c.Send_load_map_packet();
 				c.stage = -1;
 			}
 			client.GamePlay = StagePlay;
 			client.Send_game_state_packet(&client);
-			client.Send_load_map_packet(&client);
+			client.Send_load_map_packet();
 		}
 		isWaiting[stageNum] = false;
 	}

@@ -41,6 +41,7 @@ public:
 
 	void Send_frame_packet();
 	void Send_death_packet(int deathID);
+	void Send_edit_map_packet(Block* block, int i, int y);
 
 	void EnterTheStage(Session& client, int stageNum);
 	void MapLoad(int mapNumber);

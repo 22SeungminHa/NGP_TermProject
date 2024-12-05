@@ -27,10 +27,6 @@ struct Ball {
 	}
 };
 
-struct Block {
-	int x, y, type, subtype = 0;
-};
-
 struct CrashedBk {
 	int dir, i, j;
 	float x, y;
@@ -54,7 +50,6 @@ public:
 	int					starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
-	int					score;
 
 	int stage;
 
@@ -91,12 +86,10 @@ public:
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 
 	void Send_login_info_packet(Session* client);
-	void Send_edit_map_packet(Session* client);
-	void Send_load_map_packet(Session* client);
+	void Send_load_map_packet();
 	void Send_logout_packet(Session* client);
 	void Send_game_state_packet(Session* client);
 	void Send_sound_state_packet(Session* client);
-	void Send_edit_map_packet(Session* client);
 
 	bool CustomMapSave(char*);
 };

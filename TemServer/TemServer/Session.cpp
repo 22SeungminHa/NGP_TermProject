@@ -116,16 +116,7 @@ void Session::Send_sound_state_packet(Session* client)
 	AddPacketToQueue(p);
 }
 
-void Session::Send_edit_map_packet(Session* client)
-{
-	auto p = std::make_shared<SC_EDIT_MAP_PACKET>(id);
-
-	p->block = isSwitchOff;
-
-	AddPacketToQueue(p);
-}
-
-void Session::Send_load_map_packet(Session* client)
+void Session::Send_load_map_packet()
 {
 	// SC_LOGIN_INFO_PACKET 객체 생성
 	auto p = std::make_shared<SC_LOAD_MAP_PACKET>(id);
@@ -178,7 +169,7 @@ void Session::Initialize() {
 	GamePlay = Start;
 	starcnt = 0;
 	isSwitchOff = false;
-	Scheck = 0, score = 0;
+	Scheck = 0;
 
 	stage = -1;
 
@@ -277,13 +268,8 @@ void Session::Crash(int dir, int i, int y) {
 	}
 	case Star: {
 		Scheck = eatstar;
-
-
-		block[y].erase(block[y].begin() + i);
-		for (int j = 0; j < crash.size(); j++) {
-			if (y == crash[j].j && i < crash[j].i)
-				crash[j].i -= 1;
-		}
+		serverManager->Send_edit_map_packet(&block[y][i], i, y);
+		return;
 	}
 	case ElectricBk: {
 		blockrc = { (float)block[y][i].x * side + 20, (float)block[y][i].y * side + 5, (float)(block[y][i].x + 1) * side - 20, (float)(block[y][i].y + 1) * side - 5 };
@@ -322,7 +308,8 @@ void Session::Crash(int dir, int i, int y) {
 		}
 		case SwitchBk: {
 			CrashBasicTop(&block[y][i]);
-			isSwitchOff = 1 - isSwitchOff;
+			Block temp{ 0, 0, SwitchBk, 1 - isSwitchOff };
+			serverManager->Send_edit_map_packet(&temp, 0, 0);
 			return;
 		}
 		case MusicBk: {

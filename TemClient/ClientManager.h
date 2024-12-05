@@ -11,7 +11,7 @@ struct Ball {
 	u_short playerID{};
 };
 
-struct Block {
+struct Particles {
 	int x, y, type, subtype, ani = 0;
 };
 
@@ -33,7 +33,7 @@ public:
 
 	bool isSwitchOff{};
 
-	std::vector <Block> animation{};
+	std::vector <Particles> animation{};
 
 	Block list[24]{};
 	char Map[15][25]{};
