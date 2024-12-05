@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ServerManager.h"
 #include <fstream>
+#include <filesystem>
 
 ServerManager::ServerManager()
 {
@@ -370,8 +371,24 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
 		ballStartPos[p->sessionID].x = p->x;
 		ballStartPos[p->sessionID].y = p->y;
+		clients[p->sessionID].isSwitchOff = p->isSwitchOff;
 
 		clients[p->sessionID].CustomMapSave(p->mapName);
+		break;
+	}
+	case CS_LOAD_CUSTOM_MAP_LIST: {
+		CS_LOAD_CUSTOM_MAP_LIST_PACKET* p
+			= reinterpret_cast<CS_LOAD_CUSTOM_MAP_LIST_PACKET*>(packet);
+
+		MapListLoad(p->sessionID);
+		break;
+	}
+	case CS_SELECT_LOAD_CUSTOM_MAP: {
+		CS_SELECT_LOAD_CUSTOM_MAP_PACKET* p 
+			= reinterpret_cast<CS_SELECT_LOAD_CUSTOM_MAP_PACKET*>(packet);
+
+		MapLoad(p->sessionID, p->mapName);
+		clients[p->sessionID].Send_load_map_packet();
 		break;
 	}
     default:
@@ -459,12 +476,12 @@ void ServerManager::EnterTheStage(Session& client, int stageNum)
 			if (c.stage == stageNum) {
 				c.GamePlay = StagePlay;
 				c.Send_game_state_packet(&c);
-				c.Send_load_map_packet(&c);
+				c.Send_load_map_packet();
 				c.stage = -1;
 			}
 			client.GamePlay = StagePlay;
 			client.Send_game_state_packet(&client);
-			client.Send_load_map_packet(&client);
+			client.Send_load_map_packet();
 		}
 		isWaiting[stageNum] = false;
 	}
@@ -513,3 +530,71 @@ void ServerManager::MapLoad(int mapNumber)
 		client.GamePlay = StagePlay;
 	}
 }
+
+void ServerManager::MapLoad(int c_id, char* mapName)
+{
+	std::string fileName = mapName;
+	fileName = "CustomMap/" + fileName + ".txt";
+	ifstream in{ fileName };
+
+	if (!in.is_open()) {
+		std::cerr << "Error: Cannot open file " << fileName << std::endl;
+		return;
+	}
+
+	array<array<char, 25>, 15> map{};
+	bool isSwitchOff;
+
+	int data{};
+	for (auto& row : map) {
+		for (auto& cell : row) {
+			in >> data;
+			cell = (int)data;
+		}
+	}
+
+	for (auto& pos : ballStartPos) {
+		in >> pos.x;
+		in >> pos.y;
+	}
+	in >> isSwitchOff;
+
+	in.close();
+
+	clients[c_id].Map = map;
+	clients[c_id].isSwitchOff = isSwitchOff;
+
+	clients[c_id].ball.x = ballStartPos[c_id].x * side + side / 2;
+	clients[c_id].ball.y = ballStartPos[c_id].y * side + side / 2;
+
+	//clients[c_id].GamePlay = StageDeath;
+	//clients[c_id].MakeVector();
+	//clients[c_id].GamePlay = StagePlay;
+}
+
+void ServerManager::MapListLoad(int c_id)
+{
+	// 디렉터리 경로 검사
+	if (!std::filesystem::exists("CustomMap")) {
+		std::cerr << "Error: Directory " << "CustomMap" << " does not exist!" << std::endl;
+		return;
+	}
+
+	if (!std::filesystem::is_directory("CustomMap")) {
+		std::cerr << "Error: " << "CustomMap" << " is not a directory!" << std::endl;
+		return;
+	}
+
+	// 파일 이름 저장
+	string fileNames;
+
+	// 디렉터리 내 파일 이름 읽기
+	for (const auto& entry : std::filesystem::directory_iterator("CustomMap")) {
+		if (entry.is_regular_file()) { // 파일만 추가
+			fileNames = fileNames + " " + entry.path().filename().string();
+		}
+	}
+
+	clients[c_id].Send_load_custom_map_list_packet(fileNames);
+}
+
