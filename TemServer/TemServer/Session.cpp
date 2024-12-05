@@ -135,7 +135,7 @@ void Session::Send_load_map_packet(Session* client)
 	// 패킷을 큐에 추가
 	AddPacketToQueue(p);
 }
-    
+
 // ----------------------------------------------------
 // ----------------------------------------------------
 // ----------------------------------------------------
@@ -191,13 +191,13 @@ void Session::Initialize() {
 	list[5].type = RectWHBk;
 	list[6].type = CircleBHBk;
 	list[7].type = CircleWHBk;
-	list[8] = { 0, 0, SwitchBk, 0, 0 };
-	list[9] = { 0, 0, SwitchBk, 1, 0 };
-	list[10] = { 0, 0, ElectricBk, 0, 0 };
+	list[8] = { 0, 0, SwitchBk, 0 };
+	list[9] = { 0, 0, SwitchBk, 1 };
+	list[10] = { 0, 0, ElectricBk, 0 };
 	list[11].type = ClimbBK;
 	list[12].type = MusicBk;
 	for (int i = 0; i < 14; i++) {
-		list[i + 13] = { 0, 0, BasicBk, i, 0 };
+		list[i + 13] = { 0, 0, BasicBk, i };
 	}
 }
 
@@ -277,7 +277,8 @@ void Session::Crash(int dir, int i, int y) {
 	}
 	case Star: {
 		Scheck = eatstar;
-		animation.emplace_back(Block{ (block[y][i].x - 1) * side, (block[y][i].y - 1) * side, Star, rand() % 4, 0 });
+
+
 		block[y].erase(block[y].begin() + i);
 		for (int j = 0; j < crash.size(); j++) {
 			if (y == crash[j].j && i < crash[j].i)
@@ -287,7 +288,6 @@ void Session::Crash(int dir, int i, int y) {
 	case ElectricBk: {
 		blockrc = { (float)block[y][i].x * side + 20, (float)block[y][i].y * side + 5, (float)(block[y][i].x + 1) * side - 20, (float)(block[y][i].y + 1) * side - 5 };
 		if (isCrashed(&ballrc, &blockrc) != 4) {
-			animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, StageDeath, rand() % 4, 0 });
 			Scheck = balldeath;
 			if (GamePlay == StagePlay)
 				GamePlay = StageDeath;
@@ -534,7 +534,6 @@ void Session::MakeVector() {
 					temp.subtype = isSwitchOff;
 				else
 					temp.subtype = list[Map[i][j] - 1].subtype;
-				temp.ani = list[Map[i][j] - 1].ani;
 
 				// 끈끈이 그룹화
 				if (Map[i][j] == 12) {
@@ -556,7 +555,6 @@ void Session::MakeVector() {
 	}
 }
 void Session::ClearVector() { // 걍 다 초기화하게함
-	animation.clear();
 	for (int i = 0; i < 15; i++) {
 		block[i].clear();
 	}
@@ -564,7 +562,6 @@ void Session::ClearVector() { // 걍 다 초기화하게함
 
 bool Session::CrashBottom() {
 	if (ball.y + rd >= 939) {
-		animation.emplace_back(Block{ (int)ball.x - 90, (int)ball.y - 90, CustomDeath, rand() % 4, 0 });
 		Scheck = balldeath;
 		if (GamePlay == StagePlay)
 			GamePlay = StageDeath;
