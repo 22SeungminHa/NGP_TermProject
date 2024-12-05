@@ -27,11 +27,12 @@ constexpr const WORD serverPort = 9000;
 
 // Client -> Server Packet ID --------------------
 
-constexpr char CS_LOGIN             = 0;
-constexpr char CS_KEY_PRESS         = 1;
-constexpr char CS_MOUSE_POS         = 2;
-constexpr char CS_SAVE_CUSTOM_MAP   = 3;
-constexpr char CS_LOAD_CUSTOM_MAP   = 4;
+constexpr char CS_LOGIN                     = 0;
+constexpr char CS_KEY_PRESS                 = 1;
+constexpr char CS_MOUSE_POS                 = 2;
+constexpr char CS_SAVE_CUSTOM_MAP           = 3;
+constexpr char CS_LOAD_CUSTOM_MAP_LIST      = 4;
+constexpr char CS_SELECT_LOAD_CUSTOM_MAP    = 5;
 
 // Server -> Client Packet ID --------------------
 
@@ -43,6 +44,7 @@ constexpr char SC_LOAD_MAP          = 4;
 constexpr char SC_LOGOUT            = 5;
 constexpr char SC_GAME_STATE        = 6;
 constexpr char SC_SOUND_STATE       = 7;
+constexpr char SC_CUSTOM_MAP_LIST   = 8;
 
 #pragma pack(push, 1)
 
@@ -78,16 +80,22 @@ struct CS_MOUSE_PACKET : PACKET {
 
 struct CS_SAVE_CUSTOM_MAP_PACKET : PACKET {
     char            map[M_WIDTH * M_HEIGHT];
-    unsigned short  x, y;
+    unsigned short  x, y, isSwitchOff;
     char mapName[NAME_SIZE]{ 0 };
 
     CS_SAVE_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_SAVE_CUSTOM_MAP_PACKET), CS_SAVE_CUSTOM_MAP, sID) {}
 };
 
-struct CS_LOAD_CUSTOM_MAP_PACKET : PACKET {
+struct CS_LOAD_CUSTOM_MAP_LIST_PACKET : PACKET {
     char mapName[NAME_SIZE]{ 0 };
 
-    CS_LOAD_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_LOAD_CUSTOM_MAP_PACKET), CS_LOAD_CUSTOM_MAP, sID) {}
+    CS_LOAD_CUSTOM_MAP_LIST_PACKET(char sID) : PACKET(sizeof(CS_LOAD_CUSTOM_MAP_LIST_PACKET), CS_LOAD_CUSTOM_MAP_LIST, sID) {}
+};
+
+struct CS_SELECT_LOAD_CUSTOM_MAP_PACKET : PACKET {
+    char mapName[NAME_SIZE]{ 0 };
+
+    CS_SELECT_LOAD_CUSTOM_MAP_PACKET(char sID) : PACKET(sizeof(CS_SELECT_LOAD_CUSTOM_MAP_PACKET), CS_SELECT_LOAD_CUSTOM_MAP, sID) {}
 };
 
 // Server -> Client Packet -----------------------
@@ -136,6 +144,12 @@ struct SC_GAME_STATE_PACKET : PACKET {
 struct SC_SOUND_STATE_PACKET : PACKET {
     int            soundState;
     SC_SOUND_STATE_PACKET(char sID) : PACKET(sizeof(SC_SOUND_STATE_PACKET), SC_SOUND_STATE, sID) {}
+};
+
+struct SC_CUSTOM_MAP_LIST_PACKET : PACKET {
+    char mapList[NAME_SIZE * 10]{ 0 };
+
+    SC_CUSTOM_MAP_LIST_PACKET(char sID) : PACKET(sizeof(SC_CUSTOM_MAP_LIST_PACKET), SC_CUSTOM_MAP_LIST, sID) {}
 };
 
 #pragma pack(pop)

@@ -86,10 +86,12 @@ public:
 	void AddPacketToQueue(std::shared_ptr<PACKET> packet);
 
 	void Send_login_info_packet(Session* client);
+	void Send_edit_map_packet(Session* client);
 	void Send_load_map_packet();
 	void Send_logout_packet(Session* client);
 	void Send_game_state_packet(Session* client);
 	void Send_sound_state_packet(Session* client);
+	void Send_load_custom_map_list_packet(string mapList);
 
 	bool CustomMapSave(char*);
 };

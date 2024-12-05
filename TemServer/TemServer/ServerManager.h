@@ -45,4 +45,6 @@ public:
 
 	void EnterTheStage(Session& client, int stageNum);
 	void MapLoad(int mapNumber);
+	void MapLoad(int c_id, char* mapName);
+	void MapListLoad(int c_id);
 };
