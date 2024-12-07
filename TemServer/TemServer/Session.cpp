@@ -116,15 +116,6 @@ void Session::Send_sound_state_packet(Session* client)
 	AddPacketToQueue(p);
 }
 
-void Session::Send_edit_map_packet(Session* client)
-{
-	auto p = std::make_shared<SC_EDIT_MAP_PACKET>(id);
-
-	p->block = isSwitchOff;
-
-	AddPacketToQueue(p);
-}
-
 void Session::Send_load_map_packet()
 {
 	// SC_LOGIN_INFO_PACKET 객체 생성
