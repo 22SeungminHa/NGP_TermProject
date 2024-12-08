@@ -49,12 +49,16 @@ public:
 	SOCKET clientSocket{};
 	
 	CRITICAL_SECTION packetQueueCS{};
-	std::queue<std::shared_ptr<PACKET>> packetQueue{};
 
 	HANDLE hThreadForSend;
 	HANDLE hThreadForReceive;
 
 	bool isConnected{};
+
+
+	std::array<std::string, NAME_SIZE> customList{};
+
+	std::array<RECT, NAME_SIZE / 2> mapNameRect{};
 
 public:
 	ClientManager() {}
@@ -64,12 +68,14 @@ public:
 	bool Initialize(HWND _hwnd);
 	void Destroy();
 
-	bool ConnectWithServer(char*);
+	bool ConnectWithServer(const char*);
 	void LoginToGame();
 
 	bool SendLoginPacket(int sock, const char* name);
 	bool SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key);
 	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
+	bool SendCustomMapPacket(POINT startPos);
+	bool SendSelectMapPacket(int idx);
 
 	bool ReceivePlayerID();
 	bool ReceiveServerData();

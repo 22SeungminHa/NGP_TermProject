@@ -243,8 +243,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = StageStop;
 			else if (client.GamePlay == StageStop)
 				client.GamePlay = StagePlay;
-			else if (client.GamePlay == CustomMode || client.GamePlay == StageSelect)
+			else if (client.GamePlay == CustomSelect || client.GamePlay == StageSelect || client.GamePlay == CustomSelect2)
 				client.GamePlay = Start;
+			else if (client.GamePlay == CustomMode)
+				client.GamePlay = CustomSelect;
 			else if (client.GamePlay == CustomPlay)
 				client.GamePlay = CustomMode;
 			else if (client.GamePlay == StageClear)
@@ -294,6 +296,15 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
 					client.Send_game_state_packet(&client);
 					client.Send_sound_state_packet(&client);
+				}
+				if (MouseLC.x <= 430 && MouseLC.y >= 717 && MouseLC.y <= 863) {
+					client.Scheck = click;
+					client.GamePlay = CustomSelect;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+
+					MapListLoad(p->sessionID);
 				}
 			}
 			else if (client.GamePlay == StageSelect) {
@@ -350,7 +361,43 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 					client.Send_sound_state_packet(&client);
 				}
 			}
-      
+			else if (client.GamePlay == CustomSelect || client.GamePlay == CustomSelect2) {
+				if (MouseLC.x >= 1015 && MouseLC.x <= 1350 && MouseLC.y >= 60 && MouseLC.y <= 130) {
+					client.Scheck = click;
+					client.GamePlay = CustomMode;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				else if (MouseLC.x >= 1390 && MouseLC.x <= 1460 && MouseLC.y >= 60 && MouseLC.y <= 130) {
+					client.Scheck = click;
+					client.GamePlay = Start;
+
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				if (client.GamePlay == CustomSelect) {
+					if (MouseLC.x >= 775 && MouseLC.x <= 815 && MouseLC.y >= 840 && MouseLC.y <= 880) {
+						client.Scheck = click;
+
+						client.GamePlay = CustomSelect2;
+						client.Send_sound_state_packet(&client);
+						client.Send_game_state_packet(&client);
+					}
+				}
+				else if (client.GamePlay == CustomSelect2) {
+					if (MouseLC.x >= 685 && MouseLC.x <= 720 && MouseLC.y >= 840 && MouseLC.y <= 880) {
+						client.Scheck = click;
+
+						client.GamePlay = CustomSelect;
+						client.Send_game_state_packet(&client);
+						client.Send_sound_state_packet(&client);
+					}
+				}
+			}
+			else if (client.GamePlay == CustomMode) {
+
+			}
 			break;
 		}
 		default:
@@ -389,6 +436,12 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 
 		MapLoad(p->sessionID, p->mapName);
 		clients[p->sessionID].Send_load_map_packet();
+
+		u_int sessionID = p->sessionID;
+		Session& client = clients[sessionID];
+
+		client.GamePlay = StagePlay;
+		client.Send_game_state_packet(&client);
 		break;
 	}
     default:
@@ -626,12 +679,13 @@ void ServerManager::MapListLoad(int c_id)
 	}
 
 	// 파일 이름 저장
-	string fileNames;
+	string fileNames{};
 
 	// 디렉터리 내 파일 이름 읽기
 	for (const auto& entry : std::filesystem::directory_iterator("CustomMap")) {
 		if (entry.is_regular_file()) { // 파일만 추가
-			fileNames = fileNames + " " + entry.path().filename().string();
+			std::string fileName = entry.path().filename().string();
+			fileNames = fileNames + fileName + " ";
 		}
 	}
 

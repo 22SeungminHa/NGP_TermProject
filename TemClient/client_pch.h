@@ -16,6 +16,7 @@
 #include <atlImage.h>
 #include <vector>
 #include <string>
+#include<sstream>
 #include <fstream>
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod.hpp"
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod_errors.h" 
@@ -52,3 +53,10 @@ public:							\
 	}							
 
 #define INSTANCE(T) T::GetInstance()
+
+inline std::wstring AnsiToWString(const std::string& str)
+{
+	WCHAR buffer[512];
+	MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, buffer, 512);
+	return std::wstring(buffer);
+}

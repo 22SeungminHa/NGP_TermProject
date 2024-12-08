@@ -22,6 +22,8 @@ enum Game {
 	StageDeath,
 
 	CustomMode,
+	CustomSelect,
+	CustomSelect2,
 	CustomPlay,
 	CustomDeath
 };

@@ -17,6 +17,8 @@ ClientManager game;
 HANDLE hThreadForSend;
 HANDLE hThreadForReceive;
 
+HWND hEdit;
+
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"Window Class Name";
 LPCTSTR lpszWindowName = L"Trip of a Ball";
@@ -25,6 +27,7 @@ OPENFILENAME OFN;
 TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
 TCHAR lpstrFile[100], str[20];
 bool drag = false;
+POINT BallStartLC{};
 int selection = 0, electictimer = 0, bestscore = 0;
 
 FMOD::System* ssystem;
@@ -41,7 +44,7 @@ std::queue<KEY_TYPE> mouseEventQueue{};
 CImage imgBall, imgBlock, imgSwitchBk, imgElectricBk,
 imgStartScreen, imgStageScreen, imgStopScreen, imgClearScreen, imgPlayScreen, imgMaptoolScreen,
 imgHomeButton, imgResetButton, imgLoadButton, imgSaveButton, imgEraseButton, imgPlayButton,
-imgBlockList, imgOutline, imgWaiting,
+imgBlockList, imgOutline, imgWaiting, imgMapList,
 imgStarAni, imgDeadAni;
 #pragma endregion
 
@@ -50,11 +53,14 @@ void LoadResources();
 void Update();
 void Render();
 
+void ProcessInput();
+
 void SendKeyPackets();
 
 DWORD WINAPI gameSend(LPVOID arg);
 DWORD WINAPI gameReceive(LPVOID arg);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
@@ -87,8 +93,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdPa
 	TIMER.Initilaize();
 	INPUT.Initialize(hwnd);
 	LoadResources();
+	
 
-	if (game.ConnectWithServer(lpszCmdParam)) {
+	if (game.ConnectWithServer(serverIP)) {
 		game.LoginToGame();
 
 		//네트워크용 쓰레드 생성
@@ -158,6 +165,7 @@ void LoadResources()
 		imgOutline.Load(TEXT("바운스볼 PNG/맵툴_블럭 선택 테두리.png"));
 
 		imgWaiting.Load(TEXT("바운스볼 PNG/로비화면.png"));
+		imgMapList.Load(TEXT("바운스볼 PNG/맵 리스트.png"));
 	}
 	// 사운드 로드
 	{
@@ -195,37 +203,83 @@ void Update()
 	case StageWaiting:
 	case StageDeath:
 	{
-		EnterCriticalSection(&(INPUT.keyEventCS));
-		if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
-			keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
-		}
-		else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
-			keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
-		}
-		if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
-			keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
-		}
-		else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
-			keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
-		}
-		if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
-			keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
-		}
-		if (INPUT.IsKeyDown(KEY_TYPE::L)) {
-			keyEventQueue.push({ KEY_TYPE::L, KEY_STATE::DOWN });
-		}
-		LeaveCriticalSection(&(INPUT.keyEventCS));
-
-		EnterCriticalSection(&(INPUT.mouseEventCS));
-		if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
-			mouseEventQueue.push(KEY_TYPE::LBUTTON);
-		}
-		if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
-			mouseEventQueue.push(KEY_TYPE::RBUTTON);
-		}
-		LeaveCriticalSection(&(INPUT.mouseEventCS));
+		ProcessInput();
 		break;
 	}
+	case CustomSelect:
+	case CustomSelect2:
+	{
+		ProcessInput();
+		if (INPUT.IsKeyUp(KEY_TYPE::LBUTTON)) {
+			int offset = game.GamePlay == CustomSelect ? 0 : game.customList.size() / 2;
+			for (int i = 0; i < game.customList.size() / 2; i++) {
+				if (PtInRect(&game.mapNameRect[i], MouseLC)) {
+					game.SendSelectMapPacket(i + offset);
+				}
+			}
+		}
+		break;
+	}
+	case CustomMode: {
+		ProcessInput();
+
+		HWND hwnd = game.hwnd;
+
+		if(INPUT.IsKeyDown(KEY_TYPE::LBUTTON) || INPUT.IsKeyDown(KEY_TYPE::LBUTTON)){
+			drag = true;
+
+			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
+				game.Scheck = click;
+				for (int i = 0; i < 22; i++) {
+					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
+						selection = i;
+				}
+			}
+			else if (MouseLC.y >= 756 + 60 + 7 && MouseLC.y <= 756 + 60 + 7 + 60) {
+				game.Scheck = click;
+				for (int i = 0; i < 22; i++) {
+					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
+						selection = i + 22;
+				}
+			}
+			// �÷��� ��ư
+			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
+				game.Scheck = click;
+				if (BallStartLC.x == -1 || BallStartLC.y == -1) {
+					TCHAR a[100];
+					wsprintf(a, L"�� ��ġ�� �������ּ���.");
+					MessageBox(hwnd, a, L"�˸�", MB_OK);
+					drag = false;
+					break;
+				}
+				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
+				game.GamePlay = CustomPlay;
+			}
+			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
+				game.Scheck = click;
+				selection = -1;
+			}
+			else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
+				game.Scheck = click;
+				memset(game.Map, 0, sizeof(game.Map));
+				BallStartLC = { -1, -1 };
+			}
+			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
+				//맵 불러오기
+				game.Scheck = click;
+
+			}
+			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
+				game.Scheck = click;
+				drag = false;
+
+			}
+		}
+		if (INPUT.IsKeyUp(KEY_TYPE::LBUTTON)) {
+			if (drag) drag = false;
+		}
+	}
+		break;
 	default:
 		break;
 	}
@@ -349,6 +403,26 @@ void Render()
 			imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 80, 0, 80, 80); // 홈버튼 위 커서
 		else
 			imgHomeButton.Draw(mdc, 1368, 48, 80, 80, 0, 0, 80, 80); // 기본 홈버튼
+	}
+	else if (game.GamePlay == CustomSelect) {
+		imgMapList.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+		for (int i = 0; i < game.customList.size() / 2; i++) {
+			if (!game.customList[i].empty()) {
+				std::wstring name = AnsiToWString(game.customList[i]);
+				DrawText(mdc, name.c_str(), name.size(), &game.mapNameRect[i], DT_LEFT | DT_WORDBREAK);
+			}
+		}
+	}
+	else if (game.GamePlay == CustomSelect2) {
+		imgMapList.Draw(mdc, 0, 0, game.window.right, game.window.bottom, game.window.right, 0, game.window.right + game.window.right, game.window.bottom);
+
+		for (int i = game.customList.size() / 2; i < game.customList.size(); i++) {
+			int idx = game.customList.size() % (NAME_SIZE / 2);
+			if (!game.customList[i].empty()) {
+				std::wstring name = AnsiToWString(game.customList[i]);
+				DrawText(mdc, name.c_str(), name.size(), &game.mapNameRect[idx], DT_LEFT | DT_WORDBREAK);
+			}
+		}
 	}
 	else if (game.GamePlay == CustomMode) {
 		imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
@@ -495,6 +569,39 @@ void Render()
 	ReleaseDC(game.hwnd, hdc);
 }
 
+void ProcessInput()
+{
+	EnterCriticalSection(&(INPUT.keyEventCS));
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
+	}
+	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
+		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
+	}
+	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
+		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {
+		keyEventQueue.push({ KEY_TYPE::ESCAPE, KEY_STATE::DOWN });
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::L)) {
+		keyEventQueue.push({ KEY_TYPE::L, KEY_STATE::DOWN });
+	}
+	LeaveCriticalSection(&(INPUT.keyEventCS));
+
+	EnterCriticalSection(&(INPUT.mouseEventCS));
+	if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
+		mouseEventQueue.push(KEY_TYPE::LBUTTON);
+	}
+	if (INPUT.IsKeyDown(KEY_TYPE::RBUTTON)) {
+		mouseEventQueue.push(KEY_TYPE::RBUTTON);
+	}
+	LeaveCriticalSection(&(INPUT.mouseEventCS));
+}
+
 void SendKeyPackets()
 {
 	EnterCriticalSection(&(INPUT.keyEventCS));
@@ -535,22 +642,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE: {
 		break;
 	}
-	case WM_TIMER: {
-		//// 리스폰
-		//if (game.GamePlay == StageDeath && game.animation.size() == 0) { // 뒤지고 애니메이션 끝나면 리스폰됨
-		//	game.MakeVector();
-		//	game.ball = { (float)BallStartLC.x, (float)BallStartLC.y, 0, 0, 0 };
-		//	game.GamePlay = StagePlay;
-		//}
-		//else if (game.GamePlay == CustomDeath && game.animation.size() == 0) {
-		//	game.MakeVector();
-		//	game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
-		//	game.GamePlay = CustomPlay;
-		//}
-
-		//InvalidateRect(hwnd, NULL, FALSE);
-		//break;
-	}
 	case WM_DESTROY: {
 		PostQuitMessage(0);
 		break;
@@ -558,4 +649,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	//switch (message) {
+	//case WM_INITDIALOG:
+	//	hEdit = GetDlgItem(hDlg, IDC_EDIT1); // 텍스트 입력 필드
+	//	return (INT_PTR)TRUE;
+	//case WM_COMMAND:
+	//	if (LOWORD(wParam) == IDOK) {
+	//		char buffer[256];
+	//		GetWindowText(hEdit, buffer, sizeof(buffer));
+	//		MessageBox(hDlg, buffer, "입력한 텍스트", MB_OK);
+	//		EndDialog(hDlg, IDOK);
+	//		return (INT_PTR)TRUE;
+	//	}
+	//	else if (LOWORD(wParam) == IDCANCEL) {
+	//		EndDialog(hDlg, IDCANCEL);
+	//		return (INT_PTR)TRUE;
+	//	}
+	//	break;
+	//}
+	return (INT_PTR)FALSE;
 }

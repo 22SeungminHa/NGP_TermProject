@@ -21,8 +21,12 @@ public:
 	array<Session, MAX_USER> clients;
 	array<POINT, MAX_USER> ballStartPos{};
 
+	std::vector<std::string> customList{};
+
 	bool isWaiting[4]{false};
 	int cl_num;
+
+
 
 	ServerManager();
 	~ServerManager();

@@ -57,6 +57,12 @@ bool ClientManager::Initialize(HWND _hwnd)
 
 	isConnected = false;
 
+	for (int i = 0; i < mapNameRect.size(); i++) {
+		int xOffset = 720 * (i % 2);
+		int yOffset = 126 * (i / 2);
+		mapNameRect[i] = RECT(40 + xOffset, 197 + yOffset, 726 + xOffset, 300 + yOffset);
+	}
+
 	return true;
 }
 
@@ -68,7 +74,7 @@ void ClientManager::Destroy()
 	WSACleanup();
 }
 
-bool ClientManager::ConnectWithServer(char* serverIP)
+bool ClientManager::ConnectWithServer(const char* serverIP)
 {
 	struct sockaddr_in serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
@@ -138,6 +144,46 @@ bool ClientManager::SendMousePacket(KEY_TYPE key, POINT mousePos)
 	}
 
 	return true;
+}
+
+bool ClientManager::SendCustomMapPacket(POINT startPos)
+{
+	CS_SAVE_CUSTOM_MAP_PACKET customMapPacket(ball.playerID);
+	memcpy(customMapPacket.map, Map, sizeof(Map));
+	customMapPacket.isSwitchOff = isSwitchOff;
+	customMapPacket.x = startPos.x;
+	customMapPacket.y = startPos.y;
+
+	retval = send(clientSocket, (char*)&customMapPacket, sizeof(CS_SAVE_CUSTOM_MAP_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+
+	return false;
+}
+
+bool ClientManager::SendSelectMapPacket(int idx)
+{
+	if (customList[idx].empty()) {
+		return true;
+	}
+
+	CS_SELECT_LOAD_CUSTOM_MAP_PACKET selectMapPacket(ball.playerID);
+	memcpy(selectMapPacket.mapName, customList[idx].data(), customList[idx].size());
+	selectMapPacket.mapName[customList[idx].size()] = '\n';
+
+	retval = send(clientSocket, (char*)&selectMapPacket, sizeof(CS_SELECT_LOAD_CUSTOM_MAP_PACKET), 0);
+
+	if (retval == SOCKET_ERROR) {
+
+		err_display("send()");
+		return false;
+	}
+
+	return false;
 }
 
 bool ClientManager::ReceivePlayerID()
@@ -299,6 +345,17 @@ void ClientManager::UsingPacket(char* buffer)
 		SC_LOGOUT_PACKET* logoutPacket = reinterpret_cast<SC_LOGOUT_PACKET*>(buffer);
 
 		if (logoutPacket->c_id == otherPlayer.playerID) otherPlayer.playerID = 7;
+		break;
+	}
+	case SC_CUSTOM_MAP_LIST: {
+		SC_CUSTOM_MAP_LIST_PACKET* listPacket = reinterpret_cast<SC_CUSTOM_MAP_LIST_PACKET*>(buffer);
+
+		std::stringstream st{};
+		st.str(listPacket->mapList);
+
+		int cnt{};
+		while (st >> customList[cnt++]);
+
 		break;
 	}
 	default:
