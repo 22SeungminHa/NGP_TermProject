@@ -465,10 +465,10 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 	int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
 	if (retval == SOCKET_ERROR) {
-		//std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+		std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 	else {
-		//std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+		std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 }
 
