@@ -291,6 +291,10 @@ void ClientManager::UsingPacket(char* buffer)
 				otherPlayer.y = framePacket->y1;
 			}
 		}
+		//std::cout << "SC_FRAME_PACKET ("
+		//	<< framePacket->x1 << ", " << framePacket->y1 << "), ("
+		//	<< framePacket->x2 << ", " << framePacket->y2 << ")"
+		//	<< std::endl;
 		break;
 	}
 	case SC_DEATH: {
@@ -333,6 +337,9 @@ void ClientManager::UsingPacket(char* buffer)
 		SC_GAME_STATE_PACKET* gameStatePacket = reinterpret_cast<SC_GAME_STATE_PACKET*>(buffer);
 
 		GamePlay = gameStatePacket->gameState;
+		if (GamePlay == CustomPlay || GamePlay == StagePlay) {
+			ball.isDead = otherPlayer.isDead = false;
+		}
 		break;
 	}
 	case SC_SOUND_STATE: {

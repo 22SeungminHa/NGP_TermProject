@@ -175,13 +175,9 @@ bool Session::CustomMapSave(char* mapName)
 // ----------------------------------------------------
 
 void Session::Initialize() {
-	ball = { 30, 12.5, 0, 0, 0 };
-	isLeftPressed = false, isRightPressed = false;
-	GamePlay = Start;
-	starcnt = 0;
-	isSwitchOff = false;
-	Scheck = 0;
+	GameInitialize();
 
+	GamePlay = Start;
 	stage = -1;
 
 	// 맵툴 블럭 리스트
@@ -201,6 +197,15 @@ void Session::Initialize() {
 	for (int i = 0; i < 14; i++) {
 		list[i + 13] = { 0, 0, BasicBk, i };
 	}
+}
+
+void Session::GameInitialize() {
+	ball = { 0, 0, 0, 0, 0 };
+	isLeftPressed = false, isRightPressed = false;
+	starcnt = 0;
+	isSwitchOff = false;
+	Scheck = 0;
+	Map = serverManager->Map;
 }
 
 void Session::CrashExamin() {
@@ -290,6 +295,7 @@ void Session::Crash(int dir, int i, int y) {
 				GamePlay = StageDeath;
 			else if (GamePlay == CustomPlay)
 				GamePlay = CustomDeath;
+			serverManager->Send_death_packet(id);
 		}
 		return;
 	}
@@ -565,6 +571,7 @@ bool Session::CrashBottom() {
 			GamePlay = StageDeath;
 		else if (GamePlay == CustomPlay)
 			GamePlay = CustomDeath;
+		serverManager->Send_death_packet(id);
 		return true;
 	}
 	return false;

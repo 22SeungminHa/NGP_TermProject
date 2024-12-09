@@ -122,7 +122,8 @@ void ServerManager::Do_timer()
 		bool isMoved{ false };
 
 		for (Session& client : clients) {
-			if (client.GamePlay != StagePlay) continue;
+			if (client.GamePlay != StagePlay && client.GamePlay != CustomPlay) continue;
+
 			Ball& ball = client.ball;
 			if (ball.x != -999) {
 				client.MoveBall();
@@ -257,9 +258,6 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.stage = -1;
 			}
 			client.Send_game_state_packet(&client);
-            break;
-        }
-        case KEY_TYPE::SPACE: {
             break;
         }
         case KEY_TYPE::LBUTTON: {
@@ -512,7 +510,26 @@ void ServerManager::Send_death_packet(int deathID)
 		c.AddPacketToQueue(packet);
 		//cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
 	}
-
+	if (clients[0].GamePlay == CustomDeath && clients[1].GamePlay == CustomDeath) {
+		for (auto& c : clients) {
+			c.GamePlay = StagePlay;
+			c.GameInitialize();
+			c.ball.x = ballStartPos[c.id].x * side + side / 2;
+			c.ball.y = ballStartPos[c.id].y * side + side / 2;
+			c.Send_game_state_packet(&c);
+			c.Send_load_map_packet();
+		}
+	}
+	else if (clients[0].GamePlay == StageDeath && clients[1].GamePlay == StageDeath) {
+		for (auto& c : clients) {
+			c.GamePlay = StagePlay;
+			c.GameInitialize();
+			c.ball.x = ballStartPos[c.id].x * side + side / 2;
+			c.ball.y = ballStartPos[c.id].y * side + side / 2;
+			c.Send_game_state_packet(&c);
+			c.Send_load_map_packet();
+		}
+	}
 }
 
 void ServerManager::Send_edit_map_packet(Block* block, int i, int y)
@@ -590,11 +607,9 @@ void ServerManager::MapLoad(int mapNumber)
 		return;
 	}
 
-	array<array<char, 25>, 15> map{};
-	bool isSwitchOff;
 
 	int data{};
-	for (auto& row : map) {
+	for (auto& row : Map) {
 		for (auto& cell : row) {
 			in >> data;
 			cell = (int)data;
@@ -609,15 +624,13 @@ void ServerManager::MapLoad(int mapNumber)
 
 	in.close();
 
-	int cnt{};
 	for (auto& client : clients) {
 		if (client.ball.x == -999) continue;
-		client.Map = map;
+		client.Map = Map;
 		client.isSwitchOff = isSwitchOff;
 
-		client.ball.x = ballStartPos[cnt].x * side + side / 2;
-		client.ball.y = ballStartPos[cnt].y * side + side / 2;
-		if (cnt < ballStartPos.size() - 1) cnt++;
+		client.ball.x = ballStartPos[client.id].x * side + side / 2;
+		client.ball.y = ballStartPos[client.id].y * side + side / 2;
 		client.GamePlay = StageDeath;
 		client.MakeVector();
 		client.GamePlay = StagePlay;
@@ -635,11 +648,8 @@ void ServerManager::MapLoad(int c_id, char* mapName)
 		return;
 	}
 
-	array<array<char, 25>, 15> map{};
-	bool isSwitchOff;
-
 	int data{};
-	for (auto& row : map) {
+	for (auto& row : Map) {
 		for (auto& cell : row) {
 			in >> data;
 			cell = (int)data;
@@ -654,7 +664,7 @@ void ServerManager::MapLoad(int c_id, char* mapName)
 
 	in.close();
 
-	clients[c_id].Map = map;
+	clients[c_id].Map = Map;
 	clients[c_id].isSwitchOff = isSwitchOff;
 
 	clients[c_id].ball.x = ballStartPos[c_id].x * side + side / 2;

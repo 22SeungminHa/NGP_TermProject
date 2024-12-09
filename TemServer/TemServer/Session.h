@@ -47,13 +47,14 @@ public:
 	Block				list[43];
 
 	std::array<std::array<char, 25>, 15>		Map;
-	int					starcnt;
+	int	starcnt;
 	bool				isSwitchOff;
 	int					Scheck;
 
 	int stage;
 
 	void Initialize();
+	void GameInitialize();
 
 	void CrashExamin();
 	void Crash(int dir, int i, int y);

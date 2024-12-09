@@ -25,12 +25,11 @@ LPCTSTR lpszWindowName = L"Trip of a Ball";
 
 OPENFILENAME OFN;
 TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
-TCHAR lpstrFile[100], str[20];
+TCHAR lpstrFile[100];
 bool drag = false;
 POINT BallStartLC{};
-int selection = 0, electictimer = 0, bestscore = 0;
-HFONT hFont, OldFont;
-SIZE fileNameSize;
+int selection = 0;
+HFONT hFont;
 const wchar_t* fontPath = L"DNFBitBitv2.otf";
 
 FMOD::System* ssystem;
@@ -414,8 +413,8 @@ void Render()
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
 				HFONT OldFont = (HFONT)SelectObject(mdc, hFont);
-				if (!name.empty())
-					TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
+
+				TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
 				SelectObject(mdc, OldFont);
 			}
 		}
@@ -428,8 +427,8 @@ void Render()
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
 				HFONT OldFont = (HFONT)SelectObject(mdc, hFont);
-				if (!name.empty())
-					TextOut(mdc, 70 + 737 * (i >= 15), 220 + 126 * (i % 5), name.c_str(), name.size());
+
+				TextOut(mdc, 70 + 737 * (i >= 15), 220 + 126 * (i % 5), name.c_str(), name.size());
 				SelectObject(mdc, OldFont);
 			}
 		}
