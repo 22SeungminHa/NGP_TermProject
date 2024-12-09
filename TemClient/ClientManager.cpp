@@ -173,7 +173,7 @@ bool ClientManager::SendSelectMapPacket(int idx)
 
 	CS_SELECT_LOAD_CUSTOM_MAP_PACKET selectMapPacket(ball.playerID);
 	memcpy(selectMapPacket.mapName, customList[idx].data(), customList[idx].size());
-	selectMapPacket.mapName[customList[idx].size()] = '\n';
+	selectMapPacket.mapName[customList[idx].size()] = '\0';
 
 	retval = send(clientSocket, (char*)&selectMapPacket, sizeof(CS_SELECT_LOAD_CUSTOM_MAP_PACKET), 0);
 

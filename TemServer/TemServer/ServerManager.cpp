@@ -627,7 +627,7 @@ void ServerManager::MapLoad(int mapNumber)
 void ServerManager::MapLoad(int c_id, char* mapName)
 {
 	std::string fileName = mapName;
-	fileName = "CustomMap/" + fileName + ".txt";
+	fileName = "CustomMap/" + fileName;
 	ifstream in{ fileName };
 
 	if (!in.is_open()) {
@@ -669,12 +669,12 @@ void ServerManager::MapListLoad(int c_id)
 {
 	// 디렉터리 경로 검사
 	if (!std::filesystem::exists("CustomMap")) {
-		std::cerr << "Error: Directory " << "CustomMap" << " does not exist!" << std::endl;
+		std::cerr << "Error: Directory CustomMap does not exist!" << std::endl;
 		return;
 	}
 
 	if (!std::filesystem::is_directory("CustomMap")) {
-		std::cerr << "Error: " << "CustomMap" << " is not a directory!" << std::endl;
+		std::cerr << "Error: CustomMap is not a directory!" << std::endl;
 		return;
 	}
 

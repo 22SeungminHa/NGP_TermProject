@@ -29,6 +29,9 @@ TCHAR lpstrFile[100], str[20];
 bool drag = false;
 POINT BallStartLC{};
 int selection = 0, electictimer = 0, bestscore = 0;
+HFONT hFont, OldFont;
+SIZE fileNameSize;
+const wchar_t* fontPath = L"DNFBitBitv2.otf";
 
 FMOD::System* ssystem;
 FMOD::Sound* ballCrach_Sound, * Telpo_Sound, * EatStar_Sound, * ballDeath_Sound, * Click_Sound, * GameClear_Sound, * MusicBk_Sound;
@@ -182,7 +185,6 @@ void LoadResources()
 		ssystem->createSound("Sound/musicbk.mp3", FMOD_LOOP_OFF, 0, &MusicBk_Sound); //--- 게임 클리어
 	}
 
-	const wchar_t* fontPath = L"고령딸기체+OTF.otf";
 	AddFontResource(fontPath);
 }
 
@@ -210,7 +212,7 @@ void Update()
 	case CustomSelect2:
 	{
 		ProcessInput();
-		if (INPUT.IsKeyUp(KEY_TYPE::LBUTTON)) {
+		if (INPUT.IsKeyDown(KEY_TYPE::LBUTTON)) {
 			int offset = game.GamePlay == CustomSelect ? 0 : game.customList.size() / 2;
 			for (int i = 0; i < game.customList.size() / 2; i++) {
 				if (PtInRect(&game.mapNameRect[i], MouseLC)) {
@@ -406,21 +408,34 @@ void Render()
 	}
 	else if (game.GamePlay == CustomSelect) {
 		imgMapList.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
+		
 		for (int i = 0; i < game.customList.size() / 2; i++) {
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
-				DrawText(mdc, name.c_str(), name.size(), &game.mapNameRect[i], DT_LEFT | DT_WORDBREAK);
+				hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"던파 비트비트체 v2");
+				OldFont = (HFONT)SelectObject(mdc, hFont);
+				SetTextColor(mdc, RGB(0, 0, 0));
+				SetBkMode(mdc, TRANSPARENT);
+				TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
+				SelectObject(mdc, OldFont);
+				DeleteObject(hFont);
 			}
 		}
 	}
 	else if (game.GamePlay == CustomSelect2) {
-		imgMapList.Draw(mdc, 0, 0, game.window.right, game.window.bottom, game.window.right, 0, game.window.right + game.window.right, game.window.bottom);
+		imgMapList.Draw(mdc, 0, 0, game.window.right, game.window.bottom, game.window.right, 0, game.window.right, game.window.bottom);
 
 		for (int i = game.customList.size() / 2; i < game.customList.size(); i++) {
 			int idx = game.customList.size() % (NAME_SIZE / 2);
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
-				DrawText(mdc, name.c_str(), name.size(), &game.mapNameRect[idx], DT_LEFT | DT_WORDBREAK);
+				hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"던파 비트비트체 v2");
+				OldFont = (HFONT)SelectObject(mdc, hFont);
+				SetTextColor(mdc, RGB(0, 0, 0));
+				SetBkMode(mdc, TRANSPARENT);
+				TextOut(mdc, 70 + 737 * (i >= 15), 220 + 126 * (i % 5), name.c_str(), name.size());
+				SelectObject(mdc, OldFont);
+				DeleteObject(hFont);
 			}
 		}
 	}
