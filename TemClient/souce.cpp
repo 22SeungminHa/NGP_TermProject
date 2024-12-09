@@ -186,6 +186,7 @@ void LoadResources()
 	}
 
 	AddFontResource(fontPath);
+	hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"던파 비트비트체 v2");
 }
 
 void Update()
@@ -412,13 +413,10 @@ void Render()
 		for (int i = 0; i < game.customList.size() / 2; i++) {
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
-				hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"던파 비트비트체 v2");
-				OldFont = (HFONT)SelectObject(mdc, hFont);
-				SetTextColor(mdc, RGB(0, 0, 0));
-				SetBkMode(mdc, TRANSPARENT);
-				TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
+				HFONT OldFont = (HFONT)SelectObject(mdc, hFont);
+				if (!name.empty())
+					TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
 				SelectObject(mdc, OldFont);
-				DeleteObject(hFont);
 			}
 		}
 	}
@@ -429,13 +427,10 @@ void Render()
 			int idx = game.customList.size() % (NAME_SIZE / 2);
 			if (!game.customList[i].empty()) {
 				std::wstring name = AnsiToWString(game.customList[i]);
-				hFont = CreateFont(-40, 0, 0, 0, 400, NULL, NULL, NULL, NULL, 10, 2, 1, 50, L"던파 비트비트체 v2");
-				OldFont = (HFONT)SelectObject(mdc, hFont);
-				SetTextColor(mdc, RGB(0, 0, 0));
-				SetBkMode(mdc, TRANSPARENT);
-				TextOut(mdc, 70 + 737 * (i >= 15), 220 + 126 * (i % 5), name.c_str(), name.size());
+				HFONT OldFont = (HFONT)SelectObject(mdc, hFont);
+				if (!name.empty())
+					TextOut(mdc, 70 + 737 * (i >= 15), 220 + 126 * (i % 5), name.c_str(), name.size());
 				SelectObject(mdc, OldFont);
-				DeleteObject(hFont);
 			}
 		}
 	}
