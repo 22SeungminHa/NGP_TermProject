@@ -455,7 +455,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
 	unsigned int sessionID = packet->sessionID;
 	if (sessionID >= clients.size()) {
-		// std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
+		std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
 		return;
 	}
 
@@ -468,7 +468,7 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 		std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 	else {
-		std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+		//std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
 	}
 }
 
@@ -520,6 +520,8 @@ void ServerManager::Send_death_packet(int deathID)
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
 			c.Send_load_map_packet();
+			Block temp{ 0, 0, SwitchBk, isSwitchOff };
+			Send_edit_map_packet(&temp, 0, 0);
 		}
 	}
 	else if (clients[0].GamePlay == StageDeath && clients[1].GamePlay == StageDeath) {
@@ -530,6 +532,8 @@ void ServerManager::Send_death_packet(int deathID)
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
 			c.Send_load_map_packet();
+			Block temp{ 0, 0, SwitchBk, isSwitchOff };
+			Send_edit_map_packet(&temp, 0, 0);
 		}
 	}
 }

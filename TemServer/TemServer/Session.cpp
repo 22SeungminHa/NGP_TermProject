@@ -203,7 +203,7 @@ void Session::GameInitialize() {
 	ball = { 0, 0, 0, 0, 0 };
 	isLeftPressed = false, isRightPressed = false;
 	starcnt = 0;
-	isSwitchOff = false;
+	isSwitchOff = serverManager->isSwitchOff;
 	Scheck = 0;
 	Map = serverManager->Map;
 }

@@ -20,7 +20,7 @@ public:
 
 	array<Session, MAX_USER> clients;
 	array<POINT, MAX_USER> ballStartPos{};
-	bool isSwitchOff;
+	bool isSwitchOff = false;
 	array<array<char, 25>, 15> Map{};
 
 	std::vector<std::string> customList{};
