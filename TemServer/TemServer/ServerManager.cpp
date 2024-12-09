@@ -331,6 +331,7 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 					client.Scheck = click;
 					client.GamePlay = Start;
 
+					Send_death_packet(client.id);
 					client.Send_game_state_packet(&client);
 					client.Send_sound_state_packet(&client);
 				}
@@ -338,14 +339,15 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 					client.Scheck = click;
 					client.GamePlay = StageSelect;
 
+					Send_death_packet(client.id);
 					client.Send_game_state_packet(&client);
 					client.Send_sound_state_packet(&client);
 				}
 				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
 					client.Scheck = click;
-					client.MakeVector();
 					client.GamePlay = StageDeath;
-					client.ball = { (float)ballStartPos[client.id].x, (float)ballStartPos[client.id].y, 0, 0, 0}; // 재시작 전에걸로 하면 death로 바뀌고 애니메이션 끝나고 넘어가야돼서 걍 바로 리스폰시킴
+
+					Send_death_packet(client.id);
 					client.Send_game_state_packet(&client);
 					client.Send_sound_state_packet(&client);
 				}
