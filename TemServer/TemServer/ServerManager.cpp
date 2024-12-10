@@ -514,25 +514,25 @@ void ServerManager::Send_death_packet(int deathID)
 	}
 	if (clients[0].GamePlay == CustomDeath && clients[1].GamePlay == CustomDeath) {
 		for (auto& c : clients) {
+			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			c.GamePlay = StagePlay;
 			c.GameInitialize();
 			c.ball.x = ballStartPos[c.id].x * side + side / 2;
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
 			c.Send_load_map_packet();
-			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			Send_edit_map_packet(&temp, 0, 0);
 		}
 	}
 	else if (clients[0].GamePlay == StageDeath && clients[1].GamePlay == StageDeath) {
 		for (auto& c : clients) {
+			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			c.GamePlay = StagePlay;
 			c.GameInitialize();
 			c.ball.x = ballStartPos[c.id].x * side + side / 2;
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
 			c.Send_load_map_packet();
-			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			Send_edit_map_packet(&temp, 0, 0);
 		}
 	}

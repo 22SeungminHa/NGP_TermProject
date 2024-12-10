@@ -2,6 +2,7 @@
 #include "ClientManager.h"
 #include"InputManager.h"
 #include"Timer.h"
+#include "resource.h"
 
 // 최대 vx = 21
 // 최대 vy = 40
@@ -25,7 +26,7 @@ LPCTSTR lpszWindowName = L"Trip of a Ball";
 
 OPENFILENAME OFN;
 TCHAR filter[] = L"Every File(*.*)\0*.*\0Text File\0*.txt;*.doc\0";
-TCHAR lpstrFile[100];
+char fileName[NAME_SIZE];
 bool drag = false;
 POINT BallStartLC{};
 int selection = 0;
@@ -230,6 +231,7 @@ void Update()
 		if(INPUT.IsKeyDown(KEY_TYPE::LBUTTON) || INPUT.IsKeyDown(KEY_TYPE::LBUTTON)){
 			drag = true;
 
+			// 블럭 선택
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
 				game.Scheck = click;
 				for (int i = 0; i < 22; i++) {
@@ -244,37 +246,41 @@ void Update()
 						selection = i + 22;
 				}
 			}
-			// �÷��� ��ư
+			// 플레이 버튼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				game.Scheck = click;
 				if (BallStartLC.x == -1 || BallStartLC.y == -1) {
 					TCHAR a[100];
-					wsprintf(a, L"�� ��ġ�� �������ּ���.");
-					MessageBox(hwnd, a, L"�˸�", MB_OK);
+					wsprintf(a, L"공 위치를 선정해주세요.");
+					MessageBox(hwnd, a, L"알림", MB_OK);
 					drag = false;
 					break;
 				}
 				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
 				game.GamePlay = CustomPlay;
 			}
+			// 지우개 버튼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
 				selection = -1;
 			}
+			// 리셋 버튼
 			else if (MouseLC.x >= 1325 && MouseLC.x <= 1325 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
 				memset(game.Map, 0, sizeof(game.Map));
 				BallStartLC = { -1, -1 };
 			}
+			// 불러오기 버튼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
-				//맵 불러오기
 				game.Scheck = click;
 
 			}
+			// 저장 버튼
 			else if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
 				game.Scheck = click;
 				drag = false;
-
+				DialogBox(g_hInst, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DialogProc);
+				game.SendCustomMapPacket(BallStartLC, fileName);
 			}
 		}
 		if (INPUT.IsKeyUp(KEY_TYPE::LBUTTON)) {
@@ -659,25 +665,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+LRESULT CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_INITDIALOG:
+		return TRUE;
 
-LRESULT CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	//switch (message) {
-	//case WM_INITDIALOG:
-	//	hEdit = GetDlgItem(hDlg, IDC_EDIT1); // 텍스트 입력 필드
-	//	return (INT_PTR)TRUE;
-	//case WM_COMMAND:
-	//	if (LOWORD(wParam) == IDOK) {
-	//		char buffer[256];
-	//		GetWindowText(hEdit, buffer, sizeof(buffer));
-	//		MessageBox(hDlg, buffer, "입력한 텍스트", MB_OK);
-	//		EndDialog(hDlg, IDOK);
-	//		return (INT_PTR)TRUE;
-	//	}
-	//	else if (LOWORD(wParam) == IDCANCEL) {
-	//		EndDialog(hDlg, IDCANCEL);
-	//		return (INT_PTR)TRUE;
-	//	}
-	//	break;
-	//}
-	return (INT_PTR)FALSE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDOK: {
+			wchar_t wfileName[256];
+			GetDlgItemText(hDlg, IDC_EDIT1, wfileName, sizeof(wfileName) / sizeof(wchar_t));
+			WideCharToMultiByte(CP_ACP, 0, wfileName, -1, fileName, NAME_SIZE, NULL, NULL);
+			EndDialog(hDlg, IDOK);
+			return TRUE;
+		}
+		case IDCANCEL: {
+			EndDialog(hDlg, IDCANCEL);
+			return TRUE;
+		}
+		}
+		break;
+
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		return TRUE;
+	}
+	return FALSE;
 }

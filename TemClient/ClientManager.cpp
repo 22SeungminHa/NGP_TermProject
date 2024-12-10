@@ -146,13 +146,15 @@ bool ClientManager::SendMousePacket(KEY_TYPE key, POINT mousePos)
 	return true;
 }
 
-bool ClientManager::SendCustomMapPacket(POINT startPos)
+bool ClientManager::SendCustomMapPacket(POINT startPos, char* name)
 {
 	CS_SAVE_CUSTOM_MAP_PACKET customMapPacket(ball.playerID);
+
 	memcpy(customMapPacket.map, Map, sizeof(Map));
 	customMapPacket.isSwitchOff = isSwitchOff;
 	customMapPacket.x = startPos.x;
 	customMapPacket.y = startPos.y;
+	memcpy(customMapPacket.mapName, name, sizeof(name));
 
 	retval = send(clientSocket, (char*)&customMapPacket, sizeof(CS_SAVE_CUSTOM_MAP_PACKET), 0);
 

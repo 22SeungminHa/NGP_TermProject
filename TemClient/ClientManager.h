@@ -74,7 +74,7 @@ public:
 	bool SendLoginPacket(int sock, const char* name);
 	bool SendKeyPacket(int sock, pair<KEY_TYPE, KEY_STATE> key);
 	bool SendMousePacket(KEY_TYPE key, POINT mousePos);
-	bool SendCustomMapPacket(POINT startPos);
+	bool SendCustomMapPacket(POINT startPos, char* name);
 	bool SendSelectMapPacket(int idx);
 
 	bool ReceivePlayerID();
