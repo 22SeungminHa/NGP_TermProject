@@ -25,6 +25,7 @@ enum Game {
 	CustomSelect,
 	CustomSelect2,
 	CustomPlay,
+	CustomWaiting,
 	CustomDeath
 };
 

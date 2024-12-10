@@ -24,6 +24,7 @@ public:
 	array<array<char, 25>, 15> Map{};
 
 	std::vector<std::string> customList{};
+	std::unordered_map<std::string, bool> customWaiting{};
 
 	bool isWaiting[4]{false};
 	int cl_num;

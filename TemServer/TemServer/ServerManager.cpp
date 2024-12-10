@@ -246,8 +246,10 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = StagePlay;
 			else if (client.GamePlay == CustomSelect || client.GamePlay == StageSelect || client.GamePlay == CustomSelect2)
 				client.GamePlay = Start;
-			else if (client.GamePlay == CustomMode)
+			else if (client.GamePlay == CustomMode || client.GamePlay == CustomWaiting) {
 				client.GamePlay = CustomSelect;
+				MapListLoad(p->sessionID);
+			}
 			else if (client.GamePlay == CustomPlay)
 				client.GamePlay = CustomMode;
 			else if (client.GamePlay == StageClear)
@@ -396,7 +398,13 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				}
 			}
 			else if (client.GamePlay == CustomMode) {
+				if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
+					client.Scheck = click;
 
+					client.GamePlay = CustomPlay;
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
 			}
 			break;
 		}
@@ -434,14 +442,31 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 		CS_SELECT_LOAD_CUSTOM_MAP_PACKET* p 
 			= reinterpret_cast<CS_SELECT_LOAD_CUSTOM_MAP_PACKET*>(packet);
 
-		MapLoad(p->sessionID, p->mapName);
-		clients[p->sessionID].Send_load_map_packet();
-
 		u_int sessionID = p->sessionID;
 		Session& client = clients[sessionID];
 
-		client.GamePlay = StagePlay;
-		client.Send_game_state_packet(&client);
+		std::string mapName = p->mapName;
+
+		if (!customWaiting[mapName]) {
+			client.GamePlay = CustomWaiting;
+			client.Send_game_state_packet(&client);
+			customWaiting[mapName] = true;
+		}
+		else {
+			MapLoad(p->sessionID, p->mapName);
+
+			for (auto& c : clients) {
+				if (c.GamePlay == CustomWaiting) {
+					c.GamePlay = CustomPlay;
+					c.Send_game_state_packet(&c);
+					c.Send_load_map_packet();
+				}
+				client.GamePlay = CustomPlay;
+				client.Send_game_state_packet(&client);
+				client.Send_load_map_packet();
+			}
+			customWaiting[mapName] = false;
+		}
 		break;
 	}
     default:
@@ -512,7 +537,7 @@ void ServerManager::Send_death_packet(int deathID)
 		c.AddPacketToQueue(packet);
 		//cout << "Send_frame_packet 완료     " << packet->c1_id << ">>" << packet->x1 << ", " << packet->y1 << endl;
 	}
-	if (clients[0].GamePlay == CustomDeath && clients[1].GamePlay == CustomDeath) {
+	if (clients[0].GamePlay == StageDeath && clients[1].GamePlay == StageDeath) {
 		for (auto& c : clients) {
 			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			c.GamePlay = StagePlay;
@@ -524,10 +549,10 @@ void ServerManager::Send_death_packet(int deathID)
 			Send_edit_map_packet(&temp, 0, 0);
 		}
 	}
-	else if (clients[0].GamePlay == StageDeath && clients[1].GamePlay == StageDeath) {
+	else if (clients[0].GamePlay == CustomDeath && clients[1].GamePlay == CustomDeath) {
 		for (auto& c : clients) {
 			Block temp{ 0, 0, SwitchBk, isSwitchOff };
-			c.GamePlay = StagePlay;
+			c.GamePlay = CustomPlay;
 			c.GameInitialize();
 			c.ball.x = ballStartPos[c.id].x * side + side / 2;
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
@@ -670,15 +695,17 @@ void ServerManager::MapLoad(int c_id, char* mapName)
 
 	in.close();
 
-	clients[c_id].Map = Map;
-	clients[c_id].isSwitchOff = isSwitchOff;
+	for (auto& client : clients) {
+		if (client.ball.x == -999) continue;
+		client.Map = Map;
+		client.isSwitchOff = isSwitchOff;
 
-	clients[c_id].ball.x = ballStartPos[c_id].x * side + side / 2;
-	clients[c_id].ball.y = ballStartPos[c_id].y * side + side / 2;
-
-	//clients[c_id].GamePlay = StageDeath;
-	//clients[c_id].MakeVector();
-	//clients[c_id].GamePlay = StagePlay;
+		client.ball.x = ballStartPos[client.id].x * side + side / 2;
+		client.ball.y = ballStartPos[client.id].y * side + side / 2;
+		client.GamePlay = StageDeath;
+		client.MakeVector();
+		client.GamePlay = StagePlay;
+	}
 }
 
 void ServerManager::MapListLoad(int c_id)
@@ -702,6 +729,10 @@ void ServerManager::MapListLoad(int c_id)
 		if (entry.is_regular_file()) { // 파일만 추가
 			std::string fileName = entry.path().filename().string();
 			fileNames = fileNames + fileName + " ";
+
+			if (!customWaiting.contains(fileName)) {
+				customWaiting[fileName] = false;
+			}
 		}
 	}
 

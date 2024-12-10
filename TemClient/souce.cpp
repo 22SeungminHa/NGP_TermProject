@@ -246,20 +246,6 @@ void Update()
 						selection = i + 14;
 				}
 			}
-			// 플레이 버튼
-			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78) {
-				game.Scheck = click;
-				if (BallStartLC.x == -1 || BallStartLC.y == -1) {
-					TCHAR a[100];
-					wsprintf(a, L"공 위치를 선정해주세요.");
-					MessageBox(hwnd, a, L"알림", MB_OK);
-					drag = false;
-					break;
-				}
-				game.ball = { (float)BallStartLC.x * side + 30, (float)BallStartLC.y * side + 30, 0, 0, 0 };
-				game.GamePlay = CustomPlay;
-			}
-			// 지우개 버튼
 			else if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 78 && MouseLC.y >= 105 && MouseLC.y <= 105 + 78) {
 				game.Scheck = click;
 				selection = -1;
@@ -280,7 +266,6 @@ void Update()
 				game.Scheck = click;
 				drag = false;
 				DialogBox(g_hInst, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DialogProc);
-				game.SendCustomMapPacket(BallStartLC, fileName);
 			}
 		}
 		if (INPUT.IsKeyUp(KEY_TYPE::LBUTTON)) {
@@ -354,7 +339,7 @@ void Render()
 
 	POINT MouseLC = INPUT.GetMousePosition();
 
-	POINT BallStartLC = game.ballStartPos;
+	POINT& BallStartLC = game.ballStartPos;
 
 	//맵툴 블럭 설치
 	if (game.GamePlay == CustomMode && drag == true && MouseLC.x >= 21 && MouseLC.x <= 21 + 1200 && MouseLC.y >= 21 && MouseLC.y <= 21 + 720) {
@@ -443,10 +428,6 @@ void Render()
 		imgMaptoolScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 		//버튼
-		if (MouseLC.x >= 1239 && MouseLC.x <= 1239 + 164 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
-			imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 164, 0, 164, 78); // 플레이버튼 위 커서
-		else
-			imgPlayButton.Draw(mdc, 1239, 16, 164, 78, 0, 0, 164, 78); // 기본 플레이버튼
 		if (MouseLC.x >= 1410 && MouseLC.x <= 1410 + 78 && MouseLC.y >= 16 && MouseLC.y <= 16 + 78)
 			imgSaveButton.Draw(mdc, 1410, 16, 78, 78, 78, 0, 78, 78); // 저장버튼 위 커서
 		else
@@ -504,7 +485,7 @@ void Render()
 		else // 지우개
 			imgEraseButton.Draw(mdc, 1315, 307, 78, 78, 0, 0, 78, 78);
 	}
-	else if (game.GamePlay == StageWaiting) {
+	else if (game.GamePlay == StageWaiting || game.GamePlay == CustomWaiting) {
 		imgWaiting.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom); // 기본 시작화면
 	}
 
@@ -676,6 +657,7 @@ LRESULT CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			wchar_t wfileName[256];
 			GetDlgItemText(hDlg, IDC_EDIT1, wfileName, sizeof(wfileName) / sizeof(wchar_t));
 			WideCharToMultiByte(CP_ACP, 0, wfileName, -1, fileName, NAME_SIZE, NULL, NULL);
+			game.SendCustomMapPacket(BallStartLC, fileName);
 			EndDialog(hDlg, IDOK);
 			return TRUE;
 		}

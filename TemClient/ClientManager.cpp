@@ -24,7 +24,6 @@ bool ClientManager::Initialize(HWND _hwnd)
 	isSwitchOff = false;
 	Scheck = 0;
 
-	// ���� ���� ����Ʈ
 	list[0].type = Star;
 	list[1].type = JumpBk;
 	list[2].type = RStraightBk;
@@ -363,6 +362,7 @@ void ClientManager::UsingPacket(char* buffer)
 		st.str(listPacket->mapList);
 
 		int cnt{};
+		customList.fill(std::string());
 		while (st >> customList[cnt++]);
 
 		break;
