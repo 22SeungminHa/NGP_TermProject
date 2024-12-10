@@ -234,16 +234,16 @@ void Update()
 			// 블럭 선택
 			if (MouseLC.y >= 756 && MouseLC.y <= 756 + 60) {
 				game.Scheck = click;
-				for (int i = 0; i < 22; i++) {
+				for (int i = 0; i < 14; i++) {
 					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
 						selection = i;
 				}
 			}
 			else if (MouseLC.y >= 756 + 60 + 7 && MouseLC.y <= 756 + 60 + 7 + 60) {
 				game.Scheck = click;
-				for (int i = 0; i < 22; i++) {
+				for (int i = 0; i < 14; i++) {
 					if (MouseLC.x >= 17 + 60 * i + 7 * i && MouseLC.x <= 17 + 60 * i + 7 * i + 60)
-						selection = i + 22;
+						selection = i + 14;
 				}
 			}
 			// 플레이 버튼
