@@ -244,14 +244,22 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				client.GamePlay = StageStop;
 			else if (client.GamePlay == StageStop)
 				client.GamePlay = StagePlay;
+			else if (client.GamePlay == CustomStop) {
+				client.GamePlay = CustomPlay;
+			}
 			else if (client.GamePlay == CustomSelect || client.GamePlay == StageSelect || client.GamePlay == CustomSelect2)
 				client.GamePlay = Start;
-			else if (client.GamePlay == CustomMode || client.GamePlay == CustomWaiting) {
+			else if (client.GamePlay == CustomMode) {
 				client.GamePlay = CustomSelect;
 				MapListLoad(p->sessionID);
 			}
+			else if (client.GamePlay == CustomWaiting) {
+				client.GamePlay = CustomSelect;
+				MapListLoad(p->sessionID);
+				customWaiting[client.mapName] = false;
+			}
 			else if (client.GamePlay == CustomPlay)
-				client.GamePlay = CustomMode;
+				client.GamePlay = CustomStop;
 			else if (client.GamePlay == StageClear)
 				client.GamePlay = StageSelect;
 			else if (client.GamePlay == StageWaiting) {
@@ -348,6 +356,33 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
 					client.Scheck = click;
 					client.GamePlay = StageDeath;
+
+					Send_death_packet(client.id);
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+			}
+			else if (client.GamePlay == CustomStop) {
+				if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381) { // 메인화면 버튼 위 커서 
+					client.Scheck = click;
+					client.GamePlay = Start;
+
+					Send_death_packet(client.id);
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+				}
+				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494) { // 스테이지 버튼 위 커서 
+					client.Scheck = click;
+					client.GamePlay = CustomSelect;
+
+					Send_death_packet(client.id);
+					client.Send_game_state_packet(&client);
+					client.Send_sound_state_packet(&client);
+					MapListLoad(p->sessionID);
+				}
+				else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 509 && MouseLC.y <= 606) { // 재시작 버튼 위 커서
+					client.Scheck = click;
+					client.GamePlay = CustomDeath;
 
 					Send_death_packet(client.id);
 					client.Send_game_state_packet(&client);
@@ -451,21 +486,27 @@ void ServerManager::ProcessPacket(int c_id, char* packet)
 			client.GamePlay = CustomWaiting;
 			client.Send_game_state_packet(&client);
 			customWaiting[mapName] = true;
+			client.mapName = mapName;
 		}
 		else {
 			MapLoad(p->sessionID, p->mapName);
 
 			for (auto& c : clients) {
-				if (c.GamePlay == CustomWaiting) {
+				if (c.id != client.id && c.mapName == mapName) {
 					c.GamePlay = CustomPlay;
 					c.Send_game_state_packet(&c);
 					c.Send_load_map_packet();
+
+					c.mapName = "";
+
+					client.GamePlay = CustomPlay;
+					client.Send_game_state_packet(&client);
+					client.Send_load_map_packet();
+
+					customWaiting[mapName] = false;
+					break;
 				}
-				client.GamePlay = CustomPlay;
-				client.Send_game_state_packet(&client);
-				client.Send_load_map_packet();
 			}
-			customWaiting[mapName] = false;
 		}
 		break;
 	}
@@ -614,7 +655,7 @@ void ServerManager::EnterTheStage(Session& client, int stageNum)
 	else {
 		MapLoad(stageNum + 1);
 		for (auto& c : clients) {
-			if (c.stage == stageNum) {
+			if (c.id != client.id && c.stage == stageNum) {
 				c.GamePlay = StagePlay;
 				c.Send_game_state_packet(&c);
 				c.Send_load_map_packet();
@@ -623,6 +664,8 @@ void ServerManager::EnterTheStage(Session& client, int stageNum)
 			client.GamePlay = StagePlay;
 			client.Send_game_state_packet(&client);
 			client.Send_load_map_packet();
+
+			break;
 		}
 		isWaiting[stageNum] = false;
 	}
@@ -702,9 +745,7 @@ void ServerManager::MapLoad(int c_id, char* mapName)
 
 		client.ball.x = ballStartPos[client.id].x * side + side / 2;
 		client.ball.y = ballStartPos[client.id].y * side + side / 2;
-		client.GamePlay = StageDeath;
 		client.MakeVector();
-		client.GamePlay = StagePlay;
 	}
 }
 

@@ -202,8 +202,11 @@ void Update()
 	case StageSelect:
 	case StagePlay:
 	case StageStop:
+	case CustomPlay:
 	case StageClear:
 	case StageWaiting:
+	case CustomWaiting:
+	case CustomStop:
 	case StageDeath:
 	{
 		ProcessInput();
@@ -405,7 +408,7 @@ void Render()
 				std::wstring name = AnsiToWString(game.customList[i]);
 				HFONT OldFont = (HFONT)SelectObject(mdc, hFont);
 
-				TextOut(mdc, 70 + 737 * (i >= 5), 220 + 126 * (i % 5), name.c_str(), name.size());
+				TextOut(mdc, 70 + 737 * (i % 2), 220 + 126 * (i / 2), name.c_str(), name.size());
 				SelectObject(mdc, OldFont);
 			}
 		}
@@ -490,7 +493,7 @@ void Render()
 	}
 
 	// 게임 플레이 화면
-	else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
+	else if (game.GamePlay == StagePlay || game.GamePlay == StageClear || game.GamePlay == StageStop || game.GamePlay == CustomPlay || game.GamePlay == StageDeath || game.GamePlay == CustomDeath || game.GamePlay == CustomStop) { // 죽었고 파티클 애니메이션 있을 때 그리려고 추가함
 		imgPlayScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 0, 0, game.window.right, game.window.bottom);
 
 		//블럭 출력
@@ -539,7 +542,7 @@ void Render()
 		}
 
 		// 화면 출력
-		if (game.GamePlay == StageStop) {
+		if (game.GamePlay == StageStop || game.GamePlay == CustomStop) {
 			if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 284 && MouseLC.y <= 381)
 				imgStopScreen.Draw(mdc, 0, 0, game.window.right, game.window.bottom, 1500, 0, game.window.right, game.window.bottom); // 메인화면 버튼 위 커서
 			else if (MouseLC.x >= 928 && MouseLC.x <= 1217 && MouseLC.y >= 397 && MouseLC.y <= 494)

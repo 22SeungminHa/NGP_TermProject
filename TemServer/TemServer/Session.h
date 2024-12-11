@@ -52,6 +52,7 @@ public:
 	int					Scheck;
 
 	int stage;
+	std::string mapName{};
 
 	void Initialize();
 	void GameInitialize();
