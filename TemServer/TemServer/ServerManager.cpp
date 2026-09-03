@@ -118,6 +118,10 @@ void ServerManager::MakeTimerThreads()
 
 void ServerManager::Do_timer()
 {
+	using clock = std::chrono::steady_clock;
+	const auto tickInterval = std::chrono::milliseconds(30);
+	auto nextTick = clock::now() + tickInterval;
+
 	while (true) {
 		bool isMoved{ false };
 
@@ -141,7 +145,8 @@ void ServerManager::Do_timer()
 			Send_frame_packet();
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(30)); // 3ms 대기
+		std::this_thread::sleep_until(nextTick);
+		nextTick += tickInterval;
 	}
 }
 
@@ -521,20 +526,23 @@ void ServerManager::Do_Send(const std::shared_ptr<PACKET>& packet)
 
 	unsigned int sessionID = packet->sessionID;
 	if (sessionID >= clients.size()) {
-		std::cerr << "[Do_Send()] Packet session ID: " << sessionID << std::endl;
+		std::cerr << "[Do_Send()] Invalid session ID: " << sessionID << std::endl;
 		return;
 	}
 
 	Session& session = clients[sessionID];
 
-	// 전송할 데이터
+	// 이미 끊긴 세션이면 전송 생략
+	if (session.ball.x == -999) return;
+
 	int retval = send(session.sock, reinterpret_cast<const char*>(&(*packet)), packet->size, 0);
 
 	if (retval == SOCKET_ERROR) {
-		std::cerr << "[send()] Failed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
-	}
-	else {
-		//std::cout << "Successed to send Packet" << (int)packet->packetID << " to Session" << sessionID << std::endl;
+		int err = WSAGetLastError();
+		std::cerr << "[send()] Failed: packetID=" << (int)packet->packetID
+			<< " session=" << sessionID
+			<< " WSAError=" << err << std::endl;
+		Disconnect(sessionID);
 	}
 }
 
@@ -583,6 +591,7 @@ void ServerManager::Send_death_packet(int deathID)
 			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			c.GamePlay = StagePlay;
 			c.GameInitialize();
+			c.MakeVector();
 			c.ball.x = ballStartPos[c.id].x * side + side / 2;
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
@@ -595,6 +604,7 @@ void ServerManager::Send_death_packet(int deathID)
 			Block temp{ 0, 0, SwitchBk, isSwitchOff };
 			c.GamePlay = CustomPlay;
 			c.GameInitialize();
+			c.MakeVector();
 			c.ball.x = ballStartPos[c.id].x * side + side / 2;
 			c.ball.y = ballStartPos[c.id].y * side + side / 2;
 			c.Send_game_state_packet(&c);
@@ -660,13 +670,12 @@ void ServerManager::EnterTheStage(Session& client, int stageNum)
 				c.Send_game_state_packet(&c);
 				c.Send_load_map_packet();
 				c.stage = -1;
+				break;
 			}
-			client.GamePlay = StagePlay;
-			client.Send_game_state_packet(&client);
-			client.Send_load_map_packet();
-
-			break;
 		}
+		client.GamePlay = StagePlay;
+		client.Send_game_state_packet(&client);
+		client.Send_load_map_packet();
 		isWaiting[stageNum] = false;
 	}
 }

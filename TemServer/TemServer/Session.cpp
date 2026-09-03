@@ -6,30 +6,34 @@
 
 DWORD Session::Do_Recv(LPVOID arg)
 {
-	char buf[BUFSIZE + 1] = { 0 };
+	char buf[BUFSIZE * 2] = { 0 };
 
 	while (true) {
-		// 데이터 수신
-		int receivedBytes = recv(sock, buf, sizeof(buf), 0);
+		// 이전에 잘린 데이터를 버퍼 앞에 복원
+		if (recv_remain > 0) {
+			memcpy(buf, save_buf, recv_remain);
+		}
+
+		// 남은 공간에만 새 데이터 수신
+		int receivedBytes = recv(sock, buf + recv_remain, sizeof(buf) - recv_remain, 0);
 		if (receivedBytes <= 0) {
 			err_display("recv()");
 			serverManager->Disconnect(id);
 			return 1;
 		}
-		cout << "receivedBytes : " << receivedBytes << endl;
 
-		int remain_data = receivedBytes + recv_remain; // 총 데이터 크기
-		char* p = buf; // 패킷 처리 시작 위치
+		int remain_data = receivedBytes + recv_remain;
+		char* p = buf;
+		recv_remain = 0;
 
 		// 패킷 처리 루프
 		while (remain_data > 0) {
-			unsigned short* byte = reinterpret_cast<unsigned short*>(p); // 패킷 크기 읽기
+			unsigned short* byte = reinterpret_cast<unsigned short*>(p);
 			int packet_size = *byte;
 
 			// 패킷 크기 검증
 			if (packet_size > BUFSIZE * 2 || packet_size < sizeof(WORD)) {
 				std::cerr << "[Do_Recv()] Invalid packet size: " << packet_size << std::endl;
-				recv_remain = 0;
 				remain_data = 0;
 				break;
 			}
@@ -39,32 +43,26 @@ DWORD Session::Do_Recv(LPVOID arg)
 				PACKET* receivedPacket = reinterpret_cast<PACKET*>(p);
 				serverManager->ProcessPacket(id, reinterpret_cast<char*>(receivedPacket));
 
-				p += packet_size;       // 다음 패킷으로 이동
+				p += packet_size;
 				remain_data -= packet_size;
 			}
 			else {
-				break; // 패킷 데이터가 부족함
+				break; // 패킷이 잘림 - 다음 recv에서 이어받기
 			}
 		}
 
 		// 남은 데이터 보관
 		recv_remain = remain_data;
 		if (remain_data > 0) {
-			// 버퍼 크기를 초과하는 데이터를 저장하려면 경고 출력
 			if (remain_data > sizeof(save_buf)) {
-				std::cerr << "[Do_Recv()] Remaining data exceeds buffer size, data may be lost!" << std::endl;
-				remain_data = sizeof(save_buf); // 데이터 크기를 버퍼 크기로 제한
+				std::cerr << "[Do_Recv()] Remaining data exceeds save_buf size, truncating!" << std::endl;
+				remain_data = sizeof(save_buf);
 			}
-
-			memmove(save_buf, p, remain_data); // 남은 데이터를 save_buf로 이동
+			memmove(save_buf, p, remain_data);
 		}
 	}
 
 	return 0;
-}
-
-void Session::CustomMapSave()
-{
 }
 
 void Session::AddPacketToQueue(std::shared_ptr<PACKET> packet)

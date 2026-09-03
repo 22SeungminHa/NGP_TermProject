@@ -1,7 +1,7 @@
 ﻿#include "client_pch.h"
 #include "ClientManager.h"
-#include"InputManager.h"
-#include"Timer.h"
+#include "InputManager.h"
+#include "Timer.h"
 #include "resource.h"
 
 // 최대 vx = 21
@@ -571,16 +571,18 @@ void Render()
 void ProcessInput()
 {
 	EnterCriticalSection(&(INPUT.keyEventCS));
-	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT)) {
+	// 오른쪽 방향키 또는 D
+	if (INPUT.IsKeyDown(KEY_TYPE::RIGHT) || INPUT.IsKeyDown(KEY_TYPE::D)) {
 		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::DOWN });
 	}
-	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT)) {
+	else if (INPUT.IsKeyUp(KEY_TYPE::RIGHT) || INPUT.IsKeyUp(KEY_TYPE::D)) {
 		keyEventQueue.push({ KEY_TYPE::RIGHT, KEY_STATE::UP });
 	}
-	if (INPUT.IsKeyDown(KEY_TYPE::LEFT)) {
+	// 왼쪽 방향키 또는 A
+	if (INPUT.IsKeyDown(KEY_TYPE::LEFT) || INPUT.IsKeyDown(KEY_TYPE::A)) {
 		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::DOWN });
 	}
-	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT)) {
+	else if (INPUT.IsKeyUp(KEY_TYPE::LEFT) || INPUT.IsKeyUp(KEY_TYPE::A)) {
 		keyEventQueue.push({ KEY_TYPE::LEFT, KEY_STATE::UP });
 	}
 	if (INPUT.IsKeyDown(KEY_TYPE::ESCAPE)) {

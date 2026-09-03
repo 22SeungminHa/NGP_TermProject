@@ -41,6 +41,8 @@ enum class KEY_TYPE
 	ESCAPE = VK_ESCAPE,
 	SPACE = VK_SPACE,
 	L     = 'L',
+	A     = 'A',
+	D     = 'D',
 
 	LBUTTON = VK_LBUTTON,
 	RBUTTON = VK_RBUTTON

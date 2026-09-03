@@ -13,18 +13,18 @@
 #include <cstdlib>
 #include <ctime>
 #include <string.h>
-#include <atlImage.h>
+#include <atlimage.h>
 #include <vector>
 #include <string>
-#include<sstream>
+#include <sstream>
 #include <fstream>
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod.hpp"
 #include "FMOD\FMOD Studio API Windows\api\core\inc\fmod_errors.h" 
 #include <random>
 #include <time.h>
 #include <thread>
-#include<array>
-#include<queue>
+#include <array>
+#include <queue>
 #include <windows.h>
 
 #pragma comment(lib, "WS2_32.lib")
